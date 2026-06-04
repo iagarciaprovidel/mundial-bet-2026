@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MundialBet Club 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   MundialBet Club 2026 — Token layer
+   Híbrido: tipografía + espaciado + sombras de Motorra,
+   paleta Trionda dark + mascotas FIFA 2026 del brief.
+   ============================================================ */
+:root {
+  /* — Fuentes (Motorra) — */
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body:    'Manrope', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* — Paleta Trionda (brief) — ACTUALIZADA PARA LUMINOSIDAD */
+  --bg:          #0D1F3C;   /* cielo azul oscuro */
+  --surface-1:   #1A3A5C;
+  --surface-2:   #2A5A7C;
+  --surface-3:   #3A6A8C;
+  --border:      #2A5A7C;
+  --border-2:    #4A7A9C;
+
+  --mex:         #00843D;  --mex-light:  #00D466;   /* Zayu · México · verde brillante */
+  --can:         #E63946;  --can-light:  #F77F88;   /* Maple · Canadá · rojo vivido */
+  --usa:         #1B5E8F;  --usa-light:  #2E8BC0;   /* Clutch · EE.UU. · azul vibrante */
+  --gold:        #FFB81C;  --gold-light: #FFD700;   /* trofeo / monedas - amarillo dorado */
+
+  --text:        #FFFFFF;  /* blanco puro */
+  --text-alt:    #E8F0F8;  /* blanco azulado */
+  --muted:       #A8C5E0;  /* gris-azul claro */
+  --muted-2:     #7A94B8;  /* gris-azul medio */
+  --muted-3:     #5A7498;  /* gris-azul oscuro */
+
+  /* — Roles semánticos — */
+  --success:     var(--mex-light);
+  --success-bg:  rgba(0,200,90,0.12);
+  --danger:      var(--can-light);
+  --danger-bg:   rgba(232,64,64,0.12);
+  --info:        var(--usa-light);
+  --info-bg:     rgba(74,144,226,0.12);
+  --coin:        var(--gold);
+  --coin-bg:     rgba(212,175,55,0.12);
+
+  /* — Escala tipográfica (Motorra) — */
+  --t-3xs: 11px; --t-2xs: 12px; --t-xs: 13px; --t-sm: 14px; --t-md: 15px;
+  --t-lg: 17px;  --t-xl: 20px;  --t-2xl: 24px; --t-3xl: 30px; --t-4xl: 38px;
+  --t-5xl: 48px; --t-6xl: 64px;
+
+  /* — Espaciado (Motorra, base 4px) — */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px;
+  --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px; --sp-16: 64px;
+
+  /* — Radios (Motorra) — */
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px; --r-2xl: 28px; --r-pill: 9999px;
+
+  /* — Sombras (Motorra, oscurecidas) — */
+  --sh-1: 0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+  --sh-2: 0 4px 12px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+  --sh-3: 0 10px 28px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  --sh-4: 0 20px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+  --glow-gold: 0 0 0 1px rgba(212,175,55,0.5), 0 0 20px rgba(212,175,55,0.25);
+  --glow-green: 0 0 0 1px rgba(0,200,90,0.5), 0 0 18px rgba(0,200,90,0.22);
+
+  /* — Motion (Motorra) — */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 140ms; --dur-base: 220ms; --dur-slow: 380ms;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: #06080F;
+  font-family: var(--font-body);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+#stage {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 28px 16px;
+}
+
+/* — Tipografía utilitaria — */
+.display { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+.num { font-family: var(--font-display); font-feature-settings: "tnum" 1, "lnum" 1; font-weight: 700; letter-spacing: -0.01em; }
+.mono { font-family: var(--font-mono); font-feature-settings: "tnum" 1; }
+.eyebrow { font-family: var(--font-body); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--t-3xs); }
+
+/* — Scrollbar discreto — */
+*::-webkit-scrollbar { width: 0; height: 0; }
+* { scrollbar-width: none; }
+
+/* — Fondo de cancha de fútbol (estadio) — más luminoso */
+.mb-app-bg {
+  background:
+    linear-gradient(180deg, rgba(13,31,60,0.35) 0%, rgba(13,31,60,0.15) 25%, rgba(13,31,60,0.00) 55%, rgba(13,20,40,0.25) 100%),
+    url(stadium.jpg) center 68% / cover no-repeat;
+  background-color: #0c2114;
+}
+
+/* — Animaciones globales — */
+@keyframes mb-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes mb-pop { 0% { transform: scale(0.9); opacity: 0; } 60% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes mb-pulse-live { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
+@keyframes mb-pulse-tick { 0% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes mb-bounce { 0%,100% { transform: translateY(0); } 25% { transform: translateY(-14px); } 50% { transform: translateY(0); } 75% { transform: translateY(-7px); } }
+@keyframes mb-sag { 0% { transform: translateY(0) rotate(0); } 100% { transform: translateY(4px) rotate(-6deg); } }
+@keyframes mb-spin360 { from { transform: rotateY(0); } to { transform: rotateY(360deg); } }
+@keyframes mb-shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+@keyframes mb-glow-breathe { 0%,100% { box-shadow: var(--glow-gold); } 50% { box-shadow: 0 0 0 1px rgba(212,175,55,0.6), 0 0 28px rgba(212,175,55,0.4); } }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<!-- React + Babel (pinned) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Data (plain JS) -->
+<script src="data.js"></script>
+
+<!-- Frame + tweaks + components + screens + app (babel) -->
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="screens-core.jsx"></script>
+<script type="text/babel" src="screens-teams.jsx"></script>
+<script type="text/babel" src="screens-bet.jsx"></script>
+<script type="text/babel" src="screens-rank.jsx"></script>
+<script type="text/babel" src="screens-special.jsx"></script>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

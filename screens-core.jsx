@@ -1,0 +1,371 @@
+/* ============================================================
+   Screens: Onboarding + Dashboard (Inicio)
+   ============================================================ */
+const { useState: useStateC, useEffect: useEffectC } = React;
+const Dc = window.MB;
+const Mc = Dc.MASCOTS;
+const {
+  MascotAvatar, MascotImg, CoinBadge, Chip, Card, SectionHead, ProgressBar,
+  BetButton, CountdownTimer, FeedItem, GoldButton, useCountUp, Confetti, ResultBadge,
+} = window;
+
+// ─────────────────────────────────────────────────────────
+// ONBOARDING (3 pasos)
+// ─────────────────────────────────────────────────────────
+function Onboarding({ onFinish }) {
+  const [step, setStep] = useStateC(0);
+  const [chosen, setChosen] = useStateC('zayu');
+
+  const steps = [
+    { mascot: 'zayu', title: '¡Bienvenido a MundialBet Club 2026!',
+      body: 'Aquí vas a demostrar que sabes más de fútbol que todos tus amigos. 🔥', accent: 'var(--mex-light)' },
+    { mascot: 'maple', title: 'El juego es justo',
+      body: 'Todos ven los pronósticos pero nadie sabe quién apostó qué… hasta que el partido comienza. 🔒', accent: 'var(--can-light)' },
+    { mascot: 'clutch', title: 'Elige tu mascota',
+      body: 'Ella definirá tu estilo y tu color en el grupo.', accent: 'var(--usa-light)' },
+  ];
+  const cur = steps[step];
+
+  return (
+    <div className="mb-app-bg" style={{
+      height: '100%', display: 'flex', flexDirection: 'column', position: 'relative',
+      padding: '70px 24px 30px',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(120% 70% at 50% 10%, ${cur.accent}26, transparent 58%)`, transition: 'background var(--dur-slow) var(--ease-out)', pointerEvents: 'none' }} />
+      {/* logo */}
+      <div style={{ textAlign: 'center', marginBottom: 8, position: 'relative', zIndex: 1 }}>
+        <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>USA · MEX · CAN</span>
+      </div>
+
+      <div key={step} style={{ flex: 1, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+        <div style={{ position: 'relative', marginBottom: 24 }}>
+          <div style={{
+            position: 'absolute', inset: -24, borderRadius: '50%',
+            background: `radial-gradient(circle, ${cur.accent}33, transparent 70%)`,
+          }} />
+          <div style={{ position: 'relative', animation: step === 0 ? 'mb-bounce 1.4s var(--ease-spring) infinite' : 'none' }}>
+            <MascotAvatar mascot={cur.mascot} size={140} glow jersey />
+          </div>
+        </div>
+        <h1 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 12px', color: 'var(--text)', maxWidth: 300, textWrap: 'balance' }}>{cur.title}</h1>
+        <p style={{ fontSize: 'var(--t-md)', color: 'var(--muted)', lineHeight: 1.5, maxWidth: 290, margin: 0 }}>{cur.body}</p>
+
+        {step === 2 && (
+          <div style={{ display: 'flex', gap: 10, marginTop: 26 }}>
+            {['zayu', 'maple', 'clutch'].map(id => {
+              const mm = Mc[id], active = chosen === id;
+              return (
+                <button key={id} onClick={() => setChosen(id)} className="mb-press" style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer',
+                  padding: '12px 8px', width: 86, borderRadius: 'var(--r-lg)',
+                  background: active ? `${mm.color}22` : 'var(--surface-1)',
+                  border: active ? `1.5px solid ${mm.light}` : '1.5px solid var(--border)',
+                  boxShadow: active ? `0 0 16px ${mm.light}55` : 'none', transition: 'all var(--dur-base) var(--ease-out)',
+                }}>
+                  <MascotAvatar mascot={id} size={46} ring={active} />
+                  <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 700, color: active ? mm.light : 'var(--muted)' }}>Equipo {mm.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* indicadores */}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20, position: 'relative', zIndex: 1 }}>
+        {steps.map((_, i) => (
+          <span key={i} style={{
+            width: i === step ? 22 : 8, height: 8, borderRadius: 999,
+            background: i === step ? 'var(--gold)' : 'var(--surface-2)', transition: 'all var(--dur-base) var(--ease-out)',
+          }} />
+        ))}
+      </div>
+
+      {step < 2
+        ? <button onClick={() => setStep(step + 1)} className="mb-press" style={{
+            width: '100%', padding: '13px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', position: 'relative', zIndex: 1,
+            background: 'var(--surface-1)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-md)', cursor: 'pointer',
+          }}>Continuar</button>
+        : <div style={{ position: 'relative', zIndex: 1 }}><GoldButton onClick={() => onFinish(chosen)}>¡Empezar a jugar!</GoldButton></div>}
+      <button onClick={() => onFinish('zayu')} style={{
+        background: 'none', border: 'none', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', marginTop: 12, cursor: 'pointer', fontFamily: 'var(--font-body)', position: 'relative', zIndex: 1,
+      }}>Saltar introducción</button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// DASHBOARD (Inicio)
+// ─────────────────────────────────────────────────────────
+function Metric({ label, value, tone, icon }) {
+  return (
+    <Card style={{ padding: '14px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+        <span style={{ fontSize: 13 }}>{icon}</span>
+        <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+      </div>
+      <div className="num" style={{ fontSize: 'var(--t-2xl)', color: tone }}>{value}</div>
+    </Card>
+  );
+}
+
+function PrizePotCard({ animate = true }) {
+  const L = Dc.LEAGUE;
+  const amount = useCountUp(animate ? L.pot : L.pot, 1200);
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)',
+      background: 'linear-gradient(150deg, rgba(212,175,55,0.14), rgba(17,24,39,0.6))',
+      border: '1.5px solid rgba(212,175,55,0.45)', animation: 'mb-glow-breathe 3.5s var(--ease-out) infinite',
+    }}>
+      <div style={{ position: 'absolute', top: -30, right: -20, fontSize: 120, opacity: 0.08 }}>🏆</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <span style={{ fontSize: 18 }}>🏆</span>
+        <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>Bote del torneo</span>
+      </div>
+      <div className="num" style={{ fontSize: 'var(--t-5xl)', color: 'var(--gold-light)', lineHeight: 1 }}>
+        ${Dc.fmt(amount)}<span style={{ fontSize: 'var(--t-lg)', color: 'var(--gold)', marginLeft: 6 }}>CLP</span>
+      </div>
+      <div style={{ margin: '16px 0 8px' }}><ProgressBar value={L.paidCount} total={L.total} tone="gold" /></div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-sm)', color: 'var(--success)', fontWeight: 700 }}>
+        <span>✓</span> {L.paidCount}/{L.total} pagaron · ¡Todos listos para jugar!
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+        {L.distribution.map(d => (
+          <div key={d.place} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', background: 'rgba(0,0,0,0.25)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 14 }}>{d.medal}</div>
+            <div className="num" style={{ fontSize: 'var(--t-sm)', color: 'var(--gold-light)', marginTop: 2 }}>${Dc.fmt(d.amount / 1000)}k</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpcomingMatchCard({ match, index }) {
+  // Mapear países a mascotas
+  const mascotMap = {
+    'México': 'zayu',
+    'Canadá': 'maple',
+    'Estados Unidos': 'clutch',
+  };
+  const homeM = mascotMap[match.home];
+  const awayM = mascotMap[match.away];
+
+  // Información de mascotas para mostrar país
+  const mascotCountry = {
+    'zayu': 'México',
+    'maple': 'Canadá',
+    'clutch': 'EE.UU.',
+  };
+
+  return (
+    <Card style={{
+      padding: '14px',
+      background: index === 0 ? 'linear-gradient(135deg, rgba(46,139,192,0.15), rgba(0,212,102,0.08))' : 'var(--surface-1)',
+      borderColor: index === 0 ? 'rgba(46,139,192,0.4)' : 'var(--border)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <Chip tone={index === 0 ? 'green' : 'blue'}>{match.group}</Chip>
+        <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700 }}>{match.when}</span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+        {/* Equipo Local */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 6 }}>{match.flagH}</div>
+          {homeM ? (
+            <div style={{ marginBottom: 6 }}>
+              <MascotAvatar mascot={homeM} size={36} />
+            </div>
+          ) : null}
+          <div style={{
+            fontWeight: 700,
+            fontSize: 'var(--t-sm)',
+            color: 'var(--text)',
+            lineHeight: 1.2,
+          }}>
+            {match.home}
+          </div>
+          {homeM && (
+            <div style={{
+              fontSize: 'var(--t-3xs)',
+              color: 'var(--muted-2)',
+              marginTop: 4,
+              fontWeight: 600,
+            }}>
+              {mascotCountry[homeM]}
+            </div>
+          )}
+        </div>
+
+        {/* Centro - Hora */}
+        <div style={{ textAlign: 'center', padding: '0 8px' }}>
+          <div style={{
+            fontSize: 'var(--t-3xs)',
+            color: 'var(--muted-2)',
+            marginBottom: 6,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}>
+            Cierra en
+          </div>
+          <CountdownTimer minutes={match.kickoffInMin} />
+          <div style={{
+            fontSize: 'var(--t-2xs)',
+            color: 'var(--muted)',
+            marginTop: 8,
+            fontWeight: 600,
+          }}>
+            🏟️
+          </div>
+          <div style={{
+            fontSize: 'var(--t-3xs)',
+            color: 'var(--muted)',
+            marginTop: 4,
+            lineHeight: 1.3,
+          }}>
+            {match.stadium}
+          </div>
+        </div>
+
+        {/* Equipo Visitante */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 6 }}>{match.flagA}</div>
+          {awayM ? (
+            <div style={{ marginBottom: 6 }}>
+              <MascotAvatar mascot={awayM} size={36} />
+            </div>
+          ) : null}
+          <div style={{
+            fontWeight: 700,
+            fontSize: 'var(--t-sm)',
+            color: 'var(--text)',
+            lineHeight: 1.2,
+          }}>
+            {match.away}
+          </div>
+          {awayM && (
+            <div style={{
+              fontSize: 'var(--t-3xs)',
+              color: 'var(--muted-2)',
+              marginTop: 4,
+              fontWeight: 600,
+            }}>
+              {mascotCountry[awayM]}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {index === 0 && (
+        <>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <BetButton label={match.home} odd={match.odds.home} />
+            <BetButton label="Empate" odd={match.odds.draw} />
+            <BetButton label={match.away} odd={match.odds.away} />
+          </div>
+          <GoldButton onClick={() => {}}>Hacer pronóstico →</GoldButton>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function Dashboard({ user, onNav, onPredict }) {
+  const me = user;
+  const top3 = Dc.USERS.slice(0, 3);
+  const upcomingMatches = Dc.UPCOMING.slice(0, 3);
+
+  return (
+    <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 18, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+      {/* saludo */}
+      <div>
+        <h1 className="display" style={{ fontSize: 'var(--t-2xl)', margin: '4px 0 2px', color: 'var(--text)' }}>
+          ¡Buenas noches, {me.name.split(' ')[0]}! <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
+        </h1>
+        <p style={{ margin: 0, color: 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 600 }}>Llevas {me.streak} aciertos seguidos ⚡</p>
+      </div>
+
+      <PrizePotCard />
+
+      {/* métricas 2x2 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <Metric label="Mis monedas" value={Dc.fmt(me.coins)} tone="var(--gold-light)" icon="⚽" />
+        <Metric label="Posición" value={'#' + me.rank} tone="var(--usa-light)" icon="📊" />
+        <Metric label="Aciertos" value={me.hits + '%'} tone="var(--success)" icon="🎯" />
+        <Metric label="ROI" value={(me.roi >= 0 ? '+' : '') + me.roi + '%'} tone={me.roi >= 0 ? 'var(--success)' : 'var(--danger)'} icon="📈" />
+      </div>
+
+      {/* próximos partidos */}
+      <div>
+        <SectionHead title="Próximos partidos" action="Ver todos" onAction={() => onNav('partidos')} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {upcomingMatches.map((match, idx) => (
+            <UpcomingMatchCard key={match.id} match={match} index={idx} />
+          ))}
+        </div>
+      </div>
+
+      {/* Botón a Equipos y Grupos */}
+      <div>
+        <button onClick={() => onNav('equipos')} style={{
+          width: '100%',
+          padding: '14px 16px',
+          borderRadius: 'var(--r-lg)',
+          border: '1.5px solid var(--usa-light)',
+          background: 'rgba(46,139,192,0.1)',
+          color: 'var(--text)',
+          fontFamily: 'var(--font-body)',
+          fontWeight: 700,
+          fontSize: 'var(--t-sm)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          transition: 'all var(--dur-base) var(--ease-out)',
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.background = 'rgba(46,139,192,0.2)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.background = 'rgba(46,139,192,0.1)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}>
+          🌍 Ver Equipos y Grupos
+        </button>
+      </div>
+
+      {/* mini ranking */}
+      <div>
+        <SectionHead title="Top 3 del torneo" action="Ranking completo" onAction={() => onNav('ranking')} />
+        <Card style={{ padding: '6px 14px' }}>
+          {top3.map((u, i) => (
+            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+              <span style={{ fontSize: 18, width: 22 }}>{['🥇', '🥈', '🥉'][i]}</span>
+              <MascotAvatar mascot={u.mascot} size={34} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>{u.name}</div>
+                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--success)', fontWeight: 600 }}>ROI +{u.roi}%</div>
+              </div>
+              <CoinBadge amount={u.coins} size="sm" />
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      {/* feed */}
+      <div>
+        <SectionHead title="Actividad reciente" action="Ver feed" onAction={() => onNav('feed')} />
+        <Card style={{ padding: '0 14px' }}>
+          {Dc.FEED.slice(0, 3).map((f, i) => <FeedItem key={i} item={f} delay={i * 0.06} />)}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Onboarding, Dashboard, PrizePotCard });
