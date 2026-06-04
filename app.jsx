@@ -1,6 +1,9 @@
 /* ============================================================
-   MundialBet Club 2026 — App raíz: nav, header, tweaks, flujos
+   MundialBet Club 2026 — App raíz MÓVIL: nav, header, tweaks, flujos
+   (envuelto en IIFE; se expone como window.App. El render lo hace
+   el bootstrap responsive en index.html)
    ============================================================ */
+(function () {
 const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
 const Da = window.MB;
 const Ma = Da.MASCOTS;
@@ -211,11 +214,10 @@ function TweaksUI({ t, setTweak, setOnboard, setClose }) {
       <TweakSection label="Pantallas especiales" />
       <TweakButton label="Ver onboarding" onClick={() => setOnboard(true)} />
       <TweakButton label="Ver cierre del torneo" onClick={() => setClose(true)} />
-      <TweakSection label="Plataforma" />
-      <TweakButton label="🖥 Ver versión escritorio" onClick={() => { window.location.href = 'Web.html'; }} />
     </TweaksPanel>
   );
 }
 
-// ── Mount ─────────────────────────────────────────────────
-ReactDOM.createRoot(document.getElementById('stage')).render(<App />);
+// ── Export (lo monta el bootstrap responsive de index.html) ──
+window.App = App;
+})();

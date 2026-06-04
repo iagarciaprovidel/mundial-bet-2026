@@ -128,10 +128,47 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* — Fondo de cancha para el área principal del escritorio — */
+.mb-main-pitch {
+  background:
+    linear-gradient(180deg, rgba(6,14,9,0.34) 0%, rgba(6,14,9,0.04) 22%, rgba(6,14,9,0.00) 55%, rgba(5,11,7,0.14) 100%),
+    url(stadium.jpg) center 56% / cover fixed no-repeat;
+  background-color: #0c2114;
+}
+/* — En escritorio, scrollbar visible y discreto — */
+@media (min-width: 1024px) {
+  *::-webkit-scrollbar { width: 9px; height: 9px; }
+  *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 8px; }
+  * { scrollbar-width: thin; }
+}
 </style>
 </head>
 <body>
 <div id="stage"></div>
+
+<!-- Captador del prompt de instalación PWA (lo usa el botón del sidebar en escritorio) -->
+<script>
+window.__deferredPrompt = null;
+window.__triggerInstall = function () {
+  var d = window.__deferredPrompt;
+  if (!d) return;
+  d.prompt();
+  d.userChoice.finally(function () {
+    window.__deferredPrompt = null;
+    window.dispatchEvent(new Event('mb-installed'));
+  });
+};
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  window.__deferredPrompt = e;
+  window.dispatchEvent(new Event('mb-installable'));
+});
+window.addEventListener('appinstalled', function () {
+  window.__deferredPrompt = null;
+  window.dispatchEvent(new Event('mb-installed'));
+});
+</script>
 
 <!-- React + Babel (pinned) -->
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -151,6 +188,23 @@ html, body {
 <script type="text/babel" src="screens-rank.jsx"></script>
 <script type="text/babel" src="screens-special.jsx"></script>
 <script type="text/babel" src="app.jsx"></script>
+<script type="text/babel" src="app-web.jsx"></script>
+
+<!-- Bootstrap responsive: escritorio (>=1024px) -> AppWeb, móvil -> App -->
+<script type="text/babel">
+function Root() {
+  const mq = window.matchMedia('(min-width: 1024px)');
+  const [wide, setWide] = React.useState(mq.matches);
+  React.useEffect(() => {
+    const on = () => setWide(mq.matches);
+    mq.addEventListener ? mq.addEventListener('change', on) : mq.addListener(on);
+    return () => { mq.removeEventListener ? mq.removeEventListener('change', on) : mq.removeListener(on); };
+  }, []);
+  const Cmp = wide ? window.AppWeb : window.App;
+  return <Cmp />;
+}
+ReactDOM.createRoot(document.getElementById('stage')).render(<Root />);
+</script>
 
 <!-- Service Worker (PWA / instalable) -->
 <script>
