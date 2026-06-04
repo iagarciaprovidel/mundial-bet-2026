@@ -2,7 +2,7 @@
 <html lang="es-CL">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#0D1F3C" />
 <meta name="description" content="Liga de pronósticos del Mundial 2026 - MundialBet Club" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -93,8 +93,14 @@ html, body {
 }
 #stage {
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 28px 16px;
+  min-height: 100dvh;
+}
+/* Escritorio / pantallas anchas: maqueta de teléfono centrada */
+@media (min-width: 601px) {
+  #stage {
+    display: flex; align-items: center; justify-content: center;
+    padding: 28px 16px;
+  }
 }
 
 /* — Tipografía utilitaria — */
