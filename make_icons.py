@@ -8,18 +8,39 @@ FG = "uploads/pasted-1780580387402-0.png"   # mascotas (fondo blanco)
 BG = "uploads/pasted-1780580622528-0.png"   # estadio
 SIZES = [144, 192, 512]
 
-# 1) Quitar fondo blanco con flood-fill desde las 4 esquinas -----------------
+# 1) Quitar fondo blanco -----------------------------------------------------
 fg = Image.open(FG).convert("RGB")
 w, h = fg.size
+rgb = np.array(fg)
+
+# (a) flood-fill desde las 4 esquinas -> fondo exterior conectado
 SENT = (0, 254, 1)  # color centinela improbable
 flood = fg.copy()
 for corner in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)]:
-    ImageDraw.floodfill(flood, corner, SENT, thresh=34)
+    ImageDraw.floodfill(flood, corner, SENT, thresh=40)
 flood_arr = np.array(flood)
-bg_mask = np.all(flood_arr == SENT, axis=-1)  # True = fondo a eliminar
+bg_outer = np.all(flood_arr == SENT, axis=-1)
 
-rgb = np.array(fg)
+# (b) blanco PURO encerrado entre las mascotas (huecos no alcanzados por (a)).
+#     El fondo del render es ~255 plano; el blanco del aguila/alce es sombreado
+#     (<250), por eso un umbral alto lo respeta.
+pure_white = rgb.min(axis=-1) >= 248
+bg_mask = bg_outer | pure_white
+
 alpha = np.where(bg_mask, 0, 255).astype("uint8")
+
+# (c) Defringe: come el halo blanco del borde. Pixeles casi-blancos visibles
+#     pegados a una zona transparente -> transparentes. 2 pasadas.
+for _ in range(2):
+    transp = alpha == 0
+    neigh = np.zeros_like(transp)
+    neigh[1:, :]  |= transp[:-1, :]   # vecino arriba
+    neigh[:-1, :] |= transp[1:, :]    # abajo
+    neigh[:, 1:]  |= transp[:, :-1]   # izquierda
+    neigh[:, :-1] |= transp[:, 1:]    # derecha
+    halo = (alpha == 255) & neigh & (rgb.min(axis=-1) >= 232)
+    alpha[halo] = 0
+
 fg_rgba = np.dstack([rgb, alpha])
 mascots = Image.fromarray(fg_rgba, "RGBA")
 
