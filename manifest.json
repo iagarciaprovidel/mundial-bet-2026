@@ -1,0 +1,68 @@
+{
+  "name": "MundialBet Club 2026",
+  "short_name": "MundialBet",
+  "description": "Liga de pronósticos del Mundial 2026",
+  "start_url": "/mundial-bet-2026/",
+  "scope": "/mundial-bet-2026/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0D1F3C",
+  "background_color": "#FFFFFF",
+  "icons": [
+    {
+      "src": "icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%230D1F3C' width='540' height='720'/><text x='270' y='200' font-size='60' text-anchor='middle' fill='%23FFFFFF' font-family='Arial' font-weight='bold'>MundialBet Club</text><text x='270' y='400' font-size='100' text-anchor='middle' fill='%23FFB81C'>⚽</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["sports", "entertainment"],
+  "shortcuts": [
+    {
+      "name": "Ver Partidos",
+      "short_name": "Partidos",
+      "description": "Accede rápido a los próximos partidos",
+      "url": "/mundial-bet-2026/?tab=partidos",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23FFFFFF' width='96' height='96'/><text x='48' y='60' font-size='50' text-anchor='middle' fill='%23FFB81C'>⚽</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Ver Ranking",
+      "short_name": "Ranking",
+      "description": "Mira la posición en el torneo",
+      "url": "/mundial-bet-2026/?tab=ranking",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23FFFFFF' width='96' height='96'/><text x='48' y='60' font-size='50' text-anchor='middle' fill='%230D1F3C'>🏆</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
