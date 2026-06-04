@@ -198,102 +198,26 @@ function IOSList({ header, children, dark = false }) {
 // ─────────────────────────────────────────────────────────────
 // Device frame
 // ─────────────────────────────────────────────────────────────
-// ¿Estamos en un teléfono / app instalada (standalone)? -> sin marco.
-// En pantallas anchas (escritorio) se mantiene la maqueta de iPhone.
-function detectPhone() {
-  if (typeof window === 'undefined') return false;
-  const mm = window.matchMedia;
-  const standalone =
-    (mm && (mm('(display-mode: standalone)').matches ||
-            mm('(display-mode: fullscreen)').matches ||
-            mm('(display-mode: minimal-ui)').matches)) ||
-    window.navigator.standalone === true;
-  const narrow = mm && mm('(max-width: 600px)').matches;
-  return Boolean(standalone || narrow);
-}
-
-function useIsPhone() {
-  const [phone, setPhone] = React.useState(detectPhone);
-  React.useEffect(() => {
-    const onChange = () => setPhone(detectPhone());
-    window.addEventListener('resize', onChange);
-    let mq;
-    if (window.matchMedia) {
-      mq = window.matchMedia('(display-mode: standalone)');
-      mq.addEventListener ? mq.addEventListener('change', onChange)
-                          : mq.addListener && mq.addListener(onChange);
-    }
-    return () => {
-      window.removeEventListener('resize', onChange);
-      if (mq) (mq.removeEventListener ? mq.removeEventListener('change', onChange)
-                                      : mq.removeListener && mq.removeListener(onChange));
-    };
-  }, []);
-  return phone;
-}
-
-function IOSDevice({
-  children, width = 402, height = 874, dark = false,
-  title, keyboard = false,
-}) {
-  const phone = useIsPhone();
-
-  // ── Modo nativo (celular / app instalada): sin bisel, sin barra falsa,
-  //    contenido a pantalla completa con respeto al notch (safe-area) ──
-  if (phone) {
-    return (
-      <div style={{
-        width: '100%', height: '100dvh', boxSizing: 'border-box',
-        position: 'relative', overflow: 'hidden',
-        background: dark ? '#0D1F3C' : '#F2F2F7',
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        display: 'flex', flexDirection: 'column',
-        fontFamily: '-apple-system, system-ui, sans-serif',
-        WebkitFontSmoothing: 'antialiased',
-      }}>
-        {title !== undefined && <IOSNavBar title={title} dark={dark} />}
-        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</div>
-        {keyboard && <IOSKeyboard dark={dark} />}
-      </div>
-    );
-  }
-
-  // ── Modo escritorio: maqueta de iPhone (bisel + barra + isla + home) ──
+// Contenedor responsive SIN marco: a pantalla completa en celular y como
+// columna centrada (máx 480px) en escritorio. Sin barra falsa, bisel, isla
+// ni home indicator — usa la barra de estado real del dispositivo.
+function IOSDevice({ children, dark = false, title, keyboard = false }) {
   return (
     <div style={{
-      width, height, borderRadius: 48, overflow: 'hidden',
-      position: 'relative', background: dark ? '#000' : '#F2F2F7',
-      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      width: '100%', maxWidth: 480, height: '100dvh',
+      margin: '0 auto', boxSizing: 'border-box',
+      position: 'relative', overflow: 'hidden',
+      background: dark ? '#0D1F3C' : '#F2F2F7',
+      paddingTop: 'env(safe-area-inset-top)',
+      paddingBottom: 'env(safe-area-inset-bottom)',
+      display: 'flex', flexDirection: 'column',
+      boxShadow: '0 0 80px rgba(0,0,0,0.45)',
       fontFamily: '-apple-system, system-ui, sans-serif',
       WebkitFontSmoothing: 'antialiased',
     }}>
-      {/* dynamic island */}
-      <div style={{
-        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
-        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
-      }} />
-      {/* status bar (absolute) */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
-        <IOSStatusBar dark={dark} />
-      </div>
-      {/* nav + content */}
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        {title !== undefined && <IOSNavBar title={title} dark={dark} />}
-        <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
-        {keyboard && <IOSKeyboard dark={dark} />}
-      </div>
-      {/* home indicator — always on top */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
-        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
-        paddingBottom: 8, pointerEvents: 'none',
-      }}>
-        <div style={{
-          width: 139, height: 5, borderRadius: 100,
-          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
-        }} />
-      </div>
+      {title !== undefined && <IOSNavBar title={title} dark={dark} />}
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</div>
+      {keyboard && <IOSKeyboard dark={dark} />}
     </div>
   );
 }
