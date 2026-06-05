@@ -183,14 +183,23 @@ html, body { background-color: #0c2114; }
   </div>
 </div>
 <script>
-  // Respaldo: si algo falla, oculta el splash igual a los 5 s.
-  window.__mbHideSplash = function () {
+  // En móvil mantenemos el splash un mínimo (~2.2 s) para alcanzar a ver y
+  // tocar las banderas; en escritorio se va apenas la app está lista.
+  var __mbSplashT0 = Date.now();
+  var __mbSplashMin = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '') ? 2200 : 0;
+  window.__mbHideSplash = function (force) {
     var s = document.getElementById('mb-splash');
     if (!s) return;
+    var elapsed = Date.now() - __mbSplashT0;
+    if (!force && elapsed < __mbSplashMin) {
+      setTimeout(function () { window.__mbHideSplash(); }, __mbSplashMin - elapsed);
+      return;
+    }
     s.classList.add('mb-hide');
     setTimeout(function () { if (s && s.parentNode) s.parentNode.removeChild(s); }, 600);
   };
-  setTimeout(window.__mbHideSplash, 5000);
+  // Respaldo: si algo falla, oculta igual a los 6 s.
+  setTimeout(function () { window.__mbHideSplash(true); }, 6000);
 </script>
 <div id="stage"></div>
 
@@ -276,6 +285,7 @@ window.addEventListener('appinstalled', function () {
 <script type="text/babel" src="screens-special.jsx"></script>
 <script type="text/babel" src="app.jsx"></script>
 <script type="text/babel" src="app-web.jsx"></script>
+<script type="text/babel" src="mb-admin.jsx"></script>
 
 <!-- Bootstrap responsive: escritorio (>=1024px) -> AppWeb, móvil -> App -->
 <script type="text/babel">
@@ -288,7 +298,13 @@ function Root() {
     return () => { mq.removeEventListener ? mq.removeEventListener('change', on) : mq.removeListener(on); };
   }, []);
   const Cmp = wide ? window.AppWeb : window.App;
-  return <Cmp />;
+  const AdminLauncher = window.MB_AdminLauncher;
+  return (
+    <React.Fragment>
+      <Cmp />
+      {AdminLauncher ? <AdminLauncher /> : null}
+    </React.Fragment>
+  );
 }
 ReactDOM.createRoot(document.getElementById('stage')).render(<Root />);
 // La app ya montó: desvanece el splash (deja un instante para que pinte).

@@ -163,7 +163,7 @@ function App() {
     window.__mbOpenTeamByName = (name) => {
       const list = window.MB_ALL_TEAMS || [];
       const found = list.find(x => x.name === name);
-      if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(); }
+      if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(true); }
     };
     if (window.__mbPendingTeam) window.__mbOpenTeamByName(window.__mbPendingTeam);
     return () => { window.__mbOpenTeamByName = null; };

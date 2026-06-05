@@ -13,3 +13,9 @@ window.MB_FIREBASE_CONFIG = {
   appId: "1:133773637375:web:8c017f7e4866393077feca",
   measurementId: "G-X8244TLKS3",
 };
+
+// Correos con acceso de ADMIN (panel de grupos). Solo estos pueden crear/editar
+// grupos y ver el panel. Agrega o cambia los que necesites (en minúsculas).
+window.MB_ADMIN_EMAILS = [
+  "ia.garcia.providel@gmail.com",
+];
