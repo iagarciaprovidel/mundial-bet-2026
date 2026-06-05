@@ -83,6 +83,135 @@ function FlagWall({ vertical = false, size = 34, opacity = 0.1, repeat = 4 }) {
   );
 }
 
+// Todos los equipos del Mundial con su grupo (para el ticker y el modal)
+const ALL_TEAMS = (function () {
+  const out = [];
+  Object.keys(Dw.GROUP_STANDINGS).forEach(letter => {
+    Dw.GROUP_STANDINGS[letter].forEach(t => out.push(Object.assign({}, t, { group: letter })));
+  });
+  return out;
+})();
+
+// CSS para el marquee y el hover de banderas
+(function injectWebCSS() {
+  if (document.getElementById('mb-web-css')) return;
+  const s = document.createElement('style');
+  s.id = 'mb-web-css';
+  s.textContent = `
+    @keyframes mb-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .mb-ticker-wrap:hover .mb-ticker { animation-play-state: paused; }
+    .mb-flagbtn img { transition: transform .15s var(--ease-out), box-shadow .15s; }
+    .mb-flagbtn:hover img { transform: scale(1.22) translateY(-1px); box-shadow: 0 0 0 2px var(--gold), 0 3px 10px rgba(0,0,0,0.55); }
+  `;
+  document.head.appendChild(s);
+})();
+
+// Ticker de banderas en movimiento, clickeable
+function FlagTicker({ onSelect }) {
+  const items = ALL_TEAMS.concat(ALL_TEAMS); // duplicado para bucle continuo
+  const mask = 'linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent)';
+  return (
+    <div className="mb-ticker-wrap" style={{
+      overflow: 'hidden', borderTop: '1px solid var(--border)',
+      background: 'rgba(6,12,8,0.55)', WebkitMaskImage: mask, maskImage: mask,
+    }}>
+      <div className="mb-ticker" style={{
+        display: 'flex', alignItems: 'center', gap: 16, width: 'max-content',
+        padding: '7px 16px', animation: 'mb-marquee 55s linear infinite',
+      }}>
+        {items.map((t, i) => (
+          <button key={i} onClick={() => onSelect(t)} className="mb-flagbtn" title={t.name} style={{
+            background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0,
+          }}>
+            <img src={`https://flagcdn.com/h40/${flagToCode(t.flag)}.png`} alt={t.name}
+              style={{ height: 22, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Modal con todos los datos de un equipo
+function TeamStat({ label, value, tone }) {
+  return (
+    <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '10px 6px', textAlign: 'center' }}>
+      <div className="num" style={{ fontSize: 'var(--t-lg)', color: tone || 'var(--text)' }}>{value}</div>
+      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+function TeamModal({ team, onClose }) {
+  if (!team) return null;
+  const code = flagToCode(team.flag);
+  const dg = team.gf - team.gc;
+  const qualifies = team.pos <= 2;
+  const played = Dw.PLAYED.filter(m => m.home === team.name || m.away === team.name);
+  const upcoming = Dw.UPCOMING.filter(m => (m.home === team.name || m.away === team.name));
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(6,8,15,0.72)',
+      backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+      animation: 'mb-fade-up var(--dur-base) var(--ease-out)',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)',
+        padding: 24, width: 'min(480px, 92vw)', maxHeight: '88vh', overflow: 'auto',
+        boxShadow: 'var(--sh-4)', animation: 'mb-pop var(--dur-slow) var(--ease-spring)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+          <img src={`https://flagcdn.com/h80/${code}.png`} alt={team.name}
+            style={{ height: 50, width: 'auto', borderRadius: 5, boxShadow: 'var(--sh-2)' }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{team.name}</h2>
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <Chip tone="blue">Grupo {team.group}</Chip>
+              {qualifies ? <Chip tone="green" icon={<span>✓</span>}>Clasifica</Chip> : <Chip tone="neutral">Eliminado</Chip>}
+            </div>
+          </div>
+          <button onClick={onClose} className="mb-press" style={{
+            width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)',
+            background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15, flexShrink: 0,
+          }}>✕</button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 9, marginBottom: 18 }}>
+          <TeamStat label="Posición" value={'#' + team.pos} tone="var(--info)" />
+          <TeamStat label="Puntos" value={team.pts} tone="var(--gold-light)" />
+          <TeamStat label="Jugados" value={team.j} />
+          <TeamStat label="Ganados" value={team.g} tone="var(--success)" />
+          <TeamStat label="Empates" value={team.e} />
+          <TeamStat label="Perdidos" value={team.p} tone="var(--danger)" />
+          <TeamStat label="G. favor" value={team.gf} />
+          <TeamStat label="G. contra" value={team.gc} />
+          <TeamStat label="Dif." value={(dg > 0 ? '+' : '') + dg} tone={dg >= 0 ? 'var(--success)' : 'var(--danger)'} />
+        </div>
+
+        <SectionHead title="Partidos" />
+        {played.length === 0 && upcoming.length === 0 && (
+          <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Sin partidos registrados.</div>
+        )}
+        {played.map((m, i) => (
+          <div key={'p' + i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <Chip tone="neutral">{m.group}</Chip>
+            <span style={{ flex: 1, fontSize: 'var(--t-sm)', fontWeight: 600 }}>{m.home} vs {m.away}</span>
+            <span className="num" style={{ color: 'var(--gold-light)' }}>{m.sh}–{m.sa}</span>
+          </div>
+        ))}
+        {upcoming.map((m, i) => (
+          <div key={'u' + i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <Chip tone="green">Próximo</Chip>
+            <span style={{ flex: 1, fontSize: 'var(--t-sm)', fontWeight: 600 }}>{m.home} vs {m.away}</span>
+            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{m.when}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Sidebar ───────────────────────────────────────────────
 function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
   const [installable, setInstallable] = useStateW(!!window.__deferredPrompt);
@@ -179,23 +308,21 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
 }
 
 // ── Topbar ────────────────────────────────────────────────
-function Topbar({ tab, me }) {
+function Topbar({ tab, me, onFlagClick }) {
   return (
-    <header style={{
-      height: 68, flexShrink: 0, position: 'relative', overflow: 'hidden',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 28px', borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)',
-    }}>
-      <FlagWall size={46} opacity={0.34} repeat={3} />
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, position: 'relative', zIndex: 1 }}>
-        <h1 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{TITLES[tab] || ''}</h1>
-        <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)' }}>{Dw.LEAGUE.name}</span>
+    <header style={{ flexShrink: 0, borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)' }}>
+      <div style={{ height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+          <h1 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{TITLES[tab] || ''}</h1>
+          <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)' }}>{Dw.LEAGUE.name}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Chip tone="gold" icon={<span>🏆</span>}>Bote ${Dw.fmt(Dw.LEAGUE.pot)}</Chip>
+          <CoinBadge amount={me.coins} />
+          <MascotAvatar mascot={me.mascot} size={38} />
+        </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative', zIndex: 1 }}>
-        <Chip tone="gold" icon={<span>🏆</span>}>Bote ${Dw.fmt(Dw.LEAGUE.pot)}</Chip>
-        <CoinBadge amount={me.coins} />
-        <MascotAvatar mascot={me.mascot} size={38} />
-      </div>
+      <FlagTicker onSelect={onFlagClick} />
     </header>
   );
 }
@@ -703,6 +830,7 @@ function AppWeb() {
   const [tab, setTab] = useStateW('inicio');
   const [me, setMe] = useStateW(Dw.ME);
   const [closeScreen, setCloseScreen] = useStateW(false);
+  const [team, setTeam] = useStateW(null);
   const mainRef = useRefW(null);
 
   const accent = t.accent || '#4A90E2';
@@ -741,7 +869,7 @@ function AppWeb() {
     <div style={{ position: 'fixed', inset: 0, display: 'flex', overflow: 'hidden', background: '#0c2114' }}>
       <Sidebar tab={tab} onTab={goTab} me={me} accent={accent} role={t.role} onAdmin={() => goTab('admin')} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Topbar tab={tab} me={me} />
+        <Topbar tab={tab} me={me} onFlagClick={setTeam} />
         <main ref={mainRef} className="mb-main-pitch" style={{ flex: 1, overflow: 'auto', padding: '24px 28px 60px' }}>
           <div style={{ maxWidth: isCentered ? 760 : 1180, margin: '0 auto' }}>
             {isCentered ? centered[tab] : desktop[tab]}
@@ -749,6 +877,7 @@ function AppWeb() {
         </main>
       </div>
       <WebTweaks t={t} setTweak={setTweak} setClose={setCloseScreen} />
+      <TeamModal team={team} onClose={() => setTeam(null)} />
     </div>
   );
 }
