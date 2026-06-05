@@ -106,6 +106,35 @@ function BottomNav({ tab, onTab, accent }) {
   );
 }
 
+// ── Ticker de banderas móvil (tap → ficha del equipo) ─────
+function MobileFlagTicker({ onSelect }) {
+  const teams = window.MB_ALL_TEAMS || [];
+  const toCode = window.MB_flagToCode || (() => 'xx');
+  const items = teams.concat(teams);
+  const mask = 'linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent)';
+  if (!teams.length) return null;
+  return (
+    <div className="mb-ticker-wrap" style={{
+      flexShrink: 0, overflow: 'hidden', borderBottom: '1px solid var(--border)',
+      background: 'rgba(7,20,12,0.6)', WebkitMaskImage: mask, maskImage: mask,
+    }}>
+      <div className="mb-ticker" style={{
+        display: 'flex', alignItems: 'center', gap: 14, width: 'max-content',
+        padding: '7px 12px', animation: 'mb-marquee 50s linear infinite',
+      }}>
+        {items.map((tm, i) => (
+          <button key={i} onClick={() => onSelect(tm)} title={tm.name} style={{
+            background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0,
+          }}>
+            <img src={`https://flagcdn.com/h40/${toCode(tm.flag)}.png`} alt={tm.name}
+              style={{ height: 20, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── App ───────────────────────────────────────────────────
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
@@ -114,6 +143,7 @@ function App() {
   const [tab, setTab] = useStateA('inicio');
   const [me, setMe] = useStateA(Da.ME);
   const [loading, setLoading] = useStateA(null);
+  const [team, setTeam] = useStateA(null);
   const visited = useRefA(new Set());
   const scrollRef = useRefA(null);
 
@@ -179,6 +209,7 @@ function App() {
     <IOSDevice dark width={390} height={844}>
       <div className="mb-app-bg" style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <Header me={me} accent={accent} role={t.role} onAdmin={() => setTab('admin')} />
+        <MobileFlagTicker onSelect={setTeam} />
         <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
           {/* título de sección para tabs no-inicio */}
           {tab !== 'inicio' && (
@@ -201,6 +232,7 @@ function App() {
         )}
       </div>
       <TweaksUI t={t} setTweak={setTweak} setOnboard={setOnboard} setClose={setCloseScreen} />
+      {team && window.MB_TeamModal && React.createElement(window.MB_TeamModal, { team, onClose: () => setTeam(null) })}
     </IOSDevice>
   );
 }

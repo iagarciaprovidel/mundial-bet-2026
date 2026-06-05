@@ -973,5 +973,9 @@ function WebTweaks({ t, setTweak, setClose }) {
 }
 
 // ── Export (lo monta el bootstrap responsive de index.html) ──
+// Se exponen para reutilizar en la versión móvil (app.jsx)
+window.MB_TeamModal = TeamModal;
+window.MB_ALL_TEAMS = ALL_TEAMS;
+window.MB_flagToCode = flagToCode;
 window.AppWeb = AppWeb;
 })();
