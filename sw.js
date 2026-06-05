@@ -3,14 +3,17 @@
    intenta traer la versión más nueva), con fallback a caché para que la
    app funcione sin conexión una vez visitada. */
 
-const CACHE = 'mundialbet-v3';
+const CACHE = 'mundialbet-v4';
 
 // App shell (rutas relativas al scope /mundial-bet-2026/)
 const SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './i18n.js',
   './data.js',
+  './wc2026.js',
+  './app-web.jsx',
   './ios-frame.jsx',
   './tweaks-panel.jsx',
   './components.jsx',

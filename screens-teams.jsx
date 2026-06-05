@@ -19,7 +19,13 @@ function StandingRow({ team }) {
       <img src={`https://flagcdn.com/h24/${team.code || ''}.png`} alt="" style={{ height: 15, width: 'auto', borderRadius: 2 }} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{team.name}</div>
-        {team.coach && <div style={{ fontSize: 9, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎽 {team.coach}</div>}
+        {team.coach && (
+          <div style={{ fontSize: 9, color: 'var(--muted-2)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+            <span>🎽</span>
+            {team.coachCode && <img src={`https://flagcdn.com/h20/${team.coachCode}.png`} alt="" title={team.coachCountry} style={{ height: 8, width: 'auto', borderRadius: 1 }} />}
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.coach}</span>
+          </div>
+        )}
       </div>
       <div style={{ textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)' }}>{team.j}</div>
       <div style={{ textAlign: 'center', fontWeight: 700, color: 'var(--gold-light)', fontSize: 'var(--t-sm)' }}>{team.pts}</div>

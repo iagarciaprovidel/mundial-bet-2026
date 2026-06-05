@@ -183,6 +183,16 @@ function MobileFixtureCard({ m }) {
         </div>
       </div>
       <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 600 }}>🏟️ {m.stadium}</div>
+      {(() => {
+        const r = window.MB.refForMatch && window.MB.refForMatch(m);
+        return r ? (
+          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, minWidth: 0 }}>
+            <span>🧑‍⚖️</span>
+            <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 9, width: 'auto', borderRadius: 1 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+          </div>
+        ) : null;
+      })()}
     </Card>
   );
 }

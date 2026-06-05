@@ -100,6 +100,8 @@ const ALL_TEAMS = (function () {
   });
   return out;
 })();
+// Busca la ficha completa de una selección por nombre (para abrir el modal desde partidos)
+const teamByName = (name) => ALL_TEAMS.find(t => t.name === name) || null;
 
 // CSS para el marquee y el hover de banderas
 (function injectWebCSS() {
@@ -112,6 +114,10 @@ const ALL_TEAMS = (function () {
     .mb-ticker-wrap:hover .mb-ticker, .mb-ticker:hover { animation-play-state: paused !important; }
     .mb-flagbtn img { transition: transform .15s var(--ease-out), box-shadow .15s; }
     .mb-flagbtn:hover img { transform: scale(1.22) translateY(-1px); box-shadow: 0 0 0 2px var(--gold), 0 3px 10px rgba(0,0,0,0.55); }
+    .mb-team-row { transition: background .15s var(--ease-out); }
+    .mb-team-row:hover { background: rgba(212,175,55,0.10); }
+    .mb-flag-zoom { transition: transform .15s var(--ease-out), box-shadow .15s; }
+    *:hover > .mb-flag-zoom { transform: scale(1.12) translateY(-1px); box-shadow: 0 0 0 2px var(--gold), 0 3px 10px rgba(0,0,0,0.5) !important; }
   `;
   document.head.appendChild(s);
 })();
@@ -161,7 +167,13 @@ function FlagTicker({ onSelect, onGroup }) {
               style={{ height: 20, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)' }}>{hov.team.name}</div>
-              {hov.team.coach && <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>🎽 {hov.team.coach}</div>}
+              {hov.team.coach && (
+                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span>🎽</span>
+                  {hov.team.coachCode && <img src={`https://flagcdn.com/h20/${hov.team.coachCode}.png`} alt="" title={hov.team.coachCountry} style={{ height: 9, width: 'auto', borderRadius: 1, boxShadow: '0 1px 2px rgba(0,0,0,0.4)' }} />}
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hov.team.coach}</span>
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 11 }}>
@@ -247,7 +259,13 @@ function TeamModal({ team, onClose }) {
             style={{ height: 50, width: 'auto', borderRadius: 5, boxShadow: 'var(--sh-2)' }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{team.name}</h2>
-            {team.coach && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2 }}>🎽 DT: <strong>{team.coach}</strong></div>}
+            {team.coach && (
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span>🎽 DT:</span>
+                {team.coachCode && <img src={`https://flagcdn.com/h20/${team.coachCode}.png`} alt="" title={team.coachCountry} style={{ height: 11, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.4)' }} />}
+                <strong>{team.coach}</strong>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <Chip tone="blue">Grupo {team.group}</Chip>
             </div>
@@ -259,7 +277,6 @@ function TeamModal({ team, onClose }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 9, marginBottom: 18 }}>
-          <TeamStat label="Posición" value={'#' + team.pos} tone="var(--info)" />
           <TeamStat label="Puntos" value={team.pts} tone="var(--gold-light)" />
           <TeamStat label="Jugados" value={team.j} />
           <TeamStat label="Ganados" value={team.g} tone="var(--success)" />
@@ -280,6 +297,16 @@ function TeamModal({ team, onClose }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 'var(--t-sm)', fontWeight: 700 }}>{m.home} vs {m.away}</div>
               <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {m.stadium}</div>
+              {(() => {
+                const r = window.MB.refForMatch && window.MB.refForMatch(m);
+                return r ? (
+                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                    <span>🧑‍⚖️</span>
+                    <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 8, width: 'auto', borderRadius: 1 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+                  </div>
+                ) : null;
+              })()}
             </div>
             <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'right', flexShrink: 0 }}>{fmtKO(m.kickoff)}</span>
           </div>
@@ -288,6 +315,13 @@ function TeamModal({ team, onClose }) {
         <div style={{ marginTop: 18 }}>
           <SectionHead title={`Jugadores convocados (${squad.length})`} />
         </div>
+        {team.coach && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', margin: '-4px 0 10px' }}>
+            <span>🎽 DT:</span>
+            {team.coachCode && <img src={`https://flagcdn.com/h20/${team.coachCode}.png`} alt="" title={team.coachCountry} style={{ height: 11, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.4)' }} />}
+            <strong>{team.coach}</strong>
+          </div>
+        )}
         {squad.length === 0 ? (
           <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Plantilla no disponible.</div>
         ) : (
@@ -448,8 +482,9 @@ function MetricW({ label, value, tone, icon }) {
   );
 }
 
-function DashboardWeb({ me, onNav, onPredict }) {
+function DashboardWeb({ me, onNav, onPredict, onTeam }) {
   const top3 = Dw.USERS.slice(0, 3);
+  const openTeam = (name) => { const t = teamByName(name); if (t && onTeam) onTeam(t); };
   const _now = Date.now();
   const _fx = (window.MB.WC_FIXTURES) || [];
   const next = _fx.filter(m => new Date(m.kickoff).getTime() > _now).sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1))[0] || _fx[0];
@@ -480,17 +515,18 @@ function DashboardWeb({ me, onNav, onPredict }) {
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, marginBottom: 14 }}>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <img src={`https://flagcdn.com/h60/${next.homeCode}.png`} alt="" style={{ height: 40, width: 'auto', borderRadius: 4, boxShadow: 'var(--sh-2)' }} />
+              <div onClick={() => openTeam(next.home)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ficha de ${next.home}` : undefined} style={{ textAlign: 'center', flex: 1, cursor: onTeam ? 'pointer' : 'default' }}>
+                <img src={`https://flagcdn.com/h60/${next.homeCode}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 40, width: 'auto', borderRadius: 4, boxShadow: 'var(--sh-2)' }} />
                 <div style={{ fontWeight: 700, marginTop: 6 }}>{next.home}</div>
               </div>
               <span style={{ fontSize: 'var(--t-lg)', color: 'var(--muted-2)', fontWeight: 700 }}>vs</span>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <img src={`https://flagcdn.com/h60/${next.awayCode}.png`} alt="" style={{ height: 40, width: 'auto', borderRadius: 4, boxShadow: 'var(--sh-2)' }} />
+              <div onClick={() => openTeam(next.away)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ficha de ${next.away}` : undefined} style={{ textAlign: 'center', flex: 1, cursor: onTeam ? 'pointer' : 'default' }}>
+                <img src={`https://flagcdn.com/h60/${next.awayCode}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 40, width: 'auto', borderRadius: 4, boxShadow: 'var(--sh-2)' }} />
                 <div style={{ fontWeight: 700, marginTop: 6 }}>{next.away}</div>
               </div>
             </div>
             <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', textAlign: 'center' }}>📍 {next.stadium}</div>
+            <div style={{ marginTop: 4 }}><RefLineWeb m={next} /></div>
           </Card>
         </div>
         )}
@@ -560,13 +596,16 @@ function MatchCardWeb({ m, onPredict }) {
   );
 }
 
-function FixtureCardWeb({ m }) {
+function FixtureCardWeb({ m, onTeam }) {
   const d = new Date(m.kickoff);
   const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
   const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-  const Team = ({ name, code, align }) => (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
-      <img src={`https://flagcdn.com/h40/${code}.png`} alt="" style={{ height: 30, width: 'auto', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
+  const openTeam = (name) => { const t = teamByName(name); if (t && onTeam) onTeam(t); };
+  const Team = ({ name, code }) => (
+    <div onClick={() => openTeam(name)} className={onTeam ? 'mb-press' : ''}
+      title={onTeam ? `Ver ficha de ${name}` : undefined}
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', cursor: onTeam ? 'pointer' : 'default' }}>
+      <img src={`https://flagcdn.com/h40/${code}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 30, width: 'auto', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
       <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', lineHeight: 1.1 }}>{name}</span>
     </div>
   );
@@ -582,11 +621,25 @@ function FixtureCardWeb({ m }) {
         <Team name={m.away} code={m.awayCode} />
       </div>
       <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center' }}>📍 {m.stadium}</div>
+      <RefLineWeb m={m} />
     </Card>
   );
 }
 
-function PartidosWeb() {
+// Árbitro asignado al partido (designación tentativa hasta confirmación FIFA)
+function RefLineWeb({ m }) {
+  const ref = window.MB.refForMatch && window.MB.refForMatch(m);
+  if (!ref) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>
+      <span>🧑‍⚖️</span>
+      <img src={`https://flagcdn.com/h20/${ref.code}.png`} alt="" title={ref.country} style={{ height: 9, width: 'auto', borderRadius: 1 }} />
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ref.name}</span>
+    </div>
+  );
+}
+
+function PartidosWeb({ onTeam }) {
   const fx = (window.MB.WC_FIXTURES) || [];
   const ko = (window.MB.WC_KNOCKOUTS) || [];
   const byMd = { 1: [], 2: [], 3: [] };
@@ -597,7 +650,7 @@ function PartidosWeb() {
         <div key={md} style={{ marginBottom: 26 }}>
           <SectionHead title={`Fase de grupos · Jornada ${md}`} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-            {byMd[md].map(m => <FixtureCardWeb key={m.id} m={m} />)}
+            {byMd[md].map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
           </div>
         </div>
       ))}
@@ -621,7 +674,7 @@ function PartidosWeb() {
 // ════════════════════════════════════════════════════════════
 //  EQUIPOS (grupos)
 // ════════════════════════════════════════════════════════════
-function GroupTableWeb({ letter, rows, highlighted }) {
+function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
   const ref = useRefW(null);
   useEffectW(() => {
     if (highlighted && ref.current) ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -639,12 +692,20 @@ function GroupTableWeb({ letter, rows, highlighted }) {
         <span style={{ width: 28, textAlign: 'center' }}>Pts</span>
       </div>
       {rows.map(r => (
-        <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div key={r.name} onClick={() => onTeam && onTeam(Object.assign({}, r, { group: letter }))} className={onTeam ? 'mb-press mb-team-row' : ''}
+          title={onTeam ? `Ver ficha de ${r.name}` : undefined}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 4px', margin: '0 -4px', borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: onTeam ? 'pointer' : 'default' }}>
           <span style={{ width: 14, color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{r.pos}</span>
           <img src={`https://flagcdn.com/h24/${r.code || ''}.png`} alt="" style={{ height: 15, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: 'var(--t-sm)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</span>
-            {r.coach && <span style={{ display: 'block', fontSize: 9, color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎽 {r.coach}</span>}
+            {r.coach && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--muted-2)', minWidth: 0 }}>
+                <span>🎽</span>
+                {r.coachCode && <img src={`https://flagcdn.com/h20/${r.coachCode}.png`} alt="" title={r.coachCountry} style={{ height: 8, width: 'auto', borderRadius: 1 }} />}
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.coach}</span>
+              </span>
+            )}
           </span>
           <span style={{ width: 24, textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.j}</span>
           <span className="num" style={{ width: 28, textAlign: 'center', color: 'var(--gold-light)' }}>{r.pts}</span>
@@ -684,15 +745,15 @@ function RefereesPanel() {
   );
 }
 
-function EquiposWeb({ highlight }) {
+function EquiposWeb({ highlight, onTeam }) {
   const gs = Dw.GROUP_STANDINGS;
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
-        Los <strong>12 grupos</strong> del Mundial 2026 · 48 selecciones con su <strong>DT</strong>. Toca una bandera en la franja superior para ver la ficha del equipo.
+        Los <strong>12 grupos</strong> del Mundial 2026 · 48 selecciones con su <strong>DT</strong>. Toca una bandera (arriba) o cualquier selección para ver su ficha completa.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 16 }}>
-        {Object.keys(gs).map(letter => <GroupTableWeb key={letter} letter={letter} rows={gs[letter]} highlighted={letter === highlight} />)}
+        {Object.keys(gs).map(letter => <GroupTableWeb key={letter} letter={letter} rows={gs[letter]} highlighted={letter === highlight} onTeam={onTeam} />)}
       </div>
       <RefereesPanel />
     </div>
@@ -1009,9 +1070,9 @@ function AppWeb() {
 
   // Pantallas de escritorio (anchas) + reuso de Quiniela/Admin centrados
   const desktop = {
-    inicio:   <DashboardWeb me={me} onNav={goTab} onPredict={() => goTab('quiniela')} />,
-    partidos: <PartidosWeb onPredict={() => goTab('quiniela')} />,
-    equipos:  <EquiposWeb highlight={hlGroup} />,
+    inicio:   <DashboardWeb me={me} onNav={goTab} onPredict={() => goTab('quiniela')} onTeam={setTeam} />,
+    partidos: <PartidosWeb onPredict={() => goTab('quiniela')} onTeam={setTeam} />,
+    equipos:  <EquiposWeb highlight={hlGroup} onTeam={setTeam} />,
     ranking:  <RankingWeb />,
     liga:     <LigaWeb />,
     perfil:   <PerfilWeb me={me} />,

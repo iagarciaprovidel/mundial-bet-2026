@@ -143,20 +143,20 @@
     { stage: 'FINAL', fechas: '19 jul', partidos: 1, sedes: 'MetLife Stadium, Nueva Jersey' },
   ];
 
-  // — Entrenadores por selección (convocatorias 2025-2026) —
+  // — Entrenadores por selección: [nombre, nacionalidad, códigoISO] —
   const COACHES = {
-    'México': 'Javier Aguirre', 'Sudáfrica': 'Hugo Broos', 'Corea del Sur': 'Hong Myung-bo', 'Chequia': 'Ivan Hašek',
-    'Canadá': 'Jesse Marsch', 'Bosnia y Herzegovina': 'Sergej Barbarez', 'Catar': 'Julen Lopetegui', 'Suiza': 'Murat Yakin',
-    'Brasil': 'Carlo Ancelotti', 'Marruecos': 'Mohamed Ouahbi', 'Haití': 'Sébastien Migné', 'Escocia': 'Steve Clarke',
-    'Estados Unidos': 'Mauricio Pochettino', 'Paraguay': 'Gustavo Alfaro', 'Australia': 'Tony Popovic', 'Türkiye': 'Vincenzo Montella',
-    'Alemania': 'Julian Nagelsmann', 'Curazao': 'Dick Advocaat', 'Costa de Marfil': 'Emerse Faé', 'Ecuador': 'Sebastián Beccacece',
-    'Países Bajos': 'Ronald Koeman', 'Japón': 'Hajime Moriyasu', 'Suecia': 'Jon Dahl Tomasson', 'Túnez': 'Sabri Lamouchi',
-    'Bélgica': 'Rudi García', 'Egipto': 'Hossam Hassan', 'Irán': 'Amir Ghalenoei', 'Nueva Zelanda': 'Darren Bazeley',
-    'España': 'Luis de la Fuente', 'Cabo Verde': 'Pedro "Bubista" Brito', 'Arabia Saudita': 'Georgios Donis', 'Uruguay': 'Marcelo Bielsa',
-    'Francia': 'Didier Deschamps', 'Senegal': 'Pape Thiaw', 'Irak': 'Graham Arnold', 'Noruega': 'Ståle Solbakken',
-    'Argentina': 'Lionel Scaloni', 'Argelia': 'Vladimir Petković', 'Austria': 'Ralf Rangnick', 'Jordania': 'Jamal Sellami',
-    'Portugal': 'Roberto Martínez', 'Congo RD': 'Sébastien Desabre', 'Uzbekistán': 'Timur Kapadze', 'Colombia': 'Néstor Lorenzo',
-    'Inglaterra': 'Thomas Tuchel', 'Croacia': 'Zlatko Dalić', 'Ghana': 'Otto Addo', 'Panamá': 'Thomas Christiansen',
+    'México': ['Javier Aguirre', 'México', 'mx'], 'Sudáfrica': ['Hugo Broos', 'Bélgica', 'be'], 'Corea del Sur': ['Hong Myung-bo', 'Corea del Sur', 'kr'], 'Chequia': ['Ivan Hašek', 'Chequia', 'cz'],
+    'Canadá': ['Jesse Marsch', 'Estados Unidos', 'us'], 'Bosnia y Herzegovina': ['Sergej Barbarez', 'Bosnia y Herzegovina', 'ba'], 'Catar': ['Julen Lopetegui', 'España', 'es'], 'Suiza': ['Murat Yakin', 'Suiza', 'ch'],
+    'Brasil': ['Carlo Ancelotti', 'Italia', 'it'], 'Marruecos': ['Mohamed Ouahbi', 'Marruecos', 'ma'], 'Haití': ['Sébastien Migné', 'Francia', 'fr'], 'Escocia': ['Steve Clarke', 'Escocia', 'gb-sct'],
+    'Estados Unidos': ['Mauricio Pochettino', 'Argentina', 'ar'], 'Paraguay': ['Gustavo Alfaro', 'Argentina', 'ar'], 'Australia': ['Tony Popovic', 'Australia', 'au'], 'Türkiye': ['Vincenzo Montella', 'Italia', 'it'],
+    'Alemania': ['Julian Nagelsmann', 'Alemania', 'de'], 'Curazao': ['Dick Advocaat', 'Países Bajos', 'nl'], 'Costa de Marfil': ['Emerse Faé', 'Costa de Marfil', 'ci'], 'Ecuador': ['Sebastián Beccacece', 'Argentina', 'ar'],
+    'Países Bajos': ['Ronald Koeman', 'Países Bajos', 'nl'], 'Japón': ['Hajime Moriyasu', 'Japón', 'jp'], 'Suecia': ['Jon Dahl Tomasson', 'Dinamarca', 'dk'], 'Túnez': ['Sabri Lamouchi', 'Francia', 'fr'],
+    'Bélgica': ['Rudi García', 'Francia', 'fr'], 'Egipto': ['Hossam Hassan', 'Egipto', 'eg'], 'Irán': ['Amir Ghalenoei', 'Irán', 'ir'], 'Nueva Zelanda': ['Darren Bazeley', 'Inglaterra', 'gb-eng'],
+    'España': ['Luis de la Fuente', 'España', 'es'], 'Cabo Verde': ['Pedro "Bubista" Brito', 'Cabo Verde', 'cv'], 'Arabia Saudita': ['Georgios Donis', 'Grecia', 'gr'], 'Uruguay': ['Marcelo Bielsa', 'Argentina', 'ar'],
+    'Francia': ['Didier Deschamps', 'Francia', 'fr'], 'Senegal': ['Pape Thiaw', 'Senegal', 'sn'], 'Irak': ['Graham Arnold', 'Australia', 'au'], 'Noruega': ['Ståle Solbakken', 'Noruega', 'no'],
+    'Argentina': ['Lionel Scaloni', 'Argentina', 'ar'], 'Argelia': ['Vladimir Petković', 'Bosnia y Herzegovina', 'ba'], 'Austria': ['Ralf Rangnick', 'Alemania', 'de'], 'Jordania': ['Jamal Sellami', 'Marruecos', 'ma'],
+    'Portugal': ['Roberto Martínez', 'España', 'es'], 'Congo RD': ['Sébastien Desabre', 'Francia', 'fr'], 'Uzbekistán': ['Timur Kapadze', 'Uzbekistán', 'uz'], 'Colombia': ['Néstor Lorenzo', 'Argentina', 'ar'],
+    'Inglaterra': ['Thomas Tuchel', 'Alemania', 'de'], 'Croacia': ['Zlatko Dalić', 'Croacia', 'hr'], 'Ghana': ['Otto Addo', 'Ghana', 'gh'], 'Panamá': ['Thomas Christiansen', 'España', 'es'],
   };
 
   // — Árbitros designados (52) con nacionalidad —
@@ -202,13 +202,27 @@
   }
   const STANDINGS = {};
   Object.keys(GROUPS).forEach(letter => {
-    STANDINGS[letter] = GROUPS[letter].map(([name, code], i) => ({
-      pos: i + 1, name, code, flag: codeToEmoji(code), coach: COACHES[name] || '',
-      j: 0, g: 0, e: 0, p: 0, pts: 0, gf: 0, gc: 0,
-    }));
+    STANDINGS[letter] = GROUPS[letter].map(([name, code], i) => {
+      const c = COACHES[name] || ['', '', ''];
+      return {
+        pos: i + 1, name, code, flag: codeToEmoji(code),
+        coach: c[0], coachCountry: c[1], coachCode: c[2],
+        j: 0, g: 0, e: 0, p: 0, pts: 0, gf: 0, gc: 0,
+      };
+    });
   });
 
-  window.MB_WC = { GROUPS, FIXTURES, KNOCKOUTS, STADIUM, COACHES, REFEREES, STANDINGS };
+  // Árbitro asignado a un partido (determinístico; excluye la nacionalidad de
+  // ambos equipos por regla FIFA). Las designaciones oficiales salen ~2 días antes.
+  function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+  function refForMatch(m) {
+    if (!m) return null;
+    const pool = REFEREES.filter(r => r.code !== m.homeCode && r.code !== m.awayCode);
+    if (!pool.length) return null;
+    return pool[hashStr(m.id) % pool.length];
+  }
+
+  window.MB_WC = { GROUPS, FIXTURES, KNOCKOUTS, STADIUM, COACHES, REFEREES, STANDINGS, refForMatch };
 
   // Inyección en el modelo de la app (reemplaza datos mock de grupos)
   if (window.MB) {
@@ -217,5 +231,6 @@
     window.MB.COACHES = COACHES;
     window.MB.WC_FIXTURES = FIXTURES;
     window.MB.WC_KNOCKOUTS = KNOCKOUTS;
+    window.MB.refForMatch = refForMatch;
   }
 })();
