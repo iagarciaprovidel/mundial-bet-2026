@@ -12,11 +12,13 @@
 (function () {
   var nav = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
   var LANG = nav.indexOf('pt') === 0 ? 'pt' : nav.indexOf('en') === 0 ? 'en' : 'es';
-  // Override de prueba: ?lang=en|pt|es (también persiste en localStorage).
+  // Override de prueba SOLO para esta visita: ?lang=en|pt|es. No se guarda,
+  // así el idioma siempre vuelve a la detección automática del navegador.
   try {
     var q = (location.search.match(/[?&]lang=(en|pt|es)\b/) || [])[1];
-    if (q) { try { localStorage.setItem('mb_lang', q); } catch (e) {} LANG = q; }
-    else { var saved = localStorage.getItem('mb_lang'); if (saved === 'en' || saved === 'pt' || saved === 'es') LANG = saved; }
+    if (q) LANG = q;
+    // Limpia cualquier preferencia guardada por versiones anteriores.
+    try { localStorage.removeItem('mb_lang'); } catch (e) {}
   } catch (e) {}
   window.MB_LANG = LANG;
   try { document.documentElement.lang = LANG; } catch (e) {}
