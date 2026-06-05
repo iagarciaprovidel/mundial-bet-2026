@@ -208,6 +208,12 @@
     'Puntos': 'Points', 'Jugados': 'Played', 'Ganados': 'Won', 'Empates': 'Drawn',
     'Perdidos': 'Lost', 'G. favor': 'GF', 'G. contra': 'GA', 'Dif.': 'GD',
     'Los': 'The', 'grupos': 'groups',
+    // Banner de instalación
+    'Instala la app': 'Install the app',
+    'Un toque, sin barra del navegador y sin avisos.': 'One tap — no browser bar, no warnings.',
+    "Toca Compartir y elige 'Añadir a pantalla de inicio'.": "Tap Share and choose 'Add to Home Screen'.",
+    '📲 Instalar': '📲 Install', 'Cerrar': 'Close', 'Descargar': 'Download',
+    '¿Prefieres el APK de Android?': 'Prefer the Android APK?',
   };
 
   var DICT_PT = {
@@ -328,6 +334,12 @@
     'Puntos': 'Pontos', 'Jugados': 'Jogos', 'Ganados': 'Vitórias', 'Empates': 'Empates',
     'Perdidos': 'Derrotas', 'G. favor': 'GP', 'G. contra': 'GC', 'Dif.': 'SG',
     'Los': 'Os', 'grupos': 'grupos',
+    // Banner de instalación
+    'Instala la app': 'Instale o app',
+    'Un toque, sin barra del navegador y sin avisos.': 'Um toque — sem barra do navegador e sem avisos.',
+    "Toca Compartir y elige 'Añadir a pantalla de inicio'.": "Toque em Compartilhar e escolha 'Adicionar à Tela de Início'.",
+    '📲 Instalar': '📲 Instalar', 'Cerrar': 'Fechar', 'Descargar': 'Baixar',
+    '¿Prefieres el APK de Android?': 'Prefere o APK de Android?',
   };
 
   // ── Reglas para frases dinámicas (orden importa) ──────────
