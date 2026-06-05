@@ -84,7 +84,7 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
       width: 248, flexShrink: 0, height: '100%', position: 'relative', overflow: 'hidden',
       background: 'rgba(8,15,10,0.92)', borderRight: '1px solid var(--border)',
     }}>
-      <FlagWall vertical size={30} opacity={0.08} repeat={6} />
+      <FlagWall vertical size={34} opacity={0.24} repeat={6} />
       <div style={{
         position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column',
         padding: '22px 16px',
@@ -172,7 +172,7 @@ function Topbar({ tab, me }) {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 28px', borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)',
     }}>
-      <FlagWall size={42} opacity={0.14} repeat={3} />
+      <FlagWall size={46} opacity={0.34} repeat={3} />
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, position: 'relative', zIndex: 1 }}>
         <h1 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{TITLES[tab] || ''}</h1>
         <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)' }}>{Dw.LEAGUE.name}</span>
