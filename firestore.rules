@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// ============================================================
+// MundialBet Club 2026 — Reglas de seguridad de Firestore
+// Estas reglas se aplican EN EL SERVIDOR: el cliente no decide.
+// Publícalas en: Firebase Console → Firestore Database → Rules.
+// ============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // Perfiles: lectura para autenticados; cada quien edita el suyo
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // Partidos: lectura pública; escritura solo manual (consola / admin)
+    match /matches/{matchId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Predicciones (id = "<uid>_<matchId>")
+    match /predictions/{predId} {
+      // Por ahora lectura para autenticados. Para anonimato TOTAL hasta el
+      // kickoff conviene revelar vía Cloud Function; ver nota del chat.
+      allow read: if signedIn();
+
+      allow create, update: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && predId == request.auth.uid + '_' + request.resource.data.matchId
+        && request.resource.data.golesLocal is int
+        && request.resource.data.golesVisita is int
+        && request.resource.data.golesLocal >= 0 && request.resource.data.golesLocal <= 20
+        && request.resource.data.golesVisita >= 0 && request.resource.data.golesVisita <= 20
+        // No se puede predecir/editar después del kickoff del partido
+        && exists(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
+        && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.kickoff > request.time;
+
+      allow delete: if false;
+    }
+  }
+}
