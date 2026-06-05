@@ -53,7 +53,12 @@ function Header({ me, accent, role, onAdmin }) {
             <span style={{ fontSize: 18 }}>🏆</span>
             <span className="display" style={{ fontSize: 'var(--t-lg)', letterSpacing: '-0.02em' }}>MundialBet<span style={{ color: accent }}> Club</span></span>
           </div>
-          <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, letterSpacing: '0.12em' }}>USA · MEX · CAN · 2026</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            {['us', 'mx', 'ca'].map(c => (
+              <img key={c} src={`https://flagcdn.com/h20/${c}.png`} alt="" style={{ height: 10, width: 'auto', borderRadius: 2 }} />
+            ))}
+            <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, letterSpacing: '0.1em', marginLeft: 2 }}>MUNDIAL 2026</span>
+          </span>
         </div>
         <CoinBadge amount={me.coins} />
         {role === 'Admin / Tesorero' && (

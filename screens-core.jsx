@@ -34,7 +34,12 @@ function Onboarding({ onFinish }) {
       <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(120% 70% at 50% 10%, ${cur.accent}26, transparent 58%)`, transition: 'background var(--dur-slow) var(--ease-out)', pointerEvents: 'none' }} />
       {/* logo */}
       <div style={{ textAlign: 'center', marginBottom: 8, position: 'relative', zIndex: 1 }}>
-        <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>USA · MEX · CAN</span>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+          {['us', 'mx', 'ca'].map(c => (
+            <img key={c} src={`https://flagcdn.com/h20/${c}.png`} alt="" style={{ height: 13, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }} />
+          ))}
+          <span className="eyebrow" style={{ color: 'var(--gold-light)', marginLeft: 3 }}>MUNDIAL 2026</span>
+        </div>
       </div>
 
       <div key={step} style={{ flex: 1, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
