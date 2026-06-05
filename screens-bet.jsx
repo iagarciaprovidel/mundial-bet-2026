@@ -160,40 +160,61 @@ function SpecialMarket({ market }) {
   );
 }
 
-function Partidos({ onLoading }) {
-  const [phase, setPhase] = useStateB('Grupos');
-  
-  // Filtrar partidos según la fase seleccionada
-  const filteredMatches = Db.UPCOMING.filter(m => {
-    if (phase === 'Grupos') return m.stage === 'Grupos';
-    if (phase === 'Octavos') return m.stage === 'Octavos';
-    if (phase === 'Cuartos') return m.stage === 'Cuartos';
-    if (phase === 'Semis') return m.stage === 'Semifinal';
-    if (phase === 'Final') return m.stage === 'Final';
-    return false;
-  });
-  
+// Tarjeta de partido real (móvil) — datos del Mundial 2026
+function MobileFixtureCard({ m }) {
+  const d = new Date(m.kickoff);
+  const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
+  const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  return (
+    <Card style={{ marginBottom: 12, padding: '12px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <Chip tone="blue">Grupo {m.group} · J{m.md}</Chip>
+        <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+          <img src={`https://flagcdn.com/h40/${m.homeCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
+          <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
+        </div>
+        <span style={{ color: 'var(--muted-2)', fontWeight: 700, padding: '0 8px' }}>vs</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+          <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.away}</span>
+          <img src={`https://flagcdn.com/h40/${m.awayCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
+        </div>
+      </div>
+      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 600 }}>🏟️ {m.stadium}</div>
+    </Card>
+  );
+}
+
+function Partidos() {
+  const [tab, setTab] = useStateB('J1');
+  const fx = (window.MB.WC_FIXTURES) || [];
+  const ko = (window.MB.WC_KNOCKOUTS) || [];
+  const mdMap = { J1: 1, J2: 2, J3: 3 };
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ marginBottom: 16 }}>
-        <SegTabs options={['Grupos', 'Octavos', 'Cuartos', 'Semis', 'Final']} value={phase} onChange={setPhase} accent="var(--info)" />
+        <SegTabs accent="var(--info)" value={tab} onChange={setTab}
+          options={[{ v: 'J1', label: 'Jor. 1' }, { v: 'J2', label: 'Jor. 2' }, { v: 'J3', label: 'Jor. 3' }, { v: 'KO', label: 'Elim.' }]} />
       </div>
-      <SectionHead title={phase === 'Grupos' ? 'Próximos partidos' : `${phase} de final`} />
-      {filteredMatches.length > 0 ? (
-        filteredMatches.map(m => <MatchBetCard key={m.id} match={m} />)
-      ) : (
-        <Card style={{ padding: '20px', textAlign: 'center' }}>
-          <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>No hay partidos en esta fase</div>
-        </Card>
-      )}
-
-      {phase === 'Grupos' && (
+      {tab !== 'KO' ? (
         <>
-          <div style={{ marginTop: 8 }}><SectionHead title="Mercados especiales" /></div>
-          {Db.SPECIALS.map((m, i) => <SpecialMarket key={i} market={m} />)}
-
-          <div style={{ marginTop: 8 }}><SectionHead title="Finalizados" /></div>
-          {Db.PLAYED.map(m => <PlayedCard key={m.id} m={m} />)}
+          <SectionHead title={`Fase de grupos · Jornada ${mdMap[tab]}`} />
+          {fx.filter(m => m.md === mdMap[tab]).map(m => <MobileFixtureCard key={m.id} m={m} />)}
+        </>
+      ) : (
+        <>
+          <SectionHead title="Fase eliminatoria" />
+          {ko.map((k, i) => (
+            <Card key={i} style={{ marginBottom: 10, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Chip tone="gold">{k.stage}</Chip>
+                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{k.fechas}</span>
+              </div>
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{k.partidos} {k.partidos === 1 ? 'partido' : 'partidos'} · {k.sedes}</div>
+            </Card>
+          ))}
         </>
       )}
     </div>
