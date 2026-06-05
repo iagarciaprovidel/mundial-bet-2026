@@ -99,7 +99,8 @@ const ALL_TEAMS = (function () {
   s.id = 'mb-web-css';
   s.textContent = `
     @keyframes mb-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-    .mb-ticker-wrap:hover .mb-ticker { animation-play-state: paused; }
+    .mb-ticker { animation: mb-marquee 55s linear infinite; }
+    .mb-ticker-wrap:hover .mb-ticker, .mb-ticker:hover { animation-play-state: paused !important; }
     .mb-flagbtn img { transition: transform .15s var(--ease-out), box-shadow .15s; }
     .mb-flagbtn:hover img { transform: scale(1.22) translateY(-1px); box-shadow: 0 0 0 2px var(--gold), 0 3px 10px rgba(0,0,0,0.55); }
   `;
@@ -129,7 +130,6 @@ function FlagTicker({ onSelect, onGroup }) {
     }}>
       <div className="mb-ticker" style={{
         display: 'flex', alignItems: 'center', gap: 16, width: 'max-content',
-        animation: 'mb-marquee 55s linear infinite',
       }}>
         {items.map((t, i) => (
           <button key={i} className="mb-flagbtn" title={t.name}
@@ -152,8 +152,11 @@ function FlagTicker({ onSelect, onGroup }) {
               style={{ height: 20, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }} />
             <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)' }}>{hov.team.name}</span>
           </div>
-          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginBottom: 11 }}>
-            Grupo {hov.team.group} · #{hov.team.pos} · {hov.team.pts} pts
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 11 }}>
+            {hov.team.pos <= 2
+              ? <Chip tone="green" icon={<span>✓</span>}>Clasifica</Chip>
+              : <Chip tone="neutral">Eliminado</Chip>}
+            <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Grupo {hov.team.group} · #{hov.team.pos} · {hov.team.pts} pts</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             <button onClick={() => { const team = hov.team; setHov(null); onGroup(team.group); }} className="mb-press" style={{
@@ -176,6 +179,24 @@ function FlagTicker({ onSelect, onGroup }) {
 }
 
 // Modal con todos los datos de un equipo
+const POS_TONE = {
+  POR: ['var(--gold-light)', 'rgba(212,175,55,0.14)'],
+  DEF: ['var(--info)', 'rgba(74,144,226,0.14)'],
+  MED: ['var(--success)', 'rgba(0,200,90,0.14)'],
+  DEL: ['var(--danger)', 'rgba(232,64,64,0.14)'],
+};
+function PlayerRow({ p, starter }) {
+  const tone = POS_TONE[p.pos] || ['var(--muted)', 'rgba(255,255,255,0.06)'];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <span className="num" style={{ width: 22, textAlign: 'center', color: starter ? 'var(--gold-light)' : 'var(--muted-2)', fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{p.n}</span>
+      <span style={{ flex: 1, fontSize: 'var(--t-sm)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: starter ? 700 : 400 }}>
+        {starter && <span style={{ color: 'var(--gold)', marginRight: 4 }}>★</span>}{p.name}
+      </span>
+      <span style={{ fontSize: 9, fontWeight: 800, color: tone[0], background: tone[1], padding: '2px 6px', borderRadius: 'var(--r-pill)', flexShrink: 0 }}>{p.pos}</span>
+    </div>
+  );
+}
 function TeamStat({ label, value, tone }) {
   return (
     <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '10px 6px', textAlign: 'center' }}>
@@ -193,12 +214,8 @@ function TeamModal({ team, onClose }) {
   const played = Dw.PLAYED.filter(m => m.home === team.name || m.away === team.name);
   const upcoming = Dw.UPCOMING.filter(m => (m.home === team.name || m.away === team.name));
   const squad = (window.MB.PLAYERS && window.MB.PLAYERS[team.name]) || [];
-  const POS_TONE = {
-    POR: ['var(--gold-light)', 'rgba(212,175,55,0.14)'],
-    DEF: ['var(--info)', 'rgba(74,144,226,0.14)'],
-    MED: ['var(--success)', 'rgba(0,200,90,0.14)'],
-    DEL: ['var(--danger)', 'rgba(232,64,64,0.14)'],
-  };
+  const titulares = squad.filter(p => p.t);
+  const suplentes = squad.filter(p => !p.t);
   return (
     <div onClick={onClose} style={{
       position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(6,8,15,0.72)',
@@ -264,17 +281,15 @@ function TeamModal({ team, onClose }) {
         {squad.length === 0 ? (
           <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Plantilla no disponible.</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px' }}>
-            {squad.map((p, i) => {
-              const tone = POS_TONE[p.pos] || ['var(--muted)', 'rgba(255,255,255,0.06)'];
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <span className="num" style={{ width: 22, textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{p.n}</span>
-                  <span style={{ flex: 1, fontSize: 'var(--t-sm)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: tone[0], background: tone[1], padding: '2px 6px', borderRadius: 'var(--r-pill)', flexShrink: 0 }}>{p.pos}</span>
-                </div>
-              );
-            })}
+          <div>
+            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 4px' }}>★ Once titular ({titulares.length})</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px', marginBottom: 12 }}>
+              {titulares.map((p, i) => <PlayerRow key={'t' + i} p={p} starter />)}
+            </div>
+            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 4px' }}>Suplentes ({suplentes.length})</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px' }}>
+              {suplentes.map((p, i) => <PlayerRow key={'s' + i} p={p} />)}
+            </div>
           </div>
         )}
       </div>
@@ -572,9 +587,15 @@ function PartidosWeb({ onPredict }) {
 // ════════════════════════════════════════════════════════════
 //  EQUIPOS (grupos)
 // ════════════════════════════════════════════════════════════
-function GroupTableWeb({ letter, rows }) {
+function GroupTableWeb({ letter, rows, highlighted }) {
+  const ref = useRefW(null);
+  useEffectW(() => {
+    if (highlighted && ref.current) ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlighted]);
+  const hlStyle = highlighted ? { boxShadow: 'var(--glow-gold)', border: '1px solid var(--gold)' } : {};
   return (
-    <Card style={{ padding: '14px 16px' }}>
+    <div ref={ref}>
+    <Card style={{ padding: '14px 16px', transition: 'box-shadow var(--dur-base) var(--ease-out)', ...hlStyle }}>
       <h3 className="display" style={{ margin: '0 0 10px', fontSize: 'var(--t-md)' }}>Grupo {letter}</h3>
       <div style={{ display: 'flex', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, padding: '0 0 6px', borderBottom: '1px solid var(--border)' }}>
         <span style={{ width: 18 }}>#</span>
@@ -601,10 +622,11 @@ function GroupTableWeb({ letter, rows }) {
         );
       })}
     </Card>
+    </div>
   );
 }
 
-function EquiposWeb() {
+function EquiposWeb({ highlight }) {
   const gs = Dw.GROUP_STANDINGS;
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
@@ -612,7 +634,7 @@ function EquiposWeb() {
         <span style={{ color: 'var(--success)', fontWeight: 700 }}>Verde</span> = clasifica a octavos (top 2 de cada grupo).
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 16 }}>
-        {Object.keys(gs).map(letter => <GroupTableWeb key={letter} letter={letter} rows={gs[letter]} />)}
+        {Object.keys(gs).map(letter => <GroupTableWeb key={letter} letter={letter} rows={gs[letter]} highlighted={letter === highlight} />)}
       </div>
     </div>
   );
@@ -907,6 +929,7 @@ function AppWeb() {
   const [me, setMe] = useStateW(Dw.ME);
   const [closeScreen, setCloseScreen] = useStateW(false);
   const [team, setTeam] = useStateW(null);
+  const [hlGroup, setHlGroup] = useStateW(null);
   const mainRef = useRefW(null);
 
   const accent = t.accent || '#4A90E2';
@@ -929,7 +952,7 @@ function AppWeb() {
   const desktop = {
     inicio:   <DashboardWeb me={me} onNav={goTab} onPredict={() => goTab('quiniela')} />,
     partidos: <PartidosWeb onPredict={() => goTab('quiniela')} />,
-    equipos:  <EquiposWeb />,
+    equipos:  <EquiposWeb highlight={hlGroup} />,
     ranking:  <RankingWeb />,
     liga:     <LigaWeb />,
     perfil:   <PerfilWeb me={me} />,
@@ -945,7 +968,7 @@ function AppWeb() {
     <div style={{ position: 'fixed', inset: 0, display: 'flex', overflow: 'hidden', background: '#0c2114' }}>
       <Sidebar tab={tab} onTab={goTab} me={me} accent={accent} role={t.role} onAdmin={() => goTab('admin')} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Topbar tab={tab} me={me} onFlagClick={setTeam} onGroup={() => goTab('equipos')} />
+        <Topbar tab={tab} me={me} onFlagClick={setTeam} onGroup={(g) => { setHlGroup(g); goTab('equipos'); }} />
         <main ref={mainRef} className="mb-main-pitch" style={{ flex: 1, overflow: 'auto', padding: '24px 28px 60px' }}>
           <div style={{ maxWidth: isCentered ? 760 : 1180, margin: '0 auto' }}>
             {isCentered ? centered[tab] : desktop[tab]}

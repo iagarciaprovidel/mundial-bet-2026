@@ -120,7 +120,7 @@ function MobileFlagTicker({ onSelect }) {
     }}>
       <div className="mb-ticker" style={{
         display: 'flex', alignItems: 'center', gap: 14, width: 'max-content',
-        padding: '7px 12px', animation: 'mb-marquee 50s linear infinite',
+        padding: '7px 12px',
       }}>
         {items.map((tm, i) => (
           <button key={i} onClick={() => onSelect(tm)} title={tm.name} style={{
