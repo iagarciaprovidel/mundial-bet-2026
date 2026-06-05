@@ -127,6 +127,7 @@ function PrizePotCard({ animate = true }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
         <span style={{ fontSize: 18 }}>🏆</span>
         <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>Bote del torneo</span>
+        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted-2)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-pill)', padding: '2px 7px' }}>Ejemplo</span>
       </div>
       <div className="num" style={{ fontSize: 'var(--t-5xl)', color: 'var(--gold-light)', lineHeight: 1 }}>
         ${Dc.fmt(amount)}<span style={{ fontSize: 'var(--t-lg)', color: 'var(--gold)', marginLeft: 6 }}>CLP</span>
@@ -202,7 +203,9 @@ function Dashboard({ user, onNav, onPredict }) {
         <h1 className="display" style={{ fontSize: 'var(--t-2xl)', margin: '4px 0 2px', color: 'var(--text)' }}>
           {saludo} {firstName}! <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
         </h1>
-        <p style={{ margin: 0, color: 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 600 }}>Llevas {me.streak} aciertos seguidos ⚡</p>
+        <p style={{ margin: 0, color: daysLeft > 0 ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 700 }}>
+          {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>Llevas {me.streak} aciertos seguidos ⚡</>}
+        </p>
       </div>
 
       <PrizePotCard />
@@ -214,6 +217,7 @@ function Dashboard({ user, onNav, onPredict }) {
         <Metric label="Aciertos" value={me.hits + '%'} tone="var(--success)" icon="🎯" />
         <Metric label="ROI" value={(me.roi >= 0 ? '+' : '') + me.roi + '%'} tone={me.roi >= 0 ? 'var(--success)' : 'var(--danger)'} icon="📈" />
       </div>
+      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center', marginTop: -8 }}>📊 Datos de ejemplo · el torneo aún no comienza</div>
 
       {/* próximos partidos */}
       <div>

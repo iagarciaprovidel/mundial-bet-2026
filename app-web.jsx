@@ -540,7 +540,9 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
           <h2 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 2px' }}>
             {saludo} {firstName}! <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>
           </h2>
-          <p style={{ margin: 0, color: 'var(--gold-light)', fontSize: 'var(--t-md)', fontWeight: 600 }}>Llevas {me.streak} aciertos seguidos ⚡</p>
+          <p style={{ margin: 0, color: 'var(--gold-light)', fontSize: 'var(--t-md)', fontWeight: 600 }}>
+            {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>Llevas {me.streak} aciertos seguidos ⚡</>}
+          </p>
         </div>
         <PrizePotCard />
         <div style={{ display: 'flex', gap: 12 }}>
@@ -549,6 +551,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
           <MetricW label="Aciertos" value={me.hits + '%'} tone="var(--success)" icon="🎯" />
           <MetricW label="ROI" value={'+' + me.roi + '%'} tone="var(--success)" icon="📈" />
         </div>
+        <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: -8 }}>📊 Datos de ejemplo · el torneo aún no comienza</div>
         {next && (
         <div>
           <SectionHead title="Próximo partido" action="Ver todos" onAction={() => onNav('partidos')} />

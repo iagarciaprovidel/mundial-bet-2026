@@ -98,6 +98,8 @@
     // Dashboard
     '¡Buenas noches,': 'Good evening,', '¡Buenos días,': 'Good morning,', '¡Buenas tardes,': 'Good afternoon,',
     'Faltan': 'In', 'días': 'days', 'aciertos seguidos ⚡': 'hit streak ⚡',
+    'días para el Mundial 2026 🏆': 'days to the 2026 World Cup 🏆', 'Ejemplo': 'Example',
+    '📊 Datos de ejemplo · el torneo aún no comienza': '📊 Sample data · the tournament hasn’t started',
     'Llevas': 'You’re on a', 'Bote del torneo': 'Tournament pot',
     'Equipo': 'Team', '12 grupos': '12 groups',
     'del Mundial 2026 · 48 selecciones con su': 'of the 2026 World Cup · 48 teams with their',
@@ -238,6 +240,8 @@
     'Continuar': 'Continuar', '¡Empezar a jugar!': 'Começar a jogar!', 'Saltar introducción': 'Pular introdução',
     '¡Buenas noches,': 'Boa noite,', '¡Buenos días,': 'Bom dia,', '¡Buenas tardes,': 'Boa tarde,',
     'Faltan': 'Faltam', 'días': 'dias', 'aciertos seguidos ⚡': 'acertos seguidos ⚡',
+    'días para el Mundial 2026 🏆': 'dias para a Copa 2026 🏆', 'Ejemplo': 'Exemplo',
+    '📊 Datos de ejemplo · el torneo aún no comienza': '📊 Dados de exemplo · o torneio ainda não começou',
     'Llevas': 'Você está com', 'Bote del torneo': 'Prêmio do torneio',
     'Equipo': 'Time', '12 grupos': '12 grupos',
     'del Mundial 2026 · 48 selecciones con su': 'da Copa 2026 · 48 seleções com seu',
