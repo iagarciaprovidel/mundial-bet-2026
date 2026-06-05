@@ -142,9 +142,55 @@ html, body {
   *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 8px; }
   * { scrollbar-width: thin; }
 }
+
+/* — Splash propio al abrir (estadio + mascotas + banderas) — */
+#mb-splash {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(8,18,12,0.74) 0%, rgba(6,12,9,0.90) 100%),
+    url(stadium.jpg) center 58% / cover no-repeat;
+  background-color: #0c2114;
+  transition: opacity .5s ease;
+}
+#mb-splash.mb-hide { opacity: 0; pointer-events: none; }
+#mb-splash .in { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: mb-fade-up .6s ease-out; }
+#mb-splash img.logo { width: 128px; height: 128px; border-radius: 28px; box-shadow: 0 12px 44px rgba(0,0,0,0.6); }
+#mb-splash .ttl { font-family: var(--font-display); font-weight: 700; font-size: 30px; color: #fff; letter-spacing: -0.02em; text-shadow: 0 2px 14px rgba(0,0,0,0.6); margin-top: 4px; }
+#mb-splash .ttl span { color: var(--gold-light); }
+#mb-splash .sub { font-family: var(--font-body); font-weight: 800; letter-spacing: 0.18em; font-size: 12px; color: var(--gold-light); text-shadow: 0 1px 8px rgba(0,0,0,0.6); }
+#mb-splash .flags { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 280px; margin-top: 8px; }
+#mb-splash .flags img { height: 16px; width: auto; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.55); }
+#mb-splash .dots { display: flex; gap: 6px; margin-top: 12px; }
+#mb-splash .dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: mb-splash-pulse 1s ease-out infinite; }
+#mb-splash .dots span:nth-child(2) { animation-delay: .15s; }
+#mb-splash .dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes mb-splash-pulse { 0%,100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
 </style>
 </head>
 <body>
+<!-- Splash propio: estadio + mascotas + banderas (reemplaza el blanco del splash nativo) -->
+<div id="mb-splash">
+  <div class="in">
+    <img class="logo" src="icon-512.png" alt="" />
+    <div class="ttl">MundialBet <span>Club</span></div>
+    <div class="sub">MUNDIAL 2026</div>
+    <div class="flags">
+      <img src="https://flagcdn.com/h40/mx.png" alt="" /><img src="https://flagcdn.com/h40/ca.png" alt="" /><img src="https://flagcdn.com/h40/us.png" alt="" /><img src="https://flagcdn.com/h40/ar.png" alt="" /><img src="https://flagcdn.com/h40/br.png" alt="" /><img src="https://flagcdn.com/h40/es.png" alt="" /><img src="https://flagcdn.com/h40/fr.png" alt="" /><img src="https://flagcdn.com/h40/de.png" alt="" /><img src="https://flagcdn.com/h40/gb-eng.png" alt="" /><img src="https://flagcdn.com/h40/it.png" alt="" /><img src="https://flagcdn.com/h40/pt.png" alt="" /><img src="https://flagcdn.com/h40/nl.png" alt="" />
+    </div>
+    <div class="dots"><span></span><span></span><span></span></div>
+  </div>
+</div>
+<script>
+  // Respaldo: si algo falla, oculta el splash igual a los 5 s.
+  window.__mbHideSplash = function () {
+    var s = document.getElementById('mb-splash');
+    if (!s) return;
+    s.classList.add('mb-hide');
+    setTimeout(function () { if (s && s.parentNode) s.parentNode.removeChild(s); }, 600);
+  };
+  setTimeout(window.__mbHideSplash, 5000);
+</script>
 <div id="stage"></div>
 
 <!-- Captador del prompt de instalación PWA (lo usa el botón del sidebar en escritorio) -->
@@ -217,6 +263,8 @@ function Root() {
   return <Cmp />;
 }
 ReactDOM.createRoot(document.getElementById('stage')).render(<Root />);
+// La app ya montó: desvanece el splash (deja un instante para que pinte).
+requestAnimationFrame(function () { setTimeout(window.__mbHideSplash, 500); });
 </script>
 
 <!-- Banner de instalación en móvil (PWA + APK secundario) -->
