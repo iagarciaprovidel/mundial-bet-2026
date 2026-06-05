@@ -48,7 +48,10 @@
   window.MBFirebase = {
     ready: true,
     onAuth(cb) {
-      return auth.onAuthStateChanged(async (u) => { if (u) await ensureProfile(u); cb(u); });
+      return auth.onAuthStateChanged(async (u) => {
+        if (u) { try { await ensureProfile(u); } catch (e) { console.warn('[MundialBet] perfil no guardado:', e && e.message); } }
+        cb(u);
+      });
     },
     signInGoogle() {
       return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
