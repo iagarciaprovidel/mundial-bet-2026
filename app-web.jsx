@@ -241,20 +241,10 @@ function PlayerRow({ p, starter }) {
     </div>
   );
 }
-function TeamStat({ label, value, tone }) {
-  return (
-    <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '10px 6px', textAlign: 'center' }}>
-      <div className="num" style={{ fontSize: 'var(--t-lg)', color: tone || 'var(--text)' }}>{value}</div>
-      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>{label}</div>
-    </div>
-  );
-}
-
 function TeamModal({ team, onClose }) {
   if (!team) return null;
   const code = teamCode(team);
-  const dg = team.gf - team.gc;
-  const qualifies = team.pos <= 2;
+  const standings = (window.MB.GROUP_STANDINGS && window.MB.GROUP_STANDINGS[team.group]) || [];
   const fmtKO = (iso) => new Date(iso).toLocaleString('es-CL', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const teamFixtures = ((window.MB.WC_FIXTURES) || [])
     .filter(m => m.home === team.name || m.away === team.name)
@@ -296,15 +286,45 @@ function TeamModal({ team, onClose }) {
           }}>✕</button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 9, marginBottom: 18 }}>
-          <TeamStat label="Puntos" value={team.pts} tone="var(--gold-light)" />
-          <TeamStat label="Jugados" value={team.j} />
-          <TeamStat label="Ganados" value={team.g} tone="var(--success)" />
-          <TeamStat label="Empates" value={team.e} />
-          <TeamStat label="Perdidos" value={team.p} tone="var(--danger)" />
-          <TeamStat label="G. favor" value={team.gf} />
-          <TeamStat label="G. contra" value={team.gc} />
-          <TeamStat label="Dif." value={(dg > 0 ? '+' : '') + dg} tone={dg >= 0 ? 'var(--success)' : 'var(--danger)'} />
+        <div style={{ marginBottom: 18 }}>
+          <SectionHead title={`Tabla · Grupo ${team.group}`} />
+          <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '10px 6px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '18px 1fr 22px 18px 18px 18px 30px 30px', gap: 5, alignItems: 'center', padding: '0 6px 7px', borderBottom: '1px solid var(--border)', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700 }}>
+              <span style={{ textAlign: 'center' }}>#</span>
+              <span>Equipo</span>
+              <span style={{ textAlign: 'center' }}>PJ</span>
+              <span style={{ textAlign: 'center' }}>G</span>
+              <span style={{ textAlign: 'center' }}>E</span>
+              <span style={{ textAlign: 'center' }}>P</span>
+              <span style={{ textAlign: 'center' }}>DG</span>
+              <span style={{ textAlign: 'center' }}>Pts</span>
+            </div>
+            {standings.map(r => {
+              const isMe = r.name === team.name;
+              const d = r.gf - r.gc;
+              return (
+                <div key={r.name} style={{
+                  display: 'grid', gridTemplateColumns: '18px 1fr 22px 18px 18px 18px 30px 30px', gap: 5, alignItems: 'center', padding: '7px 6px',
+                  borderRadius: 'var(--r-sm)', marginTop: 2,
+                  background: isMe ? 'rgba(212,175,55,0.16)' : 'transparent',
+                  border: isMe ? '1px solid rgba(212,175,55,0.55)' : '1px solid transparent',
+                }}>
+                  <span style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', fontWeight: 700, color: r.pos <= 2 ? 'var(--success)' : 'var(--muted-2)' }}>{r.pos}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                    <img src={`https://flagcdn.com/h20/${r.code || ''}.png`} alt="" style={{ height: 13, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
+                    <span style={{ fontSize: 'var(--t-2xs)', fontWeight: isMe ? 800 : 600, color: isMe ? 'var(--gold-light)' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</span>
+                  </span>
+                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.j}</span>
+                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.g}</span>
+                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.e}</span>
+                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.p}</span>
+                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: d >= 0 ? 'var(--success)' : 'var(--danger)' }}>{(d > 0 ? '+' : '') + d}</span>
+                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>{r.pts}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 6, paddingLeft: 2 }}>Los 2 primeros avanzan de fase.</div>
         </div>
 
         <SectionHead title="Partidos en el grupo" />
