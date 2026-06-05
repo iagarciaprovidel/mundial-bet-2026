@@ -38,7 +38,7 @@ function Onboarding({ onFinish }) {
           {['us', 'mx', 'ca'].map(c => (
             <img key={c} src={`https://flagcdn.com/h20/${c}.png`} alt="" style={{ height: 13, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }} />
           ))}
-          <span className="eyebrow" style={{ color: 'var(--gold-light)', marginLeft: 3 }}>MUNDIAL 2026</span>
+          <span className="eyebrow" style={{ color: 'var(--gold-light)', marginLeft: 3, textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>MUNDIAL 2026</span>
         </div>
       </div>
 
@@ -52,8 +52,8 @@ function Onboarding({ onFinish }) {
             <MascotAvatar mascot={cur.mascot} size={140} glow jersey />
           </div>
         </div>
-        <h1 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 12px', color: 'var(--text)', maxWidth: 300, textWrap: 'balance' }}>{cur.title}</h1>
-        <p style={{ fontSize: 'var(--t-md)', color: 'var(--muted)', lineHeight: 1.5, maxWidth: 290, margin: 0 }}>{cur.body}</p>
+        <h1 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 12px', color: cur.accent, maxWidth: 300, textWrap: 'balance', textShadow: '0 1px 3px rgba(0,0,0,0.92), 0 2px 16px rgba(0,0,0,0.55)' }}>{cur.title}</h1>
+        <p style={{ fontSize: 'var(--t-md)', color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, maxWidth: 290, margin: 0, textShadow: '0 1px 10px rgba(0,0,0,0.65)' }}>{cur.body}</p>
 
         {step === 2 && (
           <div style={{ display: 'flex', gap: 10, marginTop: 26 }}>
@@ -93,7 +93,7 @@ function Onboarding({ onFinish }) {
           }}>Continuar</button>
         : <div style={{ position: 'relative', zIndex: 1 }}><GoldButton onClick={() => onFinish(chosen)}>¡Empezar a jugar!</GoldButton></div>}
       <button onClick={() => onFinish('zayu')} style={{
-        background: 'none', border: 'none', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', marginTop: 12, cursor: 'pointer', fontFamily: 'var(--font-body)', position: 'relative', zIndex: 1,
+        background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', fontSize: 'var(--t-2xs)', marginTop: 12, cursor: 'pointer', fontFamily: 'var(--font-body)', position: 'relative', zIndex: 1, textShadow: '0 1px 8px rgba(0,0,0,0.6)',
       }}>Saltar introducción</button>
     </div>
   );

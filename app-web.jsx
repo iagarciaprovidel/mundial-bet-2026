@@ -135,7 +135,14 @@ function FlagTicker({ onSelect, onGroup }) {
     setHov({ team, x: r.left + r.width / 2, y: r.bottom });
   };
   const scheduleClose = () => { cancelClose(); timer.current = setTimeout(() => setHov(null), 180); };
-  const nPlayers = (name) => ((window.MB.PLAYERS && window.MB.PLAYERS[name]) || []).length;
+  // Próximo partido del equipo (el más cercano a futuro; si no, el primero del fixture)
+  const nextMatch = (name) => {
+    const fx = (window.MB.WC_FIXTURES) || [];
+    const mine = fx.filter(m => m.home === name || m.away === name)
+      .sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
+    const now = Date.now();
+    return mine.find(m => new Date(m.kickoff).getTime() > now) || mine[0] || null;
+  };
 
   return (
     <div className="mb-ticker-wrap" style={{
@@ -157,12 +164,14 @@ function FlagTicker({ onSelect, onGroup }) {
       </div>
 
       {hov && ReactDOM.createPortal(
-        <div onMouseEnter={cancelClose} onMouseLeave={scheduleClose} style={{
-          position: 'fixed', left: hov.x, top: hov.y + 7, transform: 'translateX(-50%)', zIndex: 150, width: 210,
+        <div onMouseEnter={cancelClose} onMouseLeave={scheduleClose}
+          onClick={() => { const team = hov.team; setHov(null); onSelect(team); }}
+          title={`Ver ficha de ${hov.team.name}`} className="mb-press" style={{
+          position: 'fixed', left: hov.x, top: hov.y + 7, transform: 'translateX(-50%)', zIndex: 150, width: 220, cursor: 'pointer',
           background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-md)',
           padding: '12px 14px', boxShadow: 'var(--sh-3)', animation: 'mb-fade-up var(--dur-fast) var(--ease-out)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 7 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 9 }}>
             <img src={`https://flagcdn.com/h40/${teamCode(hov.team)}.png`} alt=""
               style={{ height: 20, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }} />
             <div style={{ minWidth: 0 }}>
@@ -176,25 +185,36 @@ function FlagTicker({ onSelect, onGroup }) {
               )}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 11 }}>
-            {hov.team.pos <= 2
-              ? <Chip tone="green" icon={<span>✓</span>}>Clasifica</Chip>
-              : <Chip tone="neutral">Eliminado</Chip>}
-            <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Grupo {hov.team.group} · #{hov.team.pos} · {hov.team.pts} pts</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+            {hov.team.j > 0
+              ? (hov.team.pos <= 2
+                ? <Chip tone="green" icon={<span>✓</span>}>Clasifica</Chip>
+                : <Chip tone="neutral">Eliminado</Chip>)
+              : <Chip tone="blue">Fase de grupos</Chip>}
+            <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Grupo {hov.team.group} · #{hov.team.pos}{hov.team.j > 0 ? ` · ${hov.team.pts} pts` : ''}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            <button onClick={() => { const team = hov.team; setHov(null); onGroup(team.group); }} className="mb-press" style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '8px',
-              borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)',
-              color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)',
-            }}>🌍 Ver Grupo {hov.team.group}</button>
-            <button onClick={() => { const team = hov.team; setHov(null); onSelect(team); }} className="mb-press" style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '8px',
-              borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer',
-              background: 'linear-gradient(135deg, #E6C04A, #C99B1F)', color: '#1A1206',
-              fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)',
-            }}>👥 Ver jugadores ({nPlayers(hov.team.name)})</button>
-          </div>
+          {(() => {
+            const nm = nextMatch(hov.team.name);
+            if (!nm) return null;
+            const home = nm.home === hov.team.name;
+            const rivalName = home ? nm.away : nm.home;
+            const rivalCode = home ? nm.awayCode : nm.homeCode;
+            const d = new Date(nm.kickoff);
+            const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
+            const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            return (
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
+                <div style={{ fontSize: 9, color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Próximo partido</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                  <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>{home ? 'vs' : '@'}</span>
+                  <img src={`https://flagcdn.com/h20/${rivalCode}.png`} alt="" style={{ height: 13, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.4)' }} />
+                  <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rivalName}</span>
+                </div>
+                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', textTransform: 'capitalize' }}>📅 {fecha} · {hora}</div>
+                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {nm.stadium}</div>
+              </div>
+            );
+          })()}
         </div>,
         document.body
       )}
