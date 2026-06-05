@@ -61,6 +61,7 @@ function Header({ me, accent, role, onAdmin }) {
           </span>
         </div>
         <CoinBadge amount={me.coins} />
+        {window.MB_LoginButton ? React.createElement(window.MB_LoginButton, { compact: true }) : null}
         {role === 'Admin / Tesorero' && (
           <button onClick={onAdmin} className="mb-press" style={{
             width: 38, height: 38, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--info-bg)',

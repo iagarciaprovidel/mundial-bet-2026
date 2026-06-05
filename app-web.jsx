@@ -375,8 +375,13 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
         </div>
       </button>
 
+      {/* Login con Google */}
+      <div style={{ marginTop: 10 }}>
+        {window.MB_LoginButton ? React.createElement(window.MB_LoginButton, {}) : null}
+      </div>
+
       {/* CTA: instalar app + descargar APK */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
         {installable && (
           <button onClick={() => window.__triggerInstall && window.__triggerInstall()} className="mb-press" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px',
