@@ -1106,6 +1106,16 @@ function AppWeb() {
   const accent = t.accent || '#4A90E2';
   useEffectW(() => { document.documentElement.style.setProperty('--accent', accent); }, [accent]);
 
+  // Puente: abrir la ficha de una selección tocada en el splash
+  useEffectW(() => {
+    window.__mbOpenTeamByName = (name) => {
+      const found = (window.MB_ALL_TEAMS || []).find(x => x.name === name);
+      if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(); }
+    };
+    if (window.__mbPendingTeam) window.__mbOpenTeamByName(window.__mbPendingTeam);
+    return () => { window.__mbOpenTeamByName = null; };
+  }, []);
+
   const goTab = (id) => { setTab(id); if (mainRef.current) mainRef.current.scrollTop = 0; };
 
   if (closeScreen) {

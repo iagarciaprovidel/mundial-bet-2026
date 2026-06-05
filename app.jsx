@@ -158,6 +158,17 @@ function App() {
     root.dataset.anim = t.anim;
   }, [t.anim]);
 
+  // Puente: abrir la ficha de una selección tocada en el splash
+  useEffectA(() => {
+    window.__mbOpenTeamByName = (name) => {
+      const list = window.MB_ALL_TEAMS || [];
+      const found = list.find(x => x.name === name);
+      if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(); }
+    };
+    if (window.__mbPendingTeam) window.__mbOpenTeamByName(window.__mbPendingTeam);
+    return () => { window.__mbOpenTeamByName = null; };
+  }, []);
+
   // loaders por sección (primera visita)
   const LOAD = { partidos: ['zayu', 'Cargando partidos'], ranking: ['clutch', 'Cargando ranking'], quiniela: ['maple', 'Cargando quiniela'], liga: ['clutch', 'Cargando liga'] };
   const goTab = (id) => {

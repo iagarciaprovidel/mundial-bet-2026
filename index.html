@@ -229,18 +229,30 @@ window.addEventListener('appinstalled', function () {
 <script src="data.js"></script>
 <script src="players.js"></script>
 <script src="wc2026.js"></script>
-<!-- Llena el splash con las banderas de las 48 selecciones clasificadas -->
+<!-- Llena el splash con las banderas de las 48 selecciones (clickeables -> ficha) -->
 <script>
 (function () {
   try {
     var c = document.querySelector('#mb-splash .flags');
     var G = window.MB_WC && window.MB_WC.GROUPS;
     if (!c || !G) return;
-    var html = '';
+    c.innerHTML = '';
     Object.keys(G).forEach(function (k) {
-      G[k].forEach(function (t) { html += '<img src="https://flagcdn.com/h40/' + t[1] + '.png" alt="" loading="eager" />'; });
+      G[k].forEach(function (t) {
+        var name = t[0], code = t[1];
+        var img = document.createElement('img');
+        img.src = 'https://flagcdn.com/h40/' + code + '.png';
+        img.alt = name; img.title = name; img.style.cursor = 'pointer';
+        img.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          window.__mbPendingTeam = name;
+          img.style.outline = '2px solid #F0CE5A';
+          img.style.transform = 'scale(1.25)';
+          if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); // app ya montada
+        });
+        c.appendChild(img);
+      });
     });
-    if (html) c.innerHTML = html;
   } catch (e) {}
 })();
 </script>
