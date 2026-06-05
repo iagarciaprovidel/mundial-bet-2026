@@ -127,7 +127,7 @@ function MobileFlagTicker({ onSelect }) {
           <button key={i} onClick={() => onSelect(tm)} title={tm.name} style={{
             background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0,
           }}>
-            <img src={`https://flagcdn.com/h40/${toCode(tm.flag)}.png`} alt={tm.name}
+            <img src={`https://flagcdn.com/h40/${tm.code || toCode(tm.flag)}.png`} alt={tm.name}
               style={{ height: 20, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
           </button>
         ))}

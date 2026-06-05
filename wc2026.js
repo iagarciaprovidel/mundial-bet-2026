@@ -143,5 +143,79 @@
     { stage: 'FINAL', fechas: '19 jul', partidos: 1, sedes: 'MetLife Stadium, Nueva Jersey' },
   ];
 
-  window.MB_WC = { GROUPS, FIXTURES, KNOCKOUTS, STADIUM };
+  // — Entrenadores por selección (convocatorias 2025-2026) —
+  const COACHES = {
+    'México': 'Javier Aguirre', 'Sudáfrica': 'Hugo Broos', 'Corea del Sur': 'Hong Myung-bo', 'Chequia': 'Ivan Hašek',
+    'Canadá': 'Jesse Marsch', 'Bosnia y Herzegovina': 'Sergej Barbarez', 'Catar': 'Julen Lopetegui', 'Suiza': 'Murat Yakin',
+    'Brasil': 'Carlo Ancelotti', 'Marruecos': 'Mohamed Ouahbi', 'Haití': 'Sébastien Migné', 'Escocia': 'Steve Clarke',
+    'Estados Unidos': 'Mauricio Pochettino', 'Paraguay': 'Gustavo Alfaro', 'Australia': 'Tony Popovic', 'Türkiye': 'Vincenzo Montella',
+    'Alemania': 'Julian Nagelsmann', 'Curazao': 'Dick Advocaat', 'Costa de Marfil': 'Emerse Faé', 'Ecuador': 'Sebastián Beccacece',
+    'Países Bajos': 'Ronald Koeman', 'Japón': 'Hajime Moriyasu', 'Suecia': 'Jon Dahl Tomasson', 'Túnez': 'Sabri Lamouchi',
+    'Bélgica': 'Rudi García', 'Egipto': 'Hossam Hassan', 'Irán': 'Amir Ghalenoei', 'Nueva Zelanda': 'Darren Bazeley',
+    'España': 'Luis de la Fuente', 'Cabo Verde': 'Pedro "Bubista" Brito', 'Arabia Saudita': 'Georgios Donis', 'Uruguay': 'Marcelo Bielsa',
+    'Francia': 'Didier Deschamps', 'Senegal': 'Pape Thiaw', 'Irak': 'Graham Arnold', 'Noruega': 'Ståle Solbakken',
+    'Argentina': 'Lionel Scaloni', 'Argelia': 'Vladimir Petković', 'Austria': 'Ralf Rangnick', 'Jordania': 'Jamal Sellami',
+    'Portugal': 'Roberto Martínez', 'Congo RD': 'Sébastien Desabre', 'Uzbekistán': 'Timur Kapadze', 'Colombia': 'Néstor Lorenzo',
+    'Inglaterra': 'Thomas Tuchel', 'Croacia': 'Zlatko Dalić', 'Ghana': 'Otto Addo', 'Panamá': 'Thomas Christiansen',
+  };
+
+  // — Árbitros designados (52) con nacionalidad —
+  const R = (name, country, code, conf) => ({ name, country, code, conf });
+  const REFEREES = [
+    R('Espen Eskås', 'Noruega', 'no', 'UEFA'), R('Alejandro Hernández', 'España', 'es', 'UEFA'),
+    R('István Kovács', 'Rumania', 'ro', 'UEFA'), R('François Letexier', 'Francia', 'fr', 'UEFA'),
+    R('Danny Makkelie', 'Países Bajos', 'nl', 'UEFA'), R('Szymon Marciniak', 'Polonia', 'pl', 'UEFA'),
+    R('Maurizio Mariani', 'Italia', 'it', 'UEFA'), R('Glenn Nyberg', 'Suecia', 'se', 'UEFA'),
+    R('Michael Oliver', 'Inglaterra', 'gb-eng', 'UEFA'), R('João Pinheiro', 'Portugal', 'pt', 'UEFA'),
+    R('Sandro Schärer', 'Suiza', 'ch', 'UEFA'), R('Anthony Taylor', 'Inglaterra', 'gb-eng', 'UEFA'),
+    R('Clément Turpin', 'Francia', 'fr', 'UEFA'), R('Slavko Vinčić', 'Eslovenia', 'si', 'UEFA'),
+    R('Felix Zwayer', 'Alemania', 'de', 'UEFA'),
+    R('Ramon Abatti', 'Brasil', 'br', 'CONMEBOL'), R('Juan Benítez', 'Paraguay', 'py', 'CONMEBOL'),
+    R('Raphael Claus', 'Brasil', 'br', 'CONMEBOL'), R('Yael Falcón Pérez', 'Argentina', 'ar', 'CONMEBOL'),
+    R('Cristián Garay', 'Chile', 'cl', 'CONMEBOL'), R('Darío Herrera', 'Argentina', 'ar', 'CONMEBOL'),
+    R('Kevin Ortega', 'Perú', 'pe', 'CONMEBOL'), R('Andrés Rojas', 'Colombia', 'co', 'CONMEBOL'),
+    R('Wilton Sampaio', 'Brasil', 'br', 'CONMEBOL'), R('Gustavo Tejera', 'Uruguay', 'uy', 'CONMEBOL'),
+    R('Facundo Tello', 'Argentina', 'ar', 'CONMEBOL'), R('Jesús Valenzuela', 'Venezuela', 've', 'CONMEBOL'),
+    R('Iván Barton', 'El Salvador', 'sv', 'CONCACAF'), R('Juan Calderón', 'Costa Rica', 'cr', 'CONCACAF'),
+    R('Ismail Elfath', 'Estados Unidos', 'us', 'CONCACAF'), R('Oshane Nation', 'Jamaica', 'jm', 'CONCACAF'),
+    R('Drew Fischer', 'Canadá', 'ca', 'CONCACAF'), R('Katia Itzel García', 'México', 'mx', 'CONCACAF'),
+    R('Saíd Martínez', 'Honduras', 'hn', 'CONCACAF'), R('Tori Penso', 'Estados Unidos', 'us', 'CONCACAF'),
+    R('César Arturo Ramos', 'México', 'mx', 'CONCACAF'),
+    R('Omar Artan', 'Somalia', 'so', 'CAF'), R('Pierre Atcho', 'Gabón', 'ga', 'CAF'),
+    R('Dahane Beida', 'Mauritania', 'mr', 'CAF'), R('Mustapha Ghorbal', 'Argelia', 'dz', 'CAF'),
+    R('Jalal Jayed', 'Marruecos', 'ma', 'CAF'), R('Amin Omar', 'Egipto', 'eg', 'CAF'),
+    R('Abongile Tom', 'Sudáfrica', 'za', 'CAF'), R('Zakhele Siwela', 'Sudáfrica', 'za', 'CAF'),
+    R('Omar Al Ali', 'Emiratos Árabes', 'ae', 'AFC'), R('Abdulrahman Al-Jassim', 'Catar', 'qa', 'AFC'),
+    R('Khalid Al-Turais', 'Arabia Saudita', 'sa', 'AFC'), R('Alireza Faghani', 'Australia', 'au', 'AFC'),
+    R('Ma Ning', 'China', 'cn', 'AFC'), R('Adham Makhadmeh', 'Jordania', 'jo', 'AFC'),
+    R('Ilgiz Tantashev', 'Uzbekistán', 'uz', 'AFC'), R('Yusuke Araki', 'Japón', 'jp', 'AFC'),
+    R('Campbell-Kirk Kawana-Waugh', 'Nueva Zelanda', 'nz', 'OFC'),
+  ];
+
+  // — Construye GROUP_STANDINGS real (0 stats; torneo no iniciado) y lo
+  //   inyecta en window.MB para que TODA la app muestre los grupos reales —
+  function codeToEmoji(code) {
+    if (code === 'gb-sct') return '🏴\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}';
+    if (code === 'gb-eng') return '🏴\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}';
+    const A = 0x1F1E6;
+    return String.fromCodePoint(A + code.charCodeAt(0) - 97, A + code.charCodeAt(1) - 97);
+  }
+  const STANDINGS = {};
+  Object.keys(GROUPS).forEach(letter => {
+    STANDINGS[letter] = GROUPS[letter].map(([name, code], i) => ({
+      pos: i + 1, name, code, flag: codeToEmoji(code), coach: COACHES[name] || '',
+      j: 0, g: 0, e: 0, p: 0, pts: 0, gf: 0, gc: 0,
+    }));
+  });
+
+  window.MB_WC = { GROUPS, FIXTURES, KNOCKOUTS, STADIUM, COACHES, REFEREES, STANDINGS };
+
+  // Inyección en el modelo de la app (reemplaza datos mock de grupos)
+  if (window.MB) {
+    window.MB.GROUP_STANDINGS = STANDINGS;
+    window.MB.REFEREES = REFEREES;
+    window.MB.COACHES = COACHES;
+    window.MB.WC_FIXTURES = FIXTURES;
+    window.MB.WC_KNOCKOUTS = KNOCKOUTS;
+  }
 })();
