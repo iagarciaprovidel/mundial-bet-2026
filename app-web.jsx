@@ -106,10 +106,21 @@ const ALL_TEAMS = (function () {
   document.head.appendChild(s);
 })();
 
-// Ticker de banderas en movimiento, clickeable
-function FlagTicker({ onSelect }) {
+// Ticker de banderas en movimiento, clickeable, con popover al hover
+function FlagTicker({ onSelect, onGroup }) {
   const items = ALL_TEAMS.concat(ALL_TEAMS); // duplicado para bucle continuo
   const mask = 'linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent)';
+  const [hov, setHov] = useStateW(null);
+  const timer = useRefW(null);
+  const cancelClose = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
+  const open = (team, e) => {
+    cancelClose();
+    const r = e.currentTarget.getBoundingClientRect();
+    setHov({ team, x: r.left + r.width / 2, y: r.bottom });
+  };
+  const scheduleClose = () => { cancelClose(); timer.current = setTimeout(() => setHov(null), 180); };
+  const nPlayers = (name) => ((window.MB.PLAYERS && window.MB.PLAYERS[name]) || []).length;
+
   return (
     <div className="mb-ticker-wrap" style={{
       flex: 1, minWidth: 0, alignSelf: 'stretch', overflow: 'hidden',
@@ -121,14 +132,45 @@ function FlagTicker({ onSelect }) {
         animation: 'mb-marquee 55s linear infinite',
       }}>
         {items.map((t, i) => (
-          <button key={i} onClick={() => onSelect(t)} className="mb-flagbtn" title={t.name} style={{
-            background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0,
-          }}>
+          <button key={i} className="mb-flagbtn" title={t.name}
+            onMouseEnter={(e) => open(t, e)} onMouseLeave={scheduleClose} onClick={() => onSelect(t)}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0 }}>
             <img src={`https://flagcdn.com/h40/${flagToCode(t.flag)}.png`} alt={t.name}
               style={{ height: 22, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
           </button>
         ))}
       </div>
+
+      {hov && ReactDOM.createPortal(
+        <div onMouseEnter={cancelClose} onMouseLeave={scheduleClose} style={{
+          position: 'fixed', left: hov.x, top: hov.y + 7, transform: 'translateX(-50%)', zIndex: 150, width: 210,
+          background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-md)',
+          padding: '12px 14px', boxShadow: 'var(--sh-3)', animation: 'mb-fade-up var(--dur-fast) var(--ease-out)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 7 }}>
+            <img src={`https://flagcdn.com/h40/${flagToCode(hov.team.flag)}.png`} alt=""
+              style={{ height: 20, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }} />
+            <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)' }}>{hov.team.name}</span>
+          </div>
+          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginBottom: 11 }}>
+            Grupo {hov.team.group} · #{hov.team.pos} · {hov.team.pts} pts
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <button onClick={() => { const team = hov.team; setHov(null); onGroup(team.group); }} className="mb-press" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '8px',
+              borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)',
+              color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)',
+            }}>🌍 Ver Grupo {hov.team.group}</button>
+            <button onClick={() => { const team = hov.team; setHov(null); onSelect(team); }} className="mb-press" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '8px',
+              borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg, #E6C04A, #C99B1F)', color: '#1A1206',
+              fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)',
+            }}>👥 Ver jugadores ({nPlayers(hov.team.name)})</button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
@@ -150,6 +192,13 @@ function TeamModal({ team, onClose }) {
   const qualifies = team.pos <= 2;
   const played = Dw.PLAYED.filter(m => m.home === team.name || m.away === team.name);
   const upcoming = Dw.UPCOMING.filter(m => (m.home === team.name || m.away === team.name));
+  const squad = (window.MB.PLAYERS && window.MB.PLAYERS[team.name]) || [];
+  const POS_TONE = {
+    POR: ['var(--gold-light)', 'rgba(212,175,55,0.14)'],
+    DEF: ['var(--info)', 'rgba(74,144,226,0.14)'],
+    MED: ['var(--success)', 'rgba(0,200,90,0.14)'],
+    DEL: ['var(--danger)', 'rgba(232,64,64,0.14)'],
+  };
   return (
     <div onClick={onClose} style={{
       position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(6,8,15,0.72)',
@@ -208,6 +257,26 @@ function TeamModal({ team, onClose }) {
             <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{m.when}</span>
           </div>
         ))}
+
+        <div style={{ marginTop: 18 }}>
+          <SectionHead title={`Jugadores convocados (${squad.length})`} />
+        </div>
+        {squad.length === 0 ? (
+          <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Plantilla no disponible.</div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px' }}>
+            {squad.map((p, i) => {
+              const tone = POS_TONE[p.pos] || ['var(--muted)', 'rgba(255,255,255,0.06)'];
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span className="num" style={{ width: 22, textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{p.n}</span>
+                  <span style={{ flex: 1, fontSize: 'var(--t-sm)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: tone[0], background: tone[1], padding: '2px 6px', borderRadius: 'var(--r-pill)', flexShrink: 0 }}>{p.pos}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -314,7 +383,7 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
 }
 
 // ── Topbar ────────────────────────────────────────────────
-function Topbar({ tab, me, onFlagClick }) {
+function Topbar({ tab, me, onFlagClick, onGroup }) {
   return (
     <header style={{
       flexShrink: 0, height: 68, display: 'flex', alignItems: 'center', gap: 16,
@@ -324,7 +393,7 @@ function Topbar({ tab, me, onFlagClick }) {
         <h1 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{TITLES[tab] || ''}</h1>
         <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)', whiteSpace: 'nowrap' }}>{Dw.LEAGUE.name}</span>
       </div>
-      <FlagTicker onSelect={onFlagClick} />
+      <FlagTicker onSelect={onFlagClick} onGroup={onGroup} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <Chip tone="gold" icon={<span>🏆</span>}>Bote ${Dw.fmt(Dw.LEAGUE.pot)}</Chip>
         <CoinBadge amount={me.coins} />
@@ -876,7 +945,7 @@ function AppWeb() {
     <div style={{ position: 'fixed', inset: 0, display: 'flex', overflow: 'hidden', background: '#0c2114' }}>
       <Sidebar tab={tab} onTab={goTab} me={me} accent={accent} role={t.role} onAdmin={() => goTab('admin')} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Topbar tab={tab} me={me} onFlagClick={setTeam} />
+        <Topbar tab={tab} me={me} onFlagClick={setTeam} onGroup={() => goTab('equipos')} />
         <main ref={mainRef} className="mb-main-pitch" style={{ flex: 1, overflow: 'auto', padding: '24px 28px 60px' }}>
           <div style={{ maxWidth: isCentered ? 760 : 1180, margin: '0 auto' }}>
             {isCentered ? centered[tab] : desktop[tab]}
