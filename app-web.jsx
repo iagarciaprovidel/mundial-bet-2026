@@ -528,12 +528,17 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
   const _now = Date.now();
   const _fx = (window.MB.WC_FIXTURES) || [];
   const next = _fx.filter(m => new Date(m.kickoff).getTime() > _now).sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1))[0] || _fx[0];
+  const daysLeft = next ? Math.max(0, Math.ceil((new Date(next.kickoff).getTime() - _now) / 86400000)) : 0;
+  const hr = new Date().getHours();
+  const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
+  const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+  const firstName = ((authUser && authUser.displayName) ? authUser.displayName : me.name).split(' ')[0];
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.65fr) minmax(0,1fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
           <h2 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 2px' }}>
-            ¡Buenas noches, {me.name.split(' ')[0]}! <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>
+            {saludo} {firstName}! <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>
           </h2>
           <p style={{ margin: 0, color: 'var(--gold-light)', fontSize: 'var(--t-md)', fontWeight: 600 }}>Llevas {me.streak} aciertos seguidos ⚡</p>
         </div>
@@ -550,9 +555,12 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
           <Card glow="var(--sh-2)">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <Chip tone="blue">Grupo {next.group} · J{next.md}</Chip>
-              <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>
-                {new Date(next.kickoff).toLocaleString('es-CL', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {daysLeft > 0 && <Chip tone="gold" icon={<span>⏳</span>}>Faltan {daysLeft} días</Chip>}
+                <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>
+                  {new Date(next.kickoff).toLocaleString('es-CL', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, marginBottom: 14 }}>
               <div onClick={() => openTeam(next.home)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ficha de ${next.home}` : undefined} style={{ textAlign: 'center', flex: 1, cursor: onTeam ? 'pointer' : 'default' }}>

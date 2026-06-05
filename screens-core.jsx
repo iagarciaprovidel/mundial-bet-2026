@@ -147,133 +147,37 @@ function PrizePotCard({ animate = true }) {
   );
 }
 
-function UpcomingMatchCard({ match, index }) {
-  // Mapear países a mascotas
-  const mascotMap = {
-    'México': 'zayu',
-    'Canadá': 'maple',
-    'Estados Unidos': 'clutch',
-  };
-  const homeM = mascotMap[match.home];
-  const awayM = mascotMap[match.away];
-
-  // Información de mascotas para mostrar país
-  const mascotCountry = {
-    'zayu': 'México',
-    'maple': 'Canadá',
-    'clutch': 'EE.UU.',
-  };
-
+function NextMatchCard({ m, featured, daysLeft, onPredict }) {
+  const d = new Date(m.kickoff);
+  const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
+  const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  const Side = ({ name, code }) => (
+    <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
+      <img src={`https://flagcdn.com/h60/${code}.png`} alt="" style={{ height: 34, width: 'auto', borderRadius: 4, boxShadow: '0 1px 5px rgba(0,0,0,0.55)' }} />
+      <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+    </div>
+  );
   return (
     <Card style={{
-      padding: '14px',
-      background: index === 0 ? 'linear-gradient(135deg, rgba(46,139,192,0.15), rgba(0,212,102,0.08))' : 'var(--surface-1)',
-      borderColor: index === 0 ? 'rgba(46,139,192,0.4)' : 'var(--border)',
+      background: featured ? 'linear-gradient(150deg, rgba(46,139,192,0.22), rgba(11,17,13,0.96))' : 'rgba(11,17,13,0.94)',
+      borderColor: featured ? 'rgba(46,139,192,0.5)' : 'var(--border)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <Chip tone={index === 0 ? 'green' : 'blue'}>{match.group}</Chip>
-        <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700 }}>{match.when}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <Chip tone="blue">Grupo {m.group} · J{m.md}</Chip>
+        {featured && daysLeft > 0
+          ? <Chip tone="gold" icon={<span>⏳</span>}>Faltan {daysLeft} días</Chip>
+          : <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>}
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-        {/* Equipo Local */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 6 }}>{match.flagH}</div>
-          {homeM ? (
-            <div style={{ marginBottom: 6 }}>
-              <MascotAvatar mascot={homeM} size={36} />
-            </div>
-          ) : null}
-          <div style={{
-            fontWeight: 700,
-            fontSize: 'var(--t-sm)',
-            color: 'var(--text)',
-            lineHeight: 1.2,
-          }}>
-            {match.home}
-          </div>
-          {homeM && (
-            <div style={{
-              fontSize: 'var(--t-3xs)',
-              color: 'var(--muted-2)',
-              marginTop: 4,
-              fontWeight: 600,
-            }}>
-              {mascotCountry[homeM]}
-            </div>
-          )}
-        </div>
-
-        {/* Centro - Hora */}
-        <div style={{ textAlign: 'center', padding: '0 8px' }}>
-          <div style={{
-            fontSize: 'var(--t-3xs)',
-            color: 'var(--muted-2)',
-            marginBottom: 6,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
-            Cierra en
-          </div>
-          <CountdownTimer minutes={match.kickoffInMin} />
-          <div style={{
-            fontSize: 'var(--t-2xs)',
-            color: 'var(--muted)',
-            marginTop: 8,
-            fontWeight: 600,
-          }}>
-            🏟️
-          </div>
-          <div style={{
-            fontSize: 'var(--t-3xs)',
-            color: 'var(--muted)',
-            marginTop: 4,
-            lineHeight: 1.3,
-          }}>
-            {match.stadium}
-          </div>
-        </div>
-
-        {/* Equipo Visitante */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 6 }}>{match.flagA}</div>
-          {awayM ? (
-            <div style={{ marginBottom: 6 }}>
-              <MascotAvatar mascot={awayM} size={36} />
-            </div>
-          ) : null}
-          <div style={{
-            fontWeight: 700,
-            fontSize: 'var(--t-sm)',
-            color: 'var(--text)',
-            lineHeight: 1.2,
-          }}>
-            {match.away}
-          </div>
-          {awayM && (
-            <div style={{
-              fontSize: 'var(--t-3xs)',
-              color: 'var(--muted-2)',
-              marginTop: 4,
-              fontWeight: 600,
-            }}>
-              {mascotCountry[awayM]}
-            </div>
-          )}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <Side name={m.home} code={m.homeCode} />
+        <span style={{ fontSize: 'var(--t-sm)', color: 'var(--muted-2)', fontWeight: 700 }}>vs</span>
+        <Side name={m.away} code={m.awayCode} />
       </div>
-
-      {index === 0 && (
-        <>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <BetButton label={match.home} odd={match.odds.home} />
-            <BetButton label="Empate" odd={match.odds.draw} />
-            <BetButton label={match.away} odd={match.odds.away} />
-          </div>
-          <GoldButton onClick={() => {}}>Hacer pronóstico →</GoldButton>
-        </>
+      {featured && (
+        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', textAlign: 'center', fontWeight: 700, textTransform: 'capitalize', marginBottom: 4 }}>📅 {fecha} · {hora}</div>
       )}
+      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: featured ? 12 : 0 }}>📍 {m.stadium}</div>
+      {featured && <GoldButton onClick={onPredict}>Hacer pronóstico →</GoldButton>}
     </Card>
   );
 }
@@ -281,14 +185,22 @@ function UpcomingMatchCard({ match, index }) {
 function Dashboard({ user, onNav, onPredict }) {
   const me = user;
   const top3 = Dc.USERS.slice(0, 3);
-  const upcomingMatches = Dc.UPCOMING.slice(0, 3);
+  const _now = Date.now();
+  const _fx = ((window.MB.WC_FIXTURES) || []).slice().sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
+  const upcoming = _fx.filter(m => new Date(m.kickoff).getTime() > _now).slice(0, 3);
+  const fallback = upcoming.length ? upcoming : _fx.slice(0, 3);
+  const daysLeft = fallback[0] ? Math.max(0, Math.ceil((new Date(fallback[0].kickoff).getTime() - _now) / 86400000)) : 0;
+  const hr = new Date().getHours();
+  const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
+  const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+  const firstName = ((authUser && authUser.displayName) ? authUser.displayName : me.name).split(' ')[0];
 
   return (
     <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 18, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       {/* saludo */}
       <div>
         <h1 className="display" style={{ fontSize: 'var(--t-2xl)', margin: '4px 0 2px', color: 'var(--text)' }}>
-          ¡Buenas noches, {me.name.split(' ')[0]}! <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
+          {saludo} {firstName}! <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
         </h1>
         <p style={{ margin: 0, color: 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 600 }}>Llevas {me.streak} aciertos seguidos ⚡</p>
       </div>
@@ -307,8 +219,8 @@ function Dashboard({ user, onNav, onPredict }) {
       <div>
         <SectionHead title="Próximos partidos" action="Ver todos" onAction={() => onNav('partidos')} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {upcomingMatches.map((match, idx) => (
-            <UpcomingMatchCard key={match.id} match={match} index={idx} />
+          {fallback.map((m, idx) => (
+            <NextMatchCard key={m.id} m={m} featured={idx === 0} daysLeft={daysLeft} onPredict={onPredict} />
           ))}
         </div>
       </div>
