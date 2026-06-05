@@ -112,12 +112,13 @@ function FlagTicker({ onSelect }) {
   const mask = 'linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent)';
   return (
     <div className="mb-ticker-wrap" style={{
-      overflow: 'hidden', borderTop: '1px solid var(--border)',
-      background: 'rgba(6,12,8,0.55)', WebkitMaskImage: mask, maskImage: mask,
+      flex: 1, minWidth: 0, alignSelf: 'stretch', overflow: 'hidden',
+      display: 'flex', alignItems: 'center',
+      WebkitMaskImage: mask, maskImage: mask,
     }}>
       <div className="mb-ticker" style={{
         display: 'flex', alignItems: 'center', gap: 16, width: 'max-content',
-        padding: '7px 16px', animation: 'mb-marquee 55s linear infinite',
+        animation: 'mb-marquee 55s linear infinite',
       }}>
         {items.map((t, i) => (
           <button key={i} onClick={() => onSelect(t)} className="mb-flagbtn" title={t.name} style={{
@@ -237,7 +238,12 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
         <span style={{ fontSize: 24 }}>🏆</span>
         <div>
           <div className="display" style={{ fontSize: 'var(--t-lg)' }}>MundialBet<span style={{ color: accent }}> Club</span></div>
-          <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, letterSpacing: '0.12em' }}>USA · MEX · CAN · 2026</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+            {['us', 'mx', 'ca'].map(c => (
+              <img key={c} src={`https://flagcdn.com/h20/${c}.png`} alt="" style={{ height: 12, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }} />
+            ))}
+            <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, letterSpacing: '0.1em', marginLeft: 3 }}>MUNDIAL 2026</span>
+          </div>
         </div>
       </div>
 
@@ -310,19 +316,20 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
 // ── Topbar ────────────────────────────────────────────────
 function Topbar({ tab, me, onFlagClick }) {
   return (
-    <header style={{ flexShrink: 0, borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)' }}>
-      <div style={{ height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <h1 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{TITLES[tab] || ''}</h1>
-          <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)' }}>{Dw.LEAGUE.name}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Chip tone="gold" icon={<span>🏆</span>}>Bote ${Dw.fmt(Dw.LEAGUE.pot)}</Chip>
-          <CoinBadge amount={me.coins} />
-          <MascotAvatar mascot={me.mascot} size={38} />
-        </div>
+    <header style={{
+      flexShrink: 0, height: 68, display: 'flex', alignItems: 'center', gap: 16,
+      padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexShrink: 0 }}>
+        <h1 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{TITLES[tab] || ''}</h1>
+        <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)', whiteSpace: 'nowrap' }}>{Dw.LEAGUE.name}</span>
       </div>
       <FlagTicker onSelect={onFlagClick} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <Chip tone="gold" icon={<span>🏆</span>}>Bote ${Dw.fmt(Dw.LEAGUE.pot)}</Chip>
+        <CoinBadge amount={me.coins} />
+        <MascotAvatar mascot={me.mascot} size={38} />
+      </div>
     </header>
   );
 }
