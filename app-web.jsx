@@ -38,6 +38,37 @@ const TITLES = {
   quiniela: 'Quiniela anónima', admin: 'Panel Admin',
 };
 
+// Todas las banderas de los equipos del Mundial (tomadas de los grupos)
+const ALL_FLAGS = (function () {
+  const seen = {}, out = [];
+  Object.values(Dw.GROUP_STANDINGS).forEach(g => g.forEach(t => {
+    if (!seen[t.flag]) { seen[t.flag] = 1; out.push(t.flag); }
+  }));
+  return out;
+})();
+
+// Muro decorativo de banderas (fondo del topbar y del sidebar)
+function FlagWall({ vertical = false, size = 34, opacity = 0.1, repeat = 4 }) {
+  const flags = [];
+  for (let i = 0; i < repeat; i++) flags.push(...ALL_FLAGS);
+  const mask = vertical
+    ? 'linear-gradient(180deg, transparent, #000 14%, #000 86%, transparent)'
+    : 'linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)';
+  return (
+    <div aria-hidden="true" style={{
+      position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0,
+      display: 'flex', flexWrap: vertical ? 'wrap' : 'nowrap',
+      alignContent: 'flex-start', alignItems: vertical ? 'flex-start' : 'center',
+      gap: vertical ? 8 : 7, padding: vertical ? '14px 10px' : '0 10px',
+      opacity, fontSize: size, lineHeight: 1.15,
+      whiteSpace: vertical ? 'normal' : 'nowrap',
+      WebkitMaskImage: mask, maskImage: mask,
+    }}>
+      {flags.map((f, i) => <span key={i}>{f}</span>)}
+    </div>
+  );
+}
+
 // ── Sidebar ───────────────────────────────────────────────
 function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
   const [installable, setInstallable] = useStateW(!!window.__deferredPrompt);
@@ -50,9 +81,14 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
 
   return (
     <aside style={{
-      width: 248, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column',
-      background: 'rgba(8,15,10,0.92)', borderRight: '1px solid var(--border)', padding: '22px 16px',
+      width: 248, flexShrink: 0, height: '100%', position: 'relative', overflow: 'hidden',
+      background: 'rgba(8,15,10,0.92)', borderRight: '1px solid var(--border)',
     }}>
+      <FlagWall vertical size={30} opacity={0.08} repeat={6} />
+      <div style={{
+        position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column',
+        padding: '22px 16px',
+      }}>
       {/* logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '0 8px 4px' }}>
         <span style={{ fontSize: 24 }}>🏆</span>
@@ -123,6 +159,7 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
           fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)',
         }}>⬇️ Descargar APK (Android)</a>
       </div>
+      </div>
     </aside>
   );
 }
@@ -131,14 +168,16 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
 function Topbar({ tab, me }) {
   return (
     <header style={{
-      height: 68, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      height: 68, flexShrink: 0, position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 28px', borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+      <FlagWall size={42} opacity={0.14} repeat={3} />
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, position: 'relative', zIndex: 1 }}>
         <h1 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{TITLES[tab] || ''}</h1>
         <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)' }}>{Dw.LEAGUE.name}</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative', zIndex: 1 }}>
         <Chip tone="gold" icon={<span>🏆</span>}>Bote ${Dw.fmt(Dw.LEAGUE.pot)}</Chip>
         <CoinBadge amount={me.coins} />
         <MascotAvatar mascot={me.mascot} size={38} />
