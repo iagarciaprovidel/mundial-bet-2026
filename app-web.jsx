@@ -47,10 +47,21 @@ const ALL_FLAGS = (function () {
   return out;
 })();
 
-// Muro decorativo de banderas (fondo del topbar y del sidebar)
+// Convierte un emoji de bandera (2 indicadores regionales) a su código ISO ("br")
+function flagToCode(flag) {
+  const cps = Array.from(flag).map(c => c.codePointAt(0));
+  const A = 0x1F1E6;
+  if (cps.length < 2) return null;
+  const a = cps[0] - A, b = cps[1] - A;
+  if (a < 0 || a > 25 || b < 0 || b > 25) return null;
+  return String.fromCharCode(97 + a) + String.fromCharCode(97 + b);
+}
+const FLAG_CODES = ALL_FLAGS.map(flagToCode).filter(Boolean);
+
+// Muro decorativo de banderas (imágenes reales, no emojis) — fondo topbar/sidebar
 function FlagWall({ vertical = false, size = 34, opacity = 0.1, repeat = 4 }) {
-  const flags = [];
-  for (let i = 0; i < repeat; i++) flags.push(...ALL_FLAGS);
+  const codes = [];
+  for (let i = 0; i < repeat; i++) codes.push(...FLAG_CODES);
   const mask = vertical
     ? 'linear-gradient(180deg, transparent, #000 14%, #000 86%, transparent)'
     : 'linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)';
@@ -58,13 +69,16 @@ function FlagWall({ vertical = false, size = 34, opacity = 0.1, repeat = 4 }) {
     <div aria-hidden="true" style={{
       position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0,
       display: 'flex', flexWrap: vertical ? 'wrap' : 'nowrap',
-      alignContent: 'flex-start', alignItems: vertical ? 'flex-start' : 'center',
-      gap: vertical ? 8 : 7, padding: vertical ? '14px 10px' : '0 10px',
-      opacity, fontSize: size, lineHeight: 1.15,
-      whiteSpace: vertical ? 'normal' : 'nowrap',
+      alignContent: 'flex-start', alignItems: 'center',
+      gap: vertical ? 9 : 8, padding: vertical ? '16px 10px' : '0 10px',
+      opacity, whiteSpace: vertical ? 'normal' : 'nowrap',
       WebkitMaskImage: mask, maskImage: mask,
     }}>
-      {flags.map((f, i) => <span key={i}>{f}</span>)}
+      {codes.map((c, i) => (
+        <img key={i} src={`https://flagcdn.com/h60/${c}.png`} alt="" draggable="false" loading="lazy"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          style={{ height: Math.round(size * 0.66), width: 'auto', borderRadius: 3, display: 'block', flexShrink: 0 }} />
+      ))}
     </div>
   );
 }
