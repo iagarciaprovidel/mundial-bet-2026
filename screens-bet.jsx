@@ -165,6 +165,7 @@ function MobileFixtureCard({ m }) {
   const d = new Date(m.kickoff);
   const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
   const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  const openTeam = (name) => { if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
   return (
     <Card style={{ marginBottom: 12, padding: '12px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -172,12 +173,12 @@ function MobileFixtureCard({ m }) {
         <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+        <div onClick={() => openTeam(m.home)} className="mb-press" title={`Ver ${m.home}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, cursor: 'pointer' }}>
           <img src={`https://flagcdn.com/h40/${m.homeCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
           <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
         </div>
         <span style={{ color: 'var(--muted-2)', fontWeight: 700, padding: '0 8px' }}>vs</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+        <div onClick={() => openTeam(m.away)} className="mb-press" title={`Ver ${m.away}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, justifyContent: 'flex-end', cursor: 'pointer' }}>
           <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.away}</span>
           <img src={`https://flagcdn.com/h40/${m.awayCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
         </div>

@@ -153,7 +153,7 @@ function NextMatchCard({ m, featured, daysLeft, onPredict }) {
   const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
   const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
   const Side = ({ name, code }) => (
-    <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
+    <div onClick={() => { if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); }} className="mb-press" title={`Ver ${name}`} style={{ flex: 1, textAlign: 'center', minWidth: 0, cursor: 'pointer' }}>
       <img src={`https://flagcdn.com/h60/${code}.png`} alt="" style={{ height: 34, width: 'auto', borderRadius: 4, boxShadow: '0 1px 5px rgba(0,0,0,0.55)' }} />
       <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
     </div>

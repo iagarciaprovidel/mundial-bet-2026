@@ -244,7 +244,10 @@ function App() {
         )}
       </div>
       <TweaksUI t={t} setTweak={setTweak} setOnboard={setOnboard} setClose={setCloseScreen} />
-      {team && window.MB_TeamModal && React.createElement(window.MB_TeamModal, { team, onClose: () => setTeam(null) })}
+      {team && window.MB_TeamModal && ReactDOM.createPortal(
+        React.createElement(window.MB_TeamModal, { team, onClose: () => setTeam(null) }),
+        document.body
+      )}
     </IOSDevice>
   );
 }

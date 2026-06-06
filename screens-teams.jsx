@@ -10,10 +10,12 @@ const GROUP_COLORS = ['#4A90E2', '#00D466', '#FFB81C', '#F77F88', '#2E8BC0', '#9
   '#00C2A8', '#FF8A4A', '#E84393', '#5AD1FF', '#A0D911', '#FF6B6B'];
 
 function StandingRow({ team }) {
+  const open = () => { if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(team.name); };
   return (
-    <div style={{
+    <div onClick={open} className="mb-press" title={`Ver ${team.name}`} style={{
       display: 'grid', gridTemplateColumns: '20px 24px 1fr 26px 30px', gap: 8,
-      alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--border)',
+      alignItems: 'center', padding: '9px 4px', margin: '0 -4px', borderRadius: 'var(--r-sm)',
+      cursor: 'pointer', borderBottom: '1px solid var(--border)',
     }}>
       <div style={{ fontWeight: 700, color: 'var(--muted-2)', textAlign: 'center', fontSize: 'var(--t-2xs)' }}>{team.pos}</div>
       <img src={`https://flagcdn.com/h24/${team.code || ''}.png`} alt="" style={{ height: 15, width: 'auto', borderRadius: 2 }} />
