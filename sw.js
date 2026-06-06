@@ -3,7 +3,7 @@
    intenta traer la versión más nueva), con fallback a caché para que la
    app funcione sin conexión una vez visitada. */
 
-const CACHE = 'mundialbet-v9';
+const CACHE = 'mundialbet-v10';
 
 // App shell (rutas relativas al scope /mundial-bet-2026/)
 const SHELL = [
@@ -53,8 +53,16 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
+  // Para archivos PROPIOS pedimos a la red saltando el caché HTTP del navegador
+  // (cache: 'reload'), así siempre llega la última versión y no queda atrás.
+  let netRequest = request;
+  try {
+    const url = new URL(request.url);
+    if (url.origin === self.location.origin) netRequest = new Request(request, { cache: 'reload' });
+  } catch (e) {}
+
   event.respondWith(
-    fetch(request)
+    fetch(netRequest)
       .then((response) => {
         // Cachea copias de respuestas válidas (incluye opacas de CDN)
         const copy = response.clone();
