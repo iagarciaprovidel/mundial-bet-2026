@@ -114,7 +114,7 @@
     return (
       <React.Fragment>
         <button onClick={() => setOpen(true)} className="mb-press" title="Panel de admin (grupos)"
-          style={{ position: 'fixed', left: 14, bottom: 'calc(14px + env(safe-area-inset-bottom,0px))', zIndex: 900, display: 'flex', alignItems: 'center', gap: 7, padding: '10px 14px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.5)', background: 'rgba(13,20,15,0.92)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', boxShadow: '0 6px 20px rgba(0,0,0,0.5)' }}>
+          style={{ position: 'fixed', right: 16, bottom: 'calc(16px + env(safe-area-inset-bottom,0px))', zIndex: 950, display: 'flex', alignItems: 'center', gap: 7, padding: '11px 16px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.6)', background: 'rgba(13,20,15,0.95)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', boxShadow: '0 6px 22px rgba(0,0,0,0.55)' }}>
           🔐 Admin
         </button>
         {open && <AdminGroupsPanel onClose={() => setOpen(false)} />}
