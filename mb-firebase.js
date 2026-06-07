@@ -120,7 +120,7 @@
       return Promise.all([
         u.updateProfile({ displayName: name }).catch(function () {}),
         db.collection('users').doc(u.uid).set({ nombre: name }, { merge: true }),
-      ]);
+      ]).then(function (r) { try { window.dispatchEvent(new Event('mb-auth-refresh')); } catch (e) {} return r; });
     },
 
     // ── Grupos (solo admin debería escribir; las reglas lo refuerzan) ──

@@ -18,4 +18,5 @@ window.MB_FIREBASE_CONFIG = {
 // grupos y ver el panel. Agrega o cambia los que necesites (en minúsculas).
 window.MB_ADMIN_EMAILS = [
   "ia.garcia.providel@gmail.com",
+  "sgarciao@gmail.com",
 ];

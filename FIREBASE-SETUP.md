@@ -24,7 +24,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
       return request.auth != null &&
-        request.auth.token.email in ['ia.garcia.providel@gmail.com'];
+        request.auth.token.email in ['ia.garcia.providel@gmail.com', 'sgarciao@gmail.com'];
     }
     // Perfiles de usuario
     match /users/{uid} {

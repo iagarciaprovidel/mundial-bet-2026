@@ -9,12 +9,24 @@
 
   function useAuth() {
     const [user, setUser] = useState(window.MBFirebase ? window.MBFirebase.currentUser() : null);
+    const [, force] = useState(0);
     useEffect(() => {
       if (!window.MBFirebase) return;
       const unsub = window.MBFirebase.onAuth((u) => setUser(u));
-      return () => { if (typeof unsub === 'function') unsub(); };
+      const onRefresh = () => force((x) => x + 1); // re-render al cambiar el apodo
+      window.addEventListener('mb-auth-refresh', onRefresh);
+      return () => { if (typeof unsub === 'function') unsub(); window.removeEventListener('mb-auth-refresh', onRefresh); };
     }, []);
     return user;
+  }
+
+  function editMyName() {
+    const u = window.MBFirebase && window.MBFirebase.currentUser && window.MBFirebase.currentUser();
+    const cur = (u && u.displayName) || '';
+    const v = window.prompt('Tu nombre o apodo (como te verán los demás):', cur);
+    if (v != null && v.trim() && window.MBFirebase.setDisplayName) {
+      window.MBFirebase.setDisplayName(v.trim()).catch((e) => alert('No se pudo cambiar: ' + ((e && e.message) || e)));
+    }
   }
 
   function signInGoogle() {
@@ -118,6 +130,7 @@
               {group && <div style={{ fontSize: 9, color: 'var(--gold-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👥 {group}</div>}
             </div>
           )}
+          <button onClick={editMyName} className="mb-press" title="Cambiar mi nombre / apodo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold-light)', fontSize: 13, padding: '0 2px' }}>✏️</button>
           <button onClick={() => window.MBFirebase.signOut()} className="mb-press" title="Cerrar sesión" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 700, padding: compact ? '0 0 0 4px' : 0 }}>Salir</button>
         </div>
       );
