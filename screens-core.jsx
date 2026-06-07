@@ -194,14 +194,14 @@ function Dashboard({ user, onNav, onPredict }) {
   const hr = new Date().getHours();
   const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
-  const firstName = ((authUser && authUser.displayName) ? authUser.displayName : me.name).split(' ')[0];
+  const greetName = (authUser && authUser.displayName) ? authUser.displayName.split(' ')[0] : null;
 
   return (
     <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 18, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       {/* saludo */}
       <div>
         <h1 className="display" style={{ fontSize: 'var(--t-2xl)', margin: '4px 0 2px', color: 'var(--text)' }}>
-          {saludo} {firstName}! <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
+          {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
         </h1>
         <p style={{ margin: 0, color: daysLeft > 0 ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 700 }}>
           {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>Llevas {me.streak} aciertos seguidos ⚡</>}

@@ -455,8 +455,8 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
       }}>
         <MascotAvatar mascot={me.mascot} size={40} jersey />
         <div style={{ textAlign: 'left', minWidth: 0, flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser ? (authUser.displayName || 'Jugador') : me.name}</div>
-          <div style={{ fontSize: 'var(--t-3xs)', color: authUser ? 'var(--muted-2)' : Mw[me.mascot].light, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser ? (authUser.email || '') : `Equipo ${Mw[me.mascot].name} · #${me.rank}`}</div>
+          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser ? (authUser.displayName || 'Jugador') : 'Invitado'}</div>
+          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser ? (authUser.email || '') : 'Inicia sesión para tu perfil'}</div>
         </div>
       </button>
 
@@ -533,13 +533,13 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
   const hr = new Date().getHours();
   const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
-  const firstName = ((authUser && authUser.displayName) ? authUser.displayName : me.name).split(' ')[0];
+  const greetName = (authUser && authUser.displayName) ? authUser.displayName.split(' ')[0] : null;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.65fr) minmax(0,1fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
           <h2 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 2px' }}>
-            {saludo} {firstName}! <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>
+            {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>
           </h2>
           <p style={{ margin: 0, color: 'var(--gold-light)', fontSize: 'var(--t-md)', fontWeight: 600 }}>
             {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>Llevas {me.streak} aciertos seguidos ⚡</>}

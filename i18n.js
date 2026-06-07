@@ -96,7 +96,7 @@
     'Ella definirá tu estilo y tu color en el grupo.': 'It defines your style and your color in the group.',
     'Continuar': 'Continue', '¡Empezar a jugar!': 'Start playing!', 'Saltar introducción': 'Skip intro',
     // Dashboard
-    '¡Buenas noches,': 'Good evening,', '¡Buenos días,': 'Good morning,', '¡Buenas tardes,': 'Good afternoon,',
+    '¡Buenas noches,': 'Good evening,', '¡Buenos días,': 'Good morning,', '¡Buenas tardes,': 'Good afternoon,', '¡Hola! 👋': 'Hi! 👋',
     'Faltan': 'In', 'días': 'days', 'aciertos seguidos ⚡': 'hit streak ⚡',
     'días para el Mundial 2026 🏆': 'days to the 2026 World Cup 🏆', 'Ejemplo': 'Example',
     '📊 Datos de ejemplo · el torneo aún no comienza': '📊 Sample data · the tournament hasn’t started',
@@ -238,7 +238,7 @@
     'Elige tu mascota': 'Escolha seu mascote',
     'Ella definirá tu estilo y tu color en el grupo.': 'Ele define seu estilo e sua cor no grupo.',
     'Continuar': 'Continuar', '¡Empezar a jugar!': 'Começar a jogar!', 'Saltar introducción': 'Pular introdução',
-    '¡Buenas noches,': 'Boa noite,', '¡Buenos días,': 'Bom dia,', '¡Buenas tardes,': 'Boa tarde,',
+    '¡Buenas noches,': 'Boa noite,', '¡Buenos días,': 'Bom dia,', '¡Buenas tardes,': 'Boa tarde,', '¡Hola! 👋': 'Olá! 👋',
     'Faltan': 'Faltam', 'días': 'dias', 'aciertos seguidos ⚡': 'acertos seguidos ⚡',
     'días para el Mundial 2026 🏆': 'dias para a Copa 2026 🏆', 'Ejemplo': 'Exemplo',
     '📊 Datos de ejemplo · el torneo aún no comienza': '📊 Dados de exemplo · o torneio ainda não começou',
