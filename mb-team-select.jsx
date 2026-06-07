@@ -88,6 +88,7 @@
     }, [user, refresh]);
 
     if (!user) return null;
+    if (FB().isAdmin && FB().isAdmin(user)) return null; // el admin no elige equipo
     if (profile === undefined) return null;          // aún cargando perfil
     if (profile && profile.groupId) return null;     // ya tiene equipo
     return <TeamSelectModal onDone={() => setRefresh(r => r + 1)} />;
