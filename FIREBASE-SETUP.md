@@ -52,5 +52,6 @@ service cloud.firestore {
 
 ## Cómo se usa
 1. Inicia sesión con tu correo admin (`ia.garcia.providel@gmail.com`) → aparece el botón **🔐 Admin** (abajo a la izquierda).
-2. En el panel: **crea grupos** (Familia, Amigos…) y **agrega los correos** de cada persona.
-3. Cuando esa persona entre (con Google o con su correo + enlace de confirmación), queda **asignada a su grupo** automáticamente. Su grupo aparece junto a su nombre.
+2. En el panel: **crea equipos** (Familia, Amigos…). Cada equipo recibe un **código** que puedes copiar y compartir.
+3. La persona entra con **su correo** (cualquier dominio) + enlace de confirmación. En su primer ingreso ve **"Elige tu equipo"**: pega el **código** que le diste, o lo elige de la **lista**.
+4. Queda en ese equipo (uno solo). Tú (admin) ves quién se unió a cada equipo, y a cada usuario le aparece su equipo en el perfil.

@@ -11,25 +11,26 @@
   const { useState, useEffect } = React;
   const FB = () => window.MBFirebase || {};
 
-  // ── Fila de un grupo ──────────────────────────────────────
+  // ── Fila de un equipo ─────────────────────────────────────
   function GroupRow({ g }) {
-    const [email, setEmail] = useState('');
-    const [busy, setBusy] = useState(false);
-    const emails = g.emails || [];
+    const [members, setMembers] = useState([]);
+    const [copied, setCopied] = useState(false);
+    useEffect(() => {
+      const unsub = FB().subscribeGroupMembers ? FB().subscribeGroupMembers(g.id, setMembers) : null;
+      return () => { if (typeof unsub === 'function') unsub(); };
+    }, [g.id]);
 
-    const add = () => {
-      const v = email.trim().toLowerCase();
-      if (!v || v.indexOf('@') === -1) { alert('Escribe un correo válido.'); return; }
-      setBusy(true);
-      FB().addEmailToGroup(g.id, v).then(() => setEmail('')).catch(e => alert('Error: ' + (e && e.message || e))).finally(() => setBusy(false));
+    const copy = () => {
+      const code = g.code || '';
+      try { if (navigator.clipboard) navigator.clipboard.writeText(code); } catch (e) {}
+      setCopied(true); setTimeout(() => setCopied(false), 1500);
     };
-    const rm = (m) => FB().removeEmailFromGroup(g.id, m).catch(e => alert('Error: ' + (e && e.message || e)));
     const rename = () => {
-      const v = window.prompt('Nuevo nombre del grupo:', g.name);
+      const v = window.prompt('Nuevo nombre del equipo:', g.name);
       if (v && v.trim()) FB().renameGroup(g.id, v.trim()).catch(e => alert('Error: ' + (e && e.message || e)));
     };
     const del = () => {
-      if (window.confirm('¿Eliminar el grupo "' + g.name + '"? Esto no borra a los usuarios, solo el grupo.')) {
+      if (window.confirm('¿Eliminar el equipo "' + g.name + '"? Los usuarios quedarán sin equipo.')) {
         FB().deleteGroup(g.id).catch(e => alert('Error: ' + (e && e.message || e)));
       }
     };
@@ -39,23 +40,23 @@
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <span style={{ fontSize: 16 }}>👥</span>
           <strong style={{ flex: 1, fontSize: 'var(--t-md)' }}>{g.name}</strong>
-          <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>{emails.length} {emails.length === 1 ? 'correo' : 'correos'}</span>
+          <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>{members.length} {members.length === 1 ? 'miembro' : 'miembros'}</span>
           <button onClick={rename} title="Renombrar" style={iconBtn}>✏️</button>
-          <button onClick={del} title="Eliminar grupo" style={iconBtn}>🗑️</button>
+          <button onClick={del} title="Eliminar equipo" style={iconBtn}>🗑️</button>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-          {emails.length === 0 && <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Sin correos aún. Agrega los de tu familia/amigos abajo.</span>}
-          {emails.map(m => (
-            <span key={m} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--t-2xs)', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--r-pill)', padding: '3px 6px 3px 10px' }}>
-              {m}
-              <button onClick={() => rm(m)} title="Quitar" style={{ border: 'none', background: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>✕</button>
-            </span>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '8px 10px', background: 'var(--surface-1)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Código:</span>
+          <code className="mono" style={{ flex: 1, fontWeight: 800, letterSpacing: '0.12em', color: 'var(--gold-light)', fontSize: 'var(--t-md)' }}>{g.code || '—'}</code>
+          <button onClick={copy} className="mb-press" style={{ ...addBtn, padding: '6px 12px', color: copied ? 'var(--success)' : 'var(--text)' }}>{copied ? '✓ Copiado' : '📋 Copiar'}</button>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <input value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') add(); }}
-            placeholder="correo@ejemplo.com" type="email" style={inp} />
-          <button onClick={add} disabled={busy} className="mb-press" style={addBtn}>＋ Agregar</button>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {members.length === 0
+            ? <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Aún nadie se ha unido. Comparte el código de arriba.</span>
+            : members.map((m, i) => (
+              <span key={i} style={{ fontSize: 'var(--t-2xs)', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--r-pill)', padding: '3px 10px' }}>
+                {m.nombre || m.email || 'Jugador'}
+              </span>
+            ))}
         </div>
       </div>
     );
@@ -80,8 +81,8 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <span style={{ fontSize: 22 }}>🔐</span>
             <div style={{ flex: 1 }}>
-              <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-xl)' }}>Admin · Grupos</h2>
-              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Crea grupos y agrega los correos de cada persona.</div>
+              <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-xl)' }}>Admin · Equipos</h2>
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Crea equipos y comparte su código. La gente se une sola.</div>
             </div>
             <button onClick={onClose} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15 }}>✕</button>
           </div>
@@ -93,11 +94,11 @@
           </div>
 
           {groups.length === 0
-            ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '20px 0' }}>Aún no hay grupos. Crea el primero arriba.</div>
+            ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '20px 0' }}>Aún no hay equipos. Crea el primero arriba.</div>
             : groups.map(g => <GroupRow key={g.id} g={g} />)}
 
           <div style={{ marginTop: 12, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', lineHeight: 1.5 }}>
-            ℹ️ Cuando una persona inicie sesión con un correo que agregaste aquí, quedará en ese grupo automáticamente.
+            ℹ️ Cada equipo tiene un código único. Las personas entran con su correo y se unen eligiendo el equipo de la lista o pegando su código.
           </div>
         </div>
       </div>

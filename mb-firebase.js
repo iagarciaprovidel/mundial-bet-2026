@@ -24,8 +24,9 @@
       completeEmailLink: noFB,
       getMyProfile() { return Promise.resolve(null); },
       createGroup: noFB, renameGroup: noFB, deleteGroup: noFB,
-      addEmailToGroup: noFB, removeEmailFromGroup: noFB,
+      joinGroupById: noFB, joinGroupByCode: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
+      subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       savePrediction() { return Promise.reject('no-config'); },
       getMyPrediction() { return Promise.resolve(null); },
       subscribePredictions() { return () => {}; },
@@ -58,17 +59,11 @@
     }
   }
 
-  // Busca el grupo cuyo listado de emails incluye el del usuario y lo asigna a su perfil.
-  async function assignGroupByEmail(user) {
-    if (!user || !user.email) return null;
-    const email = user.email.toLowerCase();
-    try {
-      const q = await db.collection('groups').where('emails', 'array-contains', email).limit(1).get();
-      if (q.empty) return null;
-      const g = q.docs[0];
-      await db.collection('users').doc(user.uid).set({ groupId: g.id, groupName: g.data().name }, { merge: true });
-      return { id: g.id, name: g.data().name };
-    } catch (e) { console.warn('[MundialBet] grupo no asignado:', e && e.message); return null; }
+  // Código de invitación legible (sin caracteres ambiguos: sin O,0,I,1).
+  function genCode() {
+    const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let s = ''; for (let i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)];
+    return s;
   }
 
   window.MBFirebase = {
@@ -77,7 +72,6 @@
       return auth.onAuthStateChanged(async (u) => {
         if (u) {
           try { await ensureProfile(u); } catch (e) { console.warn('[MundialBet] perfil no guardado:', e && e.message); }
-          try { await assignGroupByEmail(u); } catch (e) {}
         }
         cb(u);
       });
@@ -120,26 +114,43 @@
     createGroup(name) {
       const u = auth.currentUser;
       return db.collection('groups').add({
-        name: String(name || '').trim() || 'Grupo',
-        emails: [],
+        name: String(name || '').trim() || 'Equipo',
+        code: genCode(),
         owner: u ? (u.email || null) : null,
         creado: FV.serverTimestamp(),
       });
     },
     renameGroup(id, name) { return db.collection('groups').doc(id).update({ name: String(name || '').trim() }); },
     deleteGroup(id) { return db.collection('groups').doc(id).delete(); },
-    addEmailToGroup(id, email) {
-      return db.collection('groups').doc(id).update({ emails: FV.arrayUnion(String(email || '').trim().toLowerCase()) });
-    },
-    removeEmailFromGroup(id, email) {
-      return db.collection('groups').doc(id).update({ emails: FV.arrayRemove(String(email || '').trim().toLowerCase()) });
-    },
     subscribeGroups(cb) {
       return db.collection('groups').onSnapshot(function (s) {
         const arr = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
         arr.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
         cb(arr);
       }, function (e) { console.warn('[MundialBet] grupos:', e && e.message); cb([]); });
+    },
+    // Miembros de un equipo (solo el admin puede leer todos los users según reglas)
+    subscribeGroupMembers(groupId, cb) {
+      return db.collection('users').where('groupId', '==', groupId)
+        .onSnapshot(function (s) { cb(s.docs.map(function (d) { return d.data(); })); }, function () { cb([]); });
+    },
+    // El usuario se autoasigna a UN equipo (por lista o por código).
+    async joinGroupById(groupId) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const g = await db.collection('groups').doc(groupId).get();
+      if (!g.exists) return Promise.reject('grupo-no-existe');
+      await db.collection('users').doc(u.uid).set({ groupId: g.id, groupName: g.data().name }, { merge: true });
+      return { id: g.id, name: g.data().name };
+    },
+    async joinGroupByCode(code) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const c = String(code || '').trim().toUpperCase();
+      if (!c) return Promise.reject('codigo-vacio');
+      const q = await db.collection('groups').where('code', '==', c).limit(1).get();
+      if (q.empty) return Promise.reject('codigo-invalido');
+      const g = q.docs[0];
+      await db.collection('users').doc(u.uid).set({ groupId: g.id, groupName: g.data().name }, { merge: true });
+      return { id: g.id, name: g.data().name };
     },
 
     // Guarda la predicción de marcador (las reglas validan dueño + antes del kickoff)

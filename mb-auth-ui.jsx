@@ -57,16 +57,6 @@
             <button onClick={onClose} className="mb-press" style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 14 }}>✕</button>
           </div>
 
-          <button onClick={signInGoogle} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: '#fff', color: '#1f2328', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
-            <GoogleIcon /> Continuar con Google
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0' }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-2)' }} />
-            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>o con tu correo</span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-2)' }} />
-          </div>
-
           {sent ? (
             <div style={{ textAlign: 'center', padding: '6px 0' }}>
               <div style={{ fontSize: 30, marginBottom: 6 }}>📧</div>
@@ -77,6 +67,7 @@
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>Entra con tu correo (cualquiera: Gmail, Hotmail, Outlook…)</label>
               <input value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
                 type="email" placeholder="tucorreo@ejemplo.com" autoFocus
                 style={{ padding: '11px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-sm)' }} />
@@ -86,6 +77,15 @@
               <p style={{ margin: '4px 0 0', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center', lineHeight: 1.5 }}>
                 Te llegará un correo para confirmar y entrar. Sin contraseña.
               </p>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0 2px' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-2)' }} />
+                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>o</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-2)' }} />
+              </div>
+              <button onClick={signInGoogle} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', cursor: 'pointer', background: '#fff', color: '#1f2328', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
+                <GoogleIcon /> Continuar con Google
+              </button>
             </div>
           )}
         </div>
