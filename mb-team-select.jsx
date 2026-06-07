@@ -40,6 +40,14 @@
       setBusy(true);
       FB().setDisplayName(n).then(() => FB().joinGroupByCode(c)).then(onDone).catch(fail).finally(() => setBusy(false));
     };
+    // Jugar sin equipo (individual). Si no se puede guardar (reglas), entra igual esta sesión.
+    const playSolo = () => {
+      const n = ensureName(); if (!n) return;
+      setBusy(true);
+      FB().setDisplayName(n).then(() => FB().chooseNoGroup()).then(onDone)
+        .catch(() => { onSkip(); })
+        .finally(() => setBusy(false));
+    };
 
     return (
       <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
@@ -84,14 +92,12 @@
               </div>
             )}
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginTop: 18 }}>
-            <button onClick={onSkip} style={{ background: 'none', border: 'none', color: 'var(--text)', fontWeight: 700, fontSize: 'var(--t-2xs)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-              Entrar sin equipo por ahora →
-            </button>
-            <button onClick={() => FB().signOut && FB().signOut()} style={{ background: 'none', border: 'none', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-              Cerrar sesión
-            </button>
-          </div>
+          <button onClick={playSolo} disabled={busy} className="mb-press" style={{ width: '100%', marginTop: 16, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
+            🙋 Jugar sin equipo (individual)
+          </button>
+          <button onClick={() => FB().signOut && FB().signOut()} style={{ display: 'block', margin: '14px auto 0', background: 'none', border: 'none', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+            Cerrar sesión
+          </button>
         </div>
       </div>
     );
@@ -114,7 +120,7 @@
     if (FB().isAdmin && FB().isAdmin(user)) return null; // el admin no elige equipo
     if (skipped) return null;                        // entró sin equipo (esta sesión)
     if (profile === undefined) return null;          // aún cargando perfil
-    if (profile && profile.groupId) return null;     // ya tiene equipo
+    if (profile && (profile.groupId || profile.noGroup)) return null; // ya decidió (equipo o individual)
     const skip = () => { try { sessionStorage.setItem('mb_team_skip', '1'); } catch (e) {} setSkipped(true); };
     return <TeamSelectModal onDone={() => setRefresh(r => r + 1)} onSkip={skip} />;
   }

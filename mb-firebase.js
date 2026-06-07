@@ -25,7 +25,7 @@
       getMyProfile() { return Promise.resolve(null); },
       setDisplayName: noFB,
       createGroup: noFB, renameGroup: noFB, deleteGroup: noFB,
-      joinGroupById: noFB, joinGroupByCode: noFB,
+      joinGroupById: noFB, joinGroupByCode: noFB, chooseNoGroup: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       savePrediction() { return Promise.reject('no-config'); },
@@ -164,6 +164,11 @@
       const g = q.docs[0];
       await db.collection('users').doc(u.uid).set({ groupId: g.id, groupName: g.data().name }, { merge: true });
       return { id: g.id, name: g.data().name };
+    },
+    // El usuario decide NO pertenecer a ningún equipo (juega individual).
+    chooseNoGroup() {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      return db.collection('users').doc(u.uid).set({ noGroup: true, groupId: null, groupName: null }, { merge: true });
     },
 
     // Guarda la predicción de marcador (las reglas validan dueño + antes del kickoff)
