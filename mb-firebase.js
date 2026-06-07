@@ -23,6 +23,7 @@
       isEmailLink() { return false; },
       completeEmailLink: noFB,
       getMyProfile() { return Promise.resolve(null); },
+      setDisplayName: noFB,
       createGroup: noFB, renameGroup: noFB, deleteGroup: noFB,
       joinGroupById: noFB, joinGroupByCode: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
@@ -108,6 +109,18 @@
       if (!u) return null;
       const doc = await db.collection('users').doc(u.uid).get();
       return doc.exists ? doc.data() : null;
+    },
+
+    // Nombre/apodo elegido por la persona (actualiza Auth + Firestore).
+    setDisplayName(nombre) {
+      const u = auth.currentUser;
+      if (!u) return Promise.reject('no-auth');
+      const name = String(nombre || '').trim();
+      if (!name) return Promise.reject('nombre-vacio');
+      return Promise.all([
+        u.updateProfile({ displayName: name }).catch(function () {}),
+        db.collection('users').doc(u.uid).set({ nombre: name }, { merge: true }),
+      ]);
     },
 
     // ── Grupos (solo admin debería escribir; las reglas lo refuerzan) ──

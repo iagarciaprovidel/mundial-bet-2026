@@ -383,6 +383,7 @@ function TeamModal({ team, onClose }) {
 
 // ── Sidebar ───────────────────────────────────────────────
 function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
+  const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
   const [installable, setInstallable] = useStateW(!!window.__deferredPrompt);
   useEffectW(() => {
     const on = () => setInstallable(true), off = () => setInstallable(false);
@@ -454,8 +455,8 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
       }}>
         <MascotAvatar mascot={me.mascot} size={40} jersey />
         <div style={{ textAlign: 'left', minWidth: 0, flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>{me.name}</div>
-          <div style={{ fontSize: 'var(--t-3xs)', color: Mw[me.mascot].light, fontWeight: 700 }}>Equipo {Mw[me.mascot].name} · #{me.rank}</div>
+          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser ? (authUser.displayName || 'Jugador') : me.name}</div>
+          <div style={{ fontSize: 'var(--t-3xs)', color: authUser ? 'var(--muted-2)' : Mw[me.mascot].light, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser ? (authUser.email || '') : `Equipo ${Mw[me.mascot].name} · #${me.rank}`}</div>
         </div>
       </button>
 

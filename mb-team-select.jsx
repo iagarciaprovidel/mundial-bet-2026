@@ -8,8 +8,9 @@
   const { useState, useEffect } = React;
   const FB = () => window.MBFirebase || {};
 
-  function TeamSelectModal({ onDone }) {
+  function TeamSelectModal({ onDone, onSkip }) {
     const [groups, setGroups] = useState([]);
+    const [name, setName] = useState('');
     const [code, setCode] = useState('');
     const [busy, setBusy] = useState(false);
 
@@ -22,21 +23,37 @@
       const m = (e && e.message) || e;
       alert(m === 'codigo-invalido' ? 'Ese código no existe. Revísalo con quien te invitó.' : 'No se pudo unir: ' + m);
     };
-    const joinById = (g) => { setBusy(true); FB().joinGroupById(g.id).then(onDone).catch(fail).finally(() => setBusy(false)); };
+    const ensureName = () => {
+      const n = name.trim();
+      if (n.length < 2) { alert('Escribe tu nombre o apodo (mínimo 2 letras).'); return null; }
+      return n;
+    };
+    const joinById = (g) => {
+      const n = ensureName(); if (!n) return;
+      setBusy(true);
+      FB().setDisplayName(n).then(() => FB().joinGroupById(g.id)).then(onDone).catch(fail).finally(() => setBusy(false));
+    };
     const joinByCode = () => {
+      const n = ensureName(); if (!n) return;
       const c = code.trim();
       if (!c) { alert('Escribe el código de tu equipo.'); return; }
-      setBusy(true); FB().joinGroupByCode(c).then(onDone).catch(fail).finally(() => setBusy(false));
+      setBusy(true);
+      FB().setDisplayName(n).then(() => FB().joinGroupByCode(c)).then(onDone).catch(fail).finally(() => setBusy(false));
     };
 
     return (
       <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         <div style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)', padding: 24, width: 'min(440px, 94vw)', maxHeight: '90vh', overflow: 'auto', boxShadow: 'var(--sh-4)' }}>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ fontSize: 30, marginBottom: 4 }}>👥</div>
-            <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>Elige tu equipo</h2>
-            <p style={{ margin: '4px 0 0', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Únete con el código que te dieron, o elígelo de la lista.</p>
+            <div style={{ fontSize: 30, marginBottom: 4 }}>👋</div>
+            <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>¡Bienvenido!</h2>
+            <p style={{ margin: '4px 0 0', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Elige tu nombre y únete a tu equipo.</p>
           </div>
+
+          {/* Nombre / apodo */}
+          <label style={{ display: 'block', fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 5 }}>Tu nombre o apodo (como te verán los demás)</label>
+          <input value={name} onChange={e => setName(e.target.value)} maxLength={24} placeholder="ej: Sergio, El Profeta, Tío Juan…"
+            style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', marginBottom: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-md)', fontWeight: 700 }} />
 
           {/* Código */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
@@ -67,9 +84,14 @@
               </div>
             )}
 
-          <button onClick={() => FB().signOut && FB().signOut()} style={{ display: 'block', margin: '18px auto 0', background: 'none', border: 'none', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-            Cerrar sesión
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginTop: 18 }}>
+            <button onClick={onSkip} style={{ background: 'none', border: 'none', color: 'var(--text)', fontWeight: 700, fontSize: 'var(--t-2xs)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+              Entrar sin equipo por ahora →
+            </button>
+            <button onClick={() => FB().signOut && FB().signOut()} style={{ background: 'none', border: 'none', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -79,6 +101,7 @@
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [profile, setProfile] = useState(undefined); // undefined = cargando
     const [refresh, setRefresh] = useState(0);
+    const [skipped, setSkipped] = useState(function () { try { return sessionStorage.getItem('mb_team_skip') === '1'; } catch (e) { return false; } });
     useEffect(() => {
       let alive = true;
       if (user && FB().getMyProfile) {
@@ -89,9 +112,11 @@
 
     if (!user) return null;
     if (FB().isAdmin && FB().isAdmin(user)) return null; // el admin no elige equipo
+    if (skipped) return null;                        // entró sin equipo (esta sesión)
     if (profile === undefined) return null;          // aún cargando perfil
     if (profile && profile.groupId) return null;     // ya tiene equipo
-    return <TeamSelectModal onDone={() => setRefresh(r => r + 1)} />;
+    const skip = () => { try { sessionStorage.setItem('mb_team_skip', '1'); } catch (e) {} setSkipped(true); };
+    return <TeamSelectModal onDone={() => setRefresh(r => r + 1)} onSkip={skip} />;
   }
 
   window.MB_TeamGate = TeamGate;
