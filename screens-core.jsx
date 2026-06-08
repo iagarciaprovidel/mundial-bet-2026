@@ -208,8 +208,6 @@ function Dashboard({ user, onNav, onPredict }) {
         </p>
       </div>
 
-      <PrizePotCard />
-
       {/* métricas 2x2 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <Metric label="Mis monedas" value={Dc.fmt(me.coins)} tone="var(--gold-light)" icon="⚽" />
@@ -268,14 +266,6 @@ function Dashboard({ user, onNav, onPredict }) {
         <SectionHead title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} />
         <Card style={{ padding: '6px 14px' }}>
           {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 5 }) : null}
-        </Card>
-      </div>
-
-      {/* feed */}
-      <div>
-        <SectionHead title="Actividad reciente" action="Ver feed" onAction={() => onNav('feed')} />
-        <Card style={{ padding: '0 14px' }}>
-          {Dc.FEED.slice(0, 3).map((f, i) => <FeedItem key={i} item={f} delay={i * 0.06} />)}
         </Card>
       </div>
     </div>

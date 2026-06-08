@@ -118,15 +118,8 @@
       { name: 'Messi', flag: '🇦🇷', odd: 4.00 }, { name: 'Mbappé', flag: '🇫🇷', odd: 4.50 }, { name: 'Bellingham', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', odd: 6.00 } ] },
   ];
 
-  // — Feed social —
-  const FEED = [
-    { mascot: 'zayu',   text: '¡Rodrigo acertó el marcador exacto! Brasil 2—0 Suiza · +1.750 mon', emoji: '🔥', ago: '5min', reactions: { '🔥': 6, '🎯': 3 } },
-    { mascot: 'clutch', text: 'Pedro lleva 5 aciertos seguidos', emoji: '⚡', ago: '12min', reactions: { '👍': 4, '🔥': 2 } },
-    { mascot: 'maple',  text: 'México vs Canadá cierra en 2 horas. ¿Ya apostaste?', emoji: '🔒', ago: '20min', reactions: { '👍': 2 } },
-    { mascot: 'zayu',   text: 'Beatriz desbloqueó el logro "Primer Acierto"', emoji: '🎯', ago: '1h', reactions: { '🎯': 5, '👍': 3 } },
-    { mascot: 'clutch', text: '¡El bote del torneo ya es $40.000 CLP!', emoji: '💰', ago: '2h', reactions: { '🔥': 8, '👍': 4 } },
-    { mascot: 'zayu',   text: 'Rodrigo sigue líder con 12.750 monedas', emoji: '👑', ago: '3h', reactions: { '👍': 5 } },
-  ];
+  // — Feed social — (vacío: sin actividad real todavía)
+  const FEED = [];
 
   // — Historial Sergio (perfil) —
   const MY_BETS = [

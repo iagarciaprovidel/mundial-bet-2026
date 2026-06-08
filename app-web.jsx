@@ -500,7 +500,6 @@ function Topbar({ tab, me, onFlagClick, onGroup }) {
       </div>
       <FlagTicker onSelect={onFlagClick} onGroup={onGroup} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <Chip tone="gold" icon={<span>🏆</span>}>Bote ${Dw.fmt(Dw.LEAGUE.pot)}</Chip>
         <CoinBadge amount={me.coins} />
         <MascotAvatar mascot={me.mascot} size={38} />
       </div>
@@ -545,7 +544,6 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>Llevas {me.streak} aciertos seguidos ⚡</>}
           </p>
         </div>
-        <PrizePotCard />
         <div style={{ display: 'flex', gap: 12 }}>
           <MetricW label="Mis monedas" value={Dw.fmt(me.coins)} tone="var(--gold-light)" icon="⚽" />
           <MetricW label="Posición" value={'#' + me.rank} tone="var(--info)" icon="📊" />
@@ -587,25 +585,9 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
-          <SectionHead title="Top 3 del torneo" action="Ranking" onAction={() => onNav('ranking')} />
+          <SectionHead title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} />
           <Card style={{ padding: '6px 16px' }}>
-            {top3.map((u, i) => (
-              <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
-                <span style={{ fontSize: 20, width: 24 }}>{['🥇', '🥈', '🥉'][i]}</span>
-                <MascotAvatar mascot={u.mascot} size={36} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)' }}>{u.name}</div>
-                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--success)', fontWeight: 600 }}>{u.pts} pts · ROI +{u.roi}%</div>
-                </div>
-                <CoinBadge amount={u.coins} size="sm" />
-              </div>
-            ))}
-          </Card>
-        </div>
-        <div>
-          <SectionHead title="Actividad" action="Ver feed" onAction={() => onNav('feed')} />
-          <Card style={{ padding: '0 16px' }}>
-            {Dw.FEED.slice(0, 5).map((f, i) => <FeedItem key={i} item={f} delay={i * 0.05} />)}
+            {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 6 }) : null}
           </Card>
         </div>
       </div>
