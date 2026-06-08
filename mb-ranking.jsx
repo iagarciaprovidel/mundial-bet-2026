@@ -54,12 +54,75 @@
   }
 
   function LigaReal() {
+    const user = window.MB_useAuth ? window.MB_useAuth() : null;
+    const [groups, setGroups] = useState([]);
+    const [users, setUsers] = useState([]);
+    useEffect(() => {
+      if (!user) return undefined;
+      const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
+      const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
+      return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
+    }, [user]);
+
+    const note = (txt) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '22px 16px' }}>{txt}</div>;
+    if (!user) return note('Inicia sesión para ver la liga.');
+
+    const countByGroup = {};
+    users.forEach(u => { if (u.groupId) countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; });
+    // pts en 0 → desempate por orden de ingreso (creado asc)
+    const teams = groups.map(g => ({ g: g, n: countByGroup[g.id] || 0, pts: 0 }))
+      .sort((a, b) => b.pts - a.pts || tsMillis(a.g.creado) - tsMillis(b.g.creado)).slice(0, 20);
+    const players = users.slice()
+      .sort((a, b) => 0 - 0 || tsMillis(a.creado) - tsMillis(b.creado)).slice(0, 20);
+
+    const card = { background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' };
+    const head = { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 };
+    const rankNum = (i) => <span className="num" style={{ width: 22, textAlign: 'center', color: i < 3 ? 'var(--gold-light)' : 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-sm)', flexShrink: 0 }}>{i + 1}</span>;
+
     return (
-      <div style={{ animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
-        <div style={{ background: 'rgba(13,20,15,0.82)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '28px 20px', textAlign: 'center', maxWidth: 560, margin: '0 auto' }}>
-          <div style={{ fontSize: 34, marginBottom: 8 }}>🏆</div>
-          <h3 className="display" style={{ margin: '0 0 6px', fontSize: 'var(--t-lg)' }}>Sin datos todavía</h3>
-          <p style={{ margin: 0, color: 'var(--muted)', fontSize: 'var(--t-sm)', lineHeight: 1.5 }}>El torneo aún no ha comenzado. Cuando arranque, aquí verás el <strong>bote, los premios y los pagos reales</strong> de tu liga.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
+        {/* Equipos */}
+        <div style={card}>
+          <div style={head}>
+            <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)' }}>Mejores equipos</h3>
+            <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>top 20</span>
+          </div>
+          {teams.length === 0 ? note('Aún no hay equipos.') : teams.map((t, i) => {
+            const closed = t.g.open === false;
+            return (
+              <div key={t.g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 2px', borderBottom: i < teams.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                {rankNum(i)}
+                <span style={{ fontSize: 15, flexShrink: 0 }}>{closed ? '🔒' : '👥'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.g.name}</div>
+                  <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{t.n} {t.n === 1 ? 'jugador' : 'jugadores'}</div>
+                </div>
+                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0 }}>{t.pts} pts</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Jugadores */}
+        <div style={card}>
+          <div style={head}>
+            <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)' }}>Mejores jugadores</h3>
+            <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>top 20</span>
+          </div>
+          {players.length === 0 ? note('Aún no hay jugadores.') : players.map((u, i) => {
+            const isMe = u.uid === user.uid;
+            return (
+              <div key={u.uid} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 2px', borderRadius: 'var(--r-sm)', background: isMe ? 'rgba(212,175,55,0.10)' : 'transparent', borderBottom: i < players.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                {rankNum(i)}
+                <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.nombre || 'Jugador'}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
+                  <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
+                </div>
+                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0 }}>0 pts</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
