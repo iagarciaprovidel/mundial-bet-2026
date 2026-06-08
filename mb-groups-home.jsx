@@ -80,27 +80,36 @@
         {groups.length === 0
           ? <div style={{ padding: '16px', borderRadius: 'var(--r-md)', background: 'rgba(13,20,15,0.82)', border: '1px dashed var(--border-2)', textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Aún no hay equipos. Crea el tuyo con <strong style={{ color: 'var(--gold-light)' }}>👥 Mis equipos</strong> (abajo a la derecha).</div>
           : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 10 }}>
-              {groups.map(g => {
-                const mine = g.id === myId;
-                const closed = g.open === false;
-                const n = countByGroup[g.id] || 0;
-                return (
-                  <button key={g.id} onClick={() => setOpenGroup(g)} className="mb-press" title={`Ver jugadores de ${g.name}`} style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 'var(--r-md)', cursor: 'pointer', textAlign: 'left',
-                    background: 'rgba(11,17,13,0.95)',
-                    border: mine ? '1.5px solid rgba(212,175,55,0.7)' : '1px solid var(--border)',
-                    boxShadow: mine ? '0 0 0 1px rgba(212,175,55,0.2)' : 'var(--sh-1)',
-                  }}>
-                    <span style={{ fontSize: 20, flexShrink: 0 }}>{closed ? '🔒' : '👥'}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}{mine && <span style={{ color: 'var(--gold-light)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>★</span>}</div>
-                      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>{n} {n === 1 ? 'jugador' : 'jugadores'} · {closed ? '🔒 Cerrado' : '🔓 Abierto'}</div>
+            <div style={{ background: 'rgba(11,17,13,0.95)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '6px 14px', boxShadow: 'var(--sh-1)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '24px 1fr 84px 56px', gap: 8, alignItems: 'center', padding: '8px 4px 6px', borderBottom: '1px solid var(--border)', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ textAlign: 'center' }}>#</span>
+                <span>Equipo</span>
+                <span style={{ textAlign: 'center' }}>Jugadores</span>
+                <span style={{ textAlign: 'right' }}>Pts</span>
+              </div>
+              {groups.map(g => ({ g: g, n: countByGroup[g.id] || 0, pts: 0 }))
+                .sort((a, b) => b.pts - a.pts || b.n - a.n || (a.g.name || '').localeCompare(b.g.name || ''))
+                .map((row, i) => {
+                  const g = row.g, mine = g.id === myId, closed = g.open === false;
+                  return (
+                    <div key={g.id} onClick={() => setOpenGroup(g)} className="mb-press" title={`Ver jugadores de ${g.name}`} style={{
+                      display: 'grid', gridTemplateColumns: '24px 1fr 84px 56px', gap: 8, alignItems: 'center', padding: '10px 4px', cursor: 'pointer',
+                      borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                      background: mine ? 'rgba(212,175,55,0.10)' : 'transparent',
+                    }}>
+                      <span className="num" style={{ textAlign: 'center', color: i < 3 ? 'var(--gold-light)' : 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>{i + 1}</span>
+                      <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <span style={{ fontSize: 15, flexShrink: 0 }}>{closed ? '🔒' : '👥'}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}{mine && <span style={{ color: 'var(--gold-light)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>★ tu equipo</span>}</div>
+                          <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{closed ? '🔒 Cerrado' : '🔓 Abierto'}</div>
+                        </div>
+                      </div>
+                      <span style={{ textAlign: 'center', fontSize: 'var(--t-sm)', color: 'var(--muted)', fontWeight: 700 }}>{row.n}</span>
+                      <span className="num" style={{ textAlign: 'right', color: 'var(--gold-light)', fontWeight: 700 }}>{row.pts}</span>
                     </div>
-                    <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0 }}>Ver →</span>
-                  </button>
-                );
-              })}
+                  );
+                })}
             </div>
           )}
         {openGroup && ReactDOM.createPortal(<MembersModal group={openGroup} members={membersOf(openGroup.id)} onClose={() => setOpenGroup(null)} />, document.body)}
