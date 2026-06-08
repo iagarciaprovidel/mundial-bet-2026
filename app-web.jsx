@@ -541,7 +541,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
   const hr = new Date().getHours();
   const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
-  const greetName = (authUser && authUser.displayName) ? authUser.displayName.split(' ')[0] : null;
+  const greetName = (authUser && authUser.displayName) ? authUser.displayName : null;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.65fr) minmax(0,1fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

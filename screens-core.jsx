@@ -194,7 +194,7 @@ function Dashboard({ user, onNav, onPredict }) {
   const hr = new Date().getHours();
   const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
-  const greetName = (authUser && authUser.displayName) ? authUser.displayName.split(' ')[0] : null;
+  const greetName = (authUser && authUser.displayName) ? authUser.displayName : null;
 
   return (
     <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 18, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
