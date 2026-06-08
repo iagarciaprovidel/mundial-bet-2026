@@ -402,11 +402,11 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
         position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column',
         padding: '22px 16px',
       }}>
-      {/* logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '0 8px 4px' }}>
+      {/* logo (→ Inicio) */}
+      <button onClick={() => onTab('inicio')} className="mb-press" title="Ir al inicio" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '0 8px 4px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
         <span style={{ fontSize: 24 }}>🏆</span>
         <div>
-          <div className="display" style={{ fontSize: 'var(--t-lg)' }}>MundialBet<span style={{ color: accent }}> Club</span></div>
+          <div className="display" style={{ fontSize: 'var(--t-lg)', color: 'var(--text)' }}>MundialBet<span style={{ color: accent }}> Club</span></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
             {['us', 'mx', 'ca'].map(c => (
               <img key={c} src={`https://flagcdn.com/h20/${c}.png`} alt="" style={{ height: 12, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }} />
@@ -414,7 +414,7 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
             <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, letterSpacing: '0.1em', marginLeft: 3 }}>MUNDIAL 2026</span>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* nav */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 22 }}>
@@ -488,15 +488,24 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
 }
 
 // ── Topbar ────────────────────────────────────────────────
-function Topbar({ tab, me, onFlagClick, onGroup }) {
+function Topbar({ tab, me, onFlagClick, onGroup, onNav }) {
+  const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+  const [group, setGroup] = useStateW(null);
+  useEffectW(() => {
+    let alive = true;
+    if (authUser && window.MBFirebase && window.MBFirebase.getMyProfile) {
+      window.MBFirebase.getMyProfile().then(p => { if (alive) setGroup(p && p.groupName ? p.groupName : null); }).catch(() => {});
+    } else setGroup(null);
+    return () => { alive = false; };
+  }, [authUser]);
   return (
     <header style={{
       flexShrink: 0, height: 68, display: 'flex', alignItems: 'center', gap: 16,
       padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)',
     }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexShrink: 0 }}>
-        <h1 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{TITLES[tab] || ''}</h1>
-        <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)', whiteSpace: 'nowrap' }}>{Dw.LEAGUE.name}</span>
+        <h1 onClick={() => onNav && onNav('inicio')} className="display" title="Ir al inicio" style={{ margin: 0, fontSize: 'var(--t-2xl)', cursor: 'pointer' }}>{TITLES[tab] || ''}</h1>
+        {group && <button onClick={() => onNav && onNav('ranking')} className="mb-press" title="Ver los jugadores" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--t-xs)', color: 'var(--gold-light)', fontWeight: 700, whiteSpace: 'nowrap', padding: 0 }}>👥 {group}</button>}
       </div>
       <FlagTicker onSelect={onFlagClick} onGroup={onGroup} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
@@ -953,28 +962,15 @@ function FeedWeb({ onNav }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(0,1fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div>
         <SectionHead title="Actividad reciente" />
-        <Card style={{ padding: '0 18px' }}>
-          {Dw.FEED.map((f, i) => <FeedItem key={i} item={f} delay={i * 0.05} />)}
+        <Card style={{ padding: '6px 18px' }}>
+          {window.MB_ActivityReal ? React.createElement(window.MB_ActivityReal, {}) : null}
         </Card>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
           <SectionHead title="Mercados especiales" />
-          <Card style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {Dw.SPECIALS.map((s, i) => (
-              <div key={i}>
-                <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', marginBottom: 8 }}>{s.label}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {s.options.slice(0, 4).map((o, j) => (
-                    <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 'var(--r-sm)', background: 'var(--surface-1)' }}>
-                      <span style={{ fontSize: 16 }}>{o.flag}</span>
-                      <span style={{ flex: 1, fontSize: 'var(--t-sm)' }}>{o.name}</span>
-                      <span className="num" style={{ color: 'var(--gold-light)', fontSize: 'var(--t-sm)' }}>{o.odd.toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <Card style={{ textAlign: 'center', padding: '24px 18px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
+            🎯 Próximamente. Las cuotas se publicarán cuando comience el torneo.
           </Card>
         </div>
       </div>
@@ -1040,7 +1036,7 @@ function AppWeb() {
     <div style={{ position: 'fixed', inset: 0, display: 'flex', overflow: 'hidden', background: '#0c2114' }}>
       <Sidebar tab={tab} onTab={goTab} me={me} accent={accent} role={t.role} onAdmin={() => goTab('admin')} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Topbar tab={tab} me={me} onFlagClick={setTeam} onGroup={(g) => { setHlGroup(g); goTab('equipos'); }} />
+        <Topbar tab={tab} me={me} onFlagClick={setTeam} onGroup={(g) => { setHlGroup(g); goTab('equipos'); }} onNav={goTab} />
         <main ref={mainRef} className="mb-main-pitch" style={{ flex: 1, overflow: 'auto', padding: '24px 28px 60px' }}>
           <div style={{ maxWidth: isCentered ? 760 : 1180, margin: '0 auto' }}>
             {isCentered ? centered[tab] : desktop[tab]}

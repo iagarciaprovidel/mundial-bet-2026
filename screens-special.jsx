@@ -15,14 +15,8 @@ const {
 function Feed() {
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', marginBottom: 14, background: 'linear-gradient(150deg, rgba(74,144,226,0.12), var(--surface-1))', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
-        <MascotAvatar mascot="clutch" size={38} />
-        <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)' }}>
-          <strong style={{ color: 'var(--info)' }}>Clutch</strong> mantiene al grupo conectado. Esto pasó hoy:
-        </div>
-      </div>
-      <Card style={{ padding: '0 14px' }}>
-        {Ds.FEED.map((f, i) => <FeedItem key={i} item={f} delay={i * 0.05} />)}
+      <Card style={{ padding: '6px 14px' }}>
+        {window.MB_ActivityReal ? React.createElement(window.MB_ActivityReal, {}) : null}
       </Card>
     </div>
   );

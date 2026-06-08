@@ -60,7 +60,7 @@
             <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Solicitudes de ingreso ({reqs.length})</div>
             {reqs.map(r => (
               <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
-                <span style={{ flex: 1, fontSize: 'var(--t-2xs)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre || r.email || 'Jugador'}</span>
+                <span style={{ flex: 1, fontSize: 'var(--t-2xs)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre || 'Jugador'}</span>
                 <button onClick={() => approve(r)} className="mb-press" style={{ border: 'none', borderRadius: 'var(--r-pill)', padding: '5px 10px', background: 'var(--success)', color: '#04210f', fontWeight: 800, fontSize: 'var(--t-3xs)', cursor: 'pointer' }}>✓ Aceptar</button>
                 <button onClick={() => reject(r)} className="mb-press" style={{ border: '1px solid var(--border-2)', borderRadius: 'var(--r-pill)', padding: '5px 9px', background: 'none', color: 'var(--danger)', fontWeight: 700, fontSize: 'var(--t-3xs)', cursor: 'pointer' }}>✕</button>
               </div>
@@ -90,7 +90,7 @@
           {members.length === 0
             ? <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Aún nadie se ha unido. Comparte el nombre del equipo.</span>
             : members.map((m, i) => (
-              <span key={i} style={{ fontSize: 'var(--t-2xs)', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--r-pill)', padding: '3px 10px' }}>{m.nombre || m.email || 'Jugador'}</span>
+              <span key={i} style={{ fontSize: 'var(--t-2xs)', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--r-pill)', padding: '3px 10px' }}>{m.nombre || 'Jugador'}</span>
             ))}
         </div>
       </div>
