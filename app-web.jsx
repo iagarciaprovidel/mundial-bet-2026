@@ -503,9 +503,8 @@ function Topbar({ tab, me, onFlagClick, onGroup, onNav }) {
       flexShrink: 0, height: 68, display: 'flex', alignItems: 'center', gap: 16,
       padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexShrink: 0 }}>
-        <h1 onClick={() => onNav && onNav('inicio')} className="display" title="Ir al inicio" style={{ margin: 0, fontSize: 'var(--t-2xl)', cursor: 'pointer' }}>{TITLES[tab] || ''}</h1>
-        {group && <button onClick={() => onNav && onNav('ranking')} className="mb-press" title="Ver los jugadores" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--t-xs)', color: 'var(--gold-light)', fontWeight: 700, whiteSpace: 'nowrap', padding: 0 }}>👥 {group}</button>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        {group && <button onClick={() => onNav && onNav('ranking')} className="mb-press" title="Ver los jugadores" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--t-md)', color: 'var(--gold-light)', fontWeight: 800, whiteSpace: 'nowrap', padding: 0 }}>👥 {group}</button>}
       </div>
       <FlagTicker onSelect={onFlagClick} onGroup={onGroup} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
