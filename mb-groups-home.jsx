@@ -88,8 +88,9 @@
                 return (
                   <button key={g.id} onClick={() => setOpenGroup(g)} className="mb-press" title={`Ver jugadores de ${g.name}`} style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 'var(--r-md)', cursor: 'pointer', textAlign: 'left',
-                    background: mine ? 'rgba(212,175,55,0.14)' : 'rgba(13,20,15,0.82)',
-                    border: mine ? '1px solid rgba(212,175,55,0.55)' : '1px solid var(--border)',
+                    background: 'rgba(11,17,13,0.95)',
+                    border: mine ? '1.5px solid rgba(212,175,55,0.7)' : '1px solid var(--border)',
+                    boxShadow: mine ? '0 0 0 1px rgba(212,175,55,0.2)' : 'var(--sh-1)',
                   }}>
                     <span style={{ fontSize: 20, flexShrink: 0 }}>{closed ? '🔒' : '👥'}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
