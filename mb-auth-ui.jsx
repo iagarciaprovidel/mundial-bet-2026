@@ -146,5 +146,5 @@
     );
   }
 
-  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton });
+  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton, MB_editName: editMyName });
 })();

@@ -16,7 +16,7 @@
     { id: 'rodrigo',   name: 'Rodrigo M.',   initials: 'RM', mascot: 'zayu',   coins: 12750, roi: 24, pts: 187, rank: 1, hits: 74, preds: 41, paid: true,  paidDate: '15/06', streak: 6 },
     { id: 'camila',    name: 'Camila P.',    initials: 'CP', mascot: 'maple',  coins: 11200, roi: 18, pts: 164, rank: 2, hits: 70, preds: 39, paid: true,  paidDate: '14/06', streak: 4 },
     { id: 'jorge',     name: 'Jorge A.',     initials: 'JA', mascot: 'clutch', coins: 10800, roi: 15, pts: 151, rank: 3, hits: 66, preds: 40, paid: true,  paidDate: '15/06', streak: 2 },
-    { id: 'sergio',    name: 'Sergio G.',    initials: 'SG', mascot: 'zayu',   coins: 9340,  roi: 12, pts: 142, rank: 4, hits: 68, preds: 38, paid: true,  paidDate: '15/06', streak: 3, me: true, admin: true },
+    { id: 'sergio',    name: 'Sergio G.',    initials: 'SG', mascot: 'zayu',   coins: 0,     roi: 0,  pts: 0,   rank: 0, hits: 0,  preds: 0,  paid: true,  paidDate: '15/06', streak: 0, me: true, admin: true },
     { id: 'beatriz',   name: 'Beatriz V.',   initials: 'BV', mascot: 'zayu',   coins: 8500,  roi: 8,  pts: 128, rank: 5, hits: 61, preds: 36, paid: true,  paidDate: '16/06', streak: 1 },
     { id: 'pedro',     name: 'Pedro A.',     initials: 'PA', mascot: 'maple',  coins: 7200,  roi: 3,  pts: 115, rank: 6, hits: 55, preds: 35, paid: true,  paidDate: '16/06', streak: 5 },
     { id: 'valentina', name: 'Valentina C.', initials: 'VC', mascot: 'clutch', coins: 6800,  roi: -2, pts: 98,  rank: 7, hits: 48, preds: 34, paid: true,  paidDate: '16/06', streak: 0 },

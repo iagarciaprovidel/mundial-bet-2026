@@ -448,22 +448,22 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
 
       <div style={{ flex: 1 }} />
 
-      {/* user card */}
-      <button onClick={() => onTab('perfil')} className="mb-press" style={{
-        display: 'flex', alignItems: 'center', gap: 11, padding: '11px', cursor: 'pointer', width: '100%',
-        background: 'rgba(13,20,15,0.82)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
-      }}>
-        <MascotAvatar mascot={me.mascot} size={40} jersey />
-        <div style={{ textAlign: 'left', minWidth: 0, flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser ? (authUser.displayName || 'Jugador') : 'Invitado'}</div>
-          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser ? (authUser.email || '') : 'Inicia sesión para tu perfil'}</div>
+      {/* identidad / login */}
+      {authUser ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 11px', background: 'rgba(13,20,15,0.82)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
+          <button onClick={() => onTab('perfil')} className="mb-press" title="Ver mi perfil" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>
+            <MascotAvatar mascot={me.mascot} size={38} jersey />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser.displayName || 'Jugador'}</div>
+              <div style={{ fontSize: 9, color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser.email || ''}</div>
+            </div>
+          </button>
+          {window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold-light)', fontSize: 14, padding: '0 2px' }}>✏️</button>}
+          <button onClick={() => window.MBFirebase && window.MBFirebase.signOut()} title="Cerrar sesión" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 700 }}>Salir</button>
         </div>
-      </button>
-
-      {/* Login con Google */}
-      <div style={{ marginTop: 10 }}>
-        {window.MB_LoginButton ? React.createElement(window.MB_LoginButton, {}) : null}
-      </div>
+      ) : (
+        <div>{window.MB_LoginButton ? React.createElement(window.MB_LoginButton, {}) : null}</div>
+      )}
 
       {/* CTA: instalar app + descargar APK */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
@@ -992,20 +992,25 @@ function Sparkline({ data, w = 300, h = 70 }) {
 }
 
 function PerfilWeb({ me }) {
+  const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+  const dispName = authUser ? (authUser.displayName || 'Jugador') : me.name;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.3fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <Card style={{ textAlign: 'center', padding: '24px 18px' }}>
           <div style={{ display: 'inline-block' }}><MascotAvatar mascot={me.mascot} size={88} glow jersey /></div>
-          <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)' }}>{me.name}</h2>
-          <div style={{ color: Mw[me.mascot].light, fontWeight: 700, fontSize: 'var(--t-sm)' }}>Equipo {Mw[me.mascot].name} · {Mw[me.mascot].role}</div>
+          <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            {dispName}
+            {authUser && window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--gold-light)' }}>✏️</button>}
+          </h2>
+          <div style={{ color: 'var(--muted)', fontWeight: 600, fontSize: 'var(--t-sm)' }}>{authUser ? (authUser.email || '') : 'Inicia sesión para tu perfil'}</div>
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-            <MetricW label="Posición" value={'#' + me.rank} tone="var(--info)" icon="📊" />
+            <MetricW label="Posición" value={me.rank ? '#' + me.rank : '—'} tone="var(--info)" icon="📊" />
             <MetricW label="Puntos" value={me.pts} tone="var(--gold-light)" icon="🏆" />
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
             <MetricW label="Aciertos" value={me.hits + '%'} tone="var(--success)" icon="🎯" />
-            <MetricW label="ROI" value={'+' + me.roi + '%'} tone="var(--success)" icon="📈" />
+            <MetricW label="ROI" value={me.roi + '%'} tone="var(--success)" icon="📈" />
           </div>
         </Card>
         <div>

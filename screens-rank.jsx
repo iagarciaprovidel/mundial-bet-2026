@@ -259,16 +259,24 @@ function Perfil({ user }) {
   const me = user;
   const m = Mr[me.mascot];
   const best = Dr.MY_BETS.find(b => b.result === 'exact');
+  const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+  const dispName = authUser ? (authUser.displayName || 'Jugador') : me.name;
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       {/* header perfil */}
       <div style={{ textAlign: 'center', marginBottom: 18 }}>
         <div style={{ display: 'inline-block', marginBottom: 8 }}><MascotAvatar mascot={me.mascot} size={92} glow jersey /></div>
-        <h2 className="display" style={{ margin: '4px 0 6px', fontSize: 'var(--t-2xl)' }}>{me.name}</h2>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Chip tone="green" icon={<span>{m.emoji}</span>}>Equipo {m.name}</Chip>
-          <Chip tone="green" icon={<span>✓</span>}>Pago confirmado · $5.000</Chip>
-        </div>
+        <h2 className="display" style={{ margin: '4px 0 6px', fontSize: 'var(--t-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          {dispName}
+          {authUser && window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--gold-light)' }}>✏️</button>}
+        </h2>
+        {authUser
+          ? <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{authUser.email || ''}</div>
+          : (
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Chip tone="green" icon={<span>{m.emoji}</span>}>Equipo {m.name}</Chip>
+            </div>
+          )}
       </div>
 
       {/* stats */}
