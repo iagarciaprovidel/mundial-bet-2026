@@ -116,7 +116,8 @@
     if (!user) return null;
     if (skipped) return null;                        // entró sin equipo (esta sesión)
     if (profile === undefined) return null;          // aún cargando perfil
-    if (profile && (profile.groupId || profile.noGroup)) return null; // ya decidió (equipo o individual)
+    // Se cierra solo cuando YA eligió su apodo Y decidió equipo (o individual).
+    if (profile && profile.apodoSet && (profile.groupId || profile.noGroup)) return null;
     const skip = () => { try { sessionStorage.setItem('mb_team_skip', '1'); } catch (e) {} setSkipped(true); };
     return <TeamSelectModal onDone={() => setRefresh(r => r + 1)} onSkip={skip} />;
   }

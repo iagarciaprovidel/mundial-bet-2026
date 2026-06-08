@@ -132,7 +132,7 @@
       if (!name) return Promise.reject('nombre-vacio');
       return Promise.all([
         u.updateProfile({ displayName: name }).catch(function () {}),
-        db.collection('users').doc(u.uid).set({ nombre: name }, { merge: true }),
+        db.collection('users').doc(u.uid).set({ nombre: name, apodoSet: true }, { merge: true }),
       ]).then(function (r) { try { window.dispatchEvent(new Event('mb-auth-refresh')); } catch (e) {} return r; });
     },
 
