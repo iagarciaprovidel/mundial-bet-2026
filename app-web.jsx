@@ -561,9 +561,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: -8 }}>📊 Datos de ejemplo · el torneo aún no comienza</div>
         {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
         {next && (
-        <div>
-          <SectionHead title="Próximo partido" action="Ver todos" onAction={() => onNav('partidos')} />
-          <Card glow="var(--sh-2)">
+          <Card glow="var(--sh-2)" title="Próximo partido" action="Ver todos" onAction={() => onNav('partidos')}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <Chip tone="blue">Grupo {next.group} · J{next.md}</Chip>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -587,17 +585,13 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', textAlign: 'center' }}>📍 {next.stadium}</div>
             <div style={{ marginTop: 4 }}><RefLineWeb m={next} /></div>
           </Card>
-        </div>
         )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div>
-          <SectionHead title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} />
-          <Card style={{ padding: '6px 16px' }}>
-            {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 6 }) : null}
-          </Card>
-        </div>
+        <Card title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 16px' }}>
+          {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 6 }) : null}
+        </Card>
       </div>
     </div>
   );

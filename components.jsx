@@ -177,14 +177,24 @@ function ResultBadge({ result, pts }) {
 }
 
 // ── Card primitivo ────────────────────────────────────────
-function Card({ children, style = {}, glow, onClick, hover }) {
+// Si recibe `title`, lo dibuja DENTRO de la card (con su acción opcional).
+// Borde azul y fondo opaco uniformes para todas las cards.
+function Card({ children, style = {}, glow, onClick, hover, title, action, onAction }) {
   return (
     <div onClick={onClick} className={hover ? 'mb-card-hover' : ''} style={{
-      background: 'rgba(13,20,15,0.82)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(13,20,15,0.92)',
+      border: '1px solid rgba(74,144,226,0.45)',
       borderRadius: 'var(--r-lg)', padding: 'var(--sp-4)',
       boxShadow: glow || 'var(--sh-1)', cursor: onClick ? 'pointer' : 'default', ...style,
-    }}>{children}</div>
+    }}>
+      {title && (
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{title}</h3>
+          {action && <button onClick={onAction} style={{ background: 'none', border: 'none', color: 'var(--info)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)', cursor: 'pointer', padding: 0 }}>{action}</button>}
+        </div>
+      )}
+      {children}
+    </div>
   );
 }
 

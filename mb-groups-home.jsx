@@ -72,16 +72,16 @@
     const membersOf = (gid) => users.filter(u => u.groupId === gid);
 
     return (
-      <div style={{ marginTop: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, margin: '4px 0 10px' }}>
+      <div style={{ marginTop: 4, background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
           <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>Equipos de apostadores <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {groups.length}</span></h3>
           <button onClick={() => window.MB_openMyTeams && window.MB_openMyTeams()} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.55)', background: 'var(--coin-bg)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' }}>👥 Mis equipos</button>
         </div>
         {groups.length === 0
-          ? <div style={{ padding: '16px', borderRadius: 'var(--r-md)', background: 'rgba(13,20,15,0.82)', border: '1px dashed var(--border-2)', textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Aún no hay equipos. Crea el tuyo con <strong style={{ color: 'var(--gold-light)' }}>👥 Mis equipos</strong> (abajo a la derecha).</div>
+          ? <div style={{ padding: '12px', borderRadius: 'var(--r-md)', background: 'rgba(8,12,9,0.5)', border: '1px dashed var(--border-2)', textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Aún no hay equipos. Crea el tuyo con <strong style={{ color: 'var(--gold-light)' }}>👥 Mis equipos</strong>.</div>
           : (
-            <div style={{ background: 'rgba(11,17,13,0.95)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '6px 14px', boxShadow: 'var(--sh-1)' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '24px 1fr 84px 56px', gap: 8, alignItems: 'center', padding: '8px 4px 6px', borderBottom: '1px solid var(--border)', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: '24px 1fr 84px 56px', gap: 8, alignItems: 'center', padding: '0 4px 6px', borderBottom: '1px solid var(--border)', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 <span style={{ textAlign: 'center' }}>#</span>
                 <span>Equipo</span>
                 <span style={{ textAlign: 'center' }}>Jugadores</span>
