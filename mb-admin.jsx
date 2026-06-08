@@ -143,19 +143,18 @@
     );
   }
 
+  // Sin botón flotante: el panel se abre desde otras partes (Inicio/Perfil)
+  // llamando a window.MB_openMyTeams().
   function AdminLauncher() {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [open, setOpen] = useState(false);
-    if (!user) return null;
-    return (
-      <React.Fragment>
-        <button onClick={() => setOpen(true)} className="mb-press" title="Crear / administrar equipos"
-          style={{ position: 'fixed', right: 16, bottom: 'calc(16px + env(safe-area-inset-bottom,0px))', zIndex: 950, display: 'flex', alignItems: 'center', gap: 7, padding: '11px 16px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.6)', background: 'rgba(13,20,15,0.95)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', boxShadow: '0 6px 22px rgba(0,0,0,0.55)' }}>
-          👥 Mis equipos
-        </button>
-        {open && <AdminGroupsPanel onClose={() => setOpen(false)} user={user} />}
-      </React.Fragment>
-    );
+    useEffect(() => {
+      const on = () => { if (user) setOpen(true); else alert('Inicia sesión para crear o administrar equipos.'); };
+      window.MB_openMyTeams = () => window.dispatchEvent(new Event('mb-open-myteams'));
+      window.addEventListener('mb-open-myteams', on);
+      return () => window.removeEventListener('mb-open-myteams', on);
+    }, [user]);
+    return open && user ? <AdminGroupsPanel onClose={() => setOpen(false)} user={user} /> : null;
   }
 
   const inp = { flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-sm)' };
