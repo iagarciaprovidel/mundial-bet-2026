@@ -843,46 +843,10 @@ function PodiumWeb({ top3 }) {
 }
 
 function RankingWeb() {
-  const users = Dw.USERS;
-  const [period, setPeriod] = useStateW('Torneo completo');
-  const cell = { fontSize: 'var(--t-sm)' };
   return (
-    <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ maxWidth: 420, margin: '0 auto 20px' }}>
-        <SegTabs options={['Esta semana', 'Este mes', 'Torneo completo']} value={period} onChange={setPeriod} />
-      </div>
-      <PodiumWeb top3={users.slice(0, 3)} />
-      <Card style={{ padding: '4px 18px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          <span style={{ width: 34 }}>#</span>
-          <span style={{ flex: 1 }}>Jugador</span>
-          <span style={{ width: 110 }}>Equipo</span>
-          <span style={{ width: 80, textAlign: 'center' }}>Aciertos</span>
-          <span style={{ width: 70, textAlign: 'center' }}>ROI</span>
-          <span style={{ width: 60, textAlign: 'center' }}>Pts</span>
-          <span style={{ width: 110, textAlign: 'right' }}>Monedas</span>
-        </div>
-        {users.map(u => {
-          const isMe = u.me;
-          return (
-            <div key={u.id} style={{
-              display: 'flex', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)',
-              background: isMe ? 'var(--info-bg)' : 'transparent', borderRadius: isMe ? 'var(--r-sm)' : 0,
-              boxShadow: isMe ? 'inset 3px 0 0 var(--info)' : 'none', paddingLeft: isMe ? 8 : 0,
-            }}>
-              <span className="num" style={{ width: 34, color: u.rank <= 3 ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-md)' }}>{u.rank}</span>
-              <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <InitialAvatar user={u} size={34} />
-                <span style={{ fontWeight: 700, ...cell }}>{u.name}{isMe && <span style={{ color: 'var(--info)', fontWeight: 700 }}> · tú</span>}</span>
-              </span>
-              <span style={{ width: 110, fontSize: 'var(--t-2xs)', color: Mw[u.mascot].light, fontWeight: 700 }}>{Mw[u.mascot].emoji} {Mw[u.mascot].name}</span>
-              <span style={{ width: 80, textAlign: 'center', ...cell, color: 'var(--muted)' }}>{u.hits}%</span>
-              <span style={{ width: 70, textAlign: 'center', ...cell, color: u.roi >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>{u.roi >= 0 ? '+' : ''}{u.roi}%</span>
-              <span className="num" style={{ width: 60, textAlign: 'center', color: 'var(--gold-light)' }}>{u.pts}</span>
-              <span style={{ width: 110, display: 'flex', justifyContent: 'flex-end' }}><CoinBadge amount={u.coins} size="sm" /></span>
-            </div>
-          );
-        })}
+    <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', maxWidth: 680, margin: '0 auto' }}>
+      <Card style={{ padding: '8px 16px' }}>
+        {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
       </Card>
     </div>
   );
@@ -901,71 +865,9 @@ function InfoRow({ label, value }) {
 }
 
 function LigaWeb() {
-  const L = Dw.LEAGUE;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.15fr) minmax(0,1fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <PrizePotCard />
-        <div>
-          <SectionHead title="Distribución del premio" />
-          <Card style={{ padding: '6px 16px' }}>
-            {L.distribution.map((d, i) => {
-              const u = Dw.userById(d.userId);
-              return (
-                <div key={d.place} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
-                  <span style={{ fontSize: 22 }}>{d.medal}</span>
-                  <MascotAvatar mascot={u.mascot} size={34} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)' }}>{u.name}</div>
-                    <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>{d.pct}% del bote</div>
-                  </div>
-                  <span className="num" style={{ color: 'var(--gold-light)', fontSize: 'var(--t-lg)' }}>{Dw.clp(d.amount)}</span>
-                </div>
-              );
-            })}
-          </Card>
-        </div>
-        <div>
-          <SectionHead title="Información de la liga" />
-          <Card>
-            <InfoRow label="Nombre" value={L.name} />
-            <InfoRow label="Código" value={L.code} />
-            <InfoRow label="Entrada" value={Dw.clp(L.entry)} />
-            <InfoRow label="Tesorero" value={L.treasurer} />
-            <InfoRow label="Banco" value={L.bank} />
-            <InfoRow label="Plazo de pago" value={L.deadline} />
-          </Card>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div>
-          <SectionHead title={`Pagos · ${L.paidCount}/${L.total}`} />
-          <Card>
-            <div style={{ marginBottom: 12 }}><ProgressBar value={L.paidCount} total={L.total} tone="green" /></div>
-            {Dw.USERS.map(u => (
-              <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <MascotAvatar mascot={u.mascot} size={30} />
-                <span style={{ flex: 1, fontSize: 'var(--t-sm)', fontWeight: 600 }}>{u.name}</span>
-                {u.paid
-                  ? <Chip tone="green" icon={<span>✓</span>}>Pagado {u.paidDate}</Chip>
-                  : <Chip tone="red">Pendiente</Chip>}
-              </div>
-            ))}
-          </Card>
-        </div>
-        <div>
-          <SectionHead title="Transparencia (log)" />
-          <Card style={{ padding: '6px 16px', maxHeight: 280, overflow: 'auto' }}>
-            {Dw.LOG.map((l, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: i < Dw.LOG.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                <span className="mono" style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', width: 38, flexShrink: 0 }}>{l.date}</span>
-                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{l.text}</span>
-              </div>
-            ))}
-          </Card>
-        </div>
-      </div>
+    <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+      {window.MB_LigaReal ? React.createElement(window.MB_LigaReal, {}) : null}
     </div>
   );
 }

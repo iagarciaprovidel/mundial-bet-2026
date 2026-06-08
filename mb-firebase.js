@@ -30,6 +30,7 @@
       joinGroupById: noFB, chooseNoGroup: noFB,
       approveRequest: noFB, rejectRequest: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
+      subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeJoinRequests(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       savePrediction() { return Promise.reject('no-config'); },
@@ -168,6 +169,12 @@
         arr.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
         cb(arr);
       }, function (e) { console.warn('[MundialBet] grupos:', e && e.message); cb([]); });
+    },
+    // Todos los usuarios registrados (jugadores reales). Para el ranking.
+    subscribeUsers(cb) {
+      return db.collection('users').onSnapshot(function (s) {
+        cb(s.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); }));
+      }, function () { cb([]); });
     },
     // Miembros de un equipo (solo el admin puede leer todos los users según reglas)
     subscribeGroupMembers(groupId, cb) {

@@ -263,21 +263,11 @@ function Dashboard({ user, onNav, onPredict }) {
         </button>
       </div>
 
-      {/* mini ranking */}
+      {/* jugadores registrados (real) */}
       <div>
-        <SectionHead title="Top 3 del torneo" action="Ranking completo" onAction={() => onNav('ranking')} />
+        <SectionHead title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} />
         <Card style={{ padding: '6px 14px' }}>
-          {top3.map((u, i) => (
-            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
-              <span style={{ fontSize: 18, width: 22 }}>{['🥇', '🥈', '🥉'][i]}</span>
-              <MascotAvatar mascot={u.mascot} size={34} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>{u.name}</div>
-                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--success)', fontWeight: 600 }}>ROI +{u.roi}%</div>
-              </div>
-              <CoinBadge amount={u.coins} size="sm" />
-            </div>
-          ))}
+          {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 5 }) : null}
         </Card>
       </div>
 

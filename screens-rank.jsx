@@ -55,24 +55,11 @@ function RankRow({ u, highlight }) {
 }
 
 function Ranking() {
-  const [period, setPeriod] = useStateR('Torneo completo');
-  const users = Dr.USERS;
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ marginBottom: 18 }}>
-        <SegTabs options={['Esta semana', 'Este mes', 'Torneo completo']} value={period} onChange={setPeriod} accent="var(--gold)" />
-      </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 18 }}>
-        <PodiumCard u={users[1]} place={2} />
-        <PodiumCard u={users[0]} place={1} />
-        <PodiumCard u={users[2]} place={3} />
-      </div>
       <Card style={{ padding: '8px' }}>
-        {users.map(u => <RankRow key={u.id} u={u} highlight={u.me} />)}
+        {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
       </Card>
-      <p style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>
-        🔒 Los nombres solo son visibles en partidos ya jugados o en curso.
-      </p>
     </div>
   );
 }
@@ -94,113 +81,9 @@ function PaymentRow({ u, last }) {
 }
 
 function Liga() {
-  const [tab, setTab] = useStateR('Bote y pagos');
-  const [copied, setCopied] = useStateR(false);
-  const L = Dr.LEAGUE;
-
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      {/* header liga */}
-      <Card style={{ marginBottom: 14, background: 'linear-gradient(150deg, rgba(74,144,226,0.12), var(--surface-1))' }}>
-        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tu liga</div>
-        <h2 className="display" style={{ margin: '4px 0 12px', fontSize: 'var(--t-xl)' }}>{L.name}</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Código:</span>
-          <span className="mono" style={{ fontWeight: 700, color: 'var(--info)', letterSpacing: '0.05em' }}>{L.code}</span>
-          <button onClick={() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }} className="mb-press" style={{
-            marginLeft: 'auto', padding: '5px 12px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)',
-            background: 'var(--surface-2)', color: copied ? 'var(--success)' : 'var(--text)', fontSize: 'var(--t-2xs)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)',
-          }}>{copied ? '✓ Copiado' : '📋 Copiar'}</button>
-        </div>
-      </Card>
-
-      <div style={{ marginBottom: 16 }}>
-        <SegTabs options={['Bote y pagos', 'Reglamento', 'Historial']} value={tab} onChange={setTab} accent="var(--info)" />
-      </div>
-
-      {tab === 'Bote y pagos' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
-          <PrizePotCard animate={false} />
-
-          {/* distribución */}
-          <Card>
-            <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', marginBottom: 10 }}>Distribución del premio</div>
-            {L.distribution.map(d => {
-              const u = Dr.userById(d.userId);
-              return (
-                <div key={d.place} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: d.place < 3 ? '1px solid var(--border)' : 'none' }}>
-                  <span style={{ fontSize: 18 }}>{d.medal}</span>
-                  <MascotAvatar mascot={u.mascot} size={28} ring={false} />
-                  <span style={{ flex: 1, fontWeight: 600, fontSize: 'var(--t-sm)' }}>{u.name}</span>
-                  <span className="num" style={{ color: 'var(--gold-light)' }}>${Dr.fmt(d.amount)}</span>
-                </div>
-              );
-            })}
-          </Card>
-
-          {/* tesorero */}
-          <Card>
-            <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', marginBottom: 12 }}>Datos del Tesorero</div>
-            {[
-              ['👤', 'Tesorero', L.treasurer + ' 🐆'],
-              ['🏦', 'Banco', L.bank],
-              ['📋', 'RUT', L.rut],
-              ['💬', 'Asunto', '"' + L.subject + '"'],
-              ['📅', 'Fecha límite', L.deadline],
-            ].map(([ic, k, v]) => (
-              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
-                <span style={{ width: 20 }}>{ic}</span>
-                <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted)', width: 92 }}>{k}</span>
-                <span style={{ fontSize: 'var(--t-sm)', fontWeight: 600, color: 'var(--text)' }}>{v}</span>
-              </div>
-            ))}
-          </Card>
-
-          {/* estado de pagos */}
-          <Card>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)' }}>Estado de pagos</span>
-              <Chip tone="green" icon={<span>✓</span>}>8/8 confirmados</Chip>
-            </div>
-            {Dr.USERS.map((u, i) => <PaymentRow key={u.id} u={u} last={i === Dr.USERS.length - 1} />)}
-            <p style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
-              Solo el Tesorero puede marcar pagos. Transparente y público para todos los miembros.
-            </p>
-          </Card>
-        </div>
-      )}
-
-      {tab === 'Reglamento' && (
-        <Card style={{ animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
-          <div style={{ fontWeight: 700, fontSize: 'var(--t-md)', marginBottom: 12 }}>Reglamento de la liga</div>
-          <ol style={{ margin: 0, paddingLeft: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {Dr.RULES.map((r, i) => (
-              <li key={i} style={{ display: 'flex', gap: 10, fontSize: 'var(--t-sm)', lineHeight: 1.45 }}>
-                <span className="num" style={{ color: 'var(--info)', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
-                <span style={{ color: 'var(--text)' }}>{r}</span>
-              </li>
-            ))}
-          </ol>
-          <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--success-bg)', borderRadius: 'var(--r-md)', textAlign: 'center', color: 'var(--success)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
-            8/8 miembros aceptaron el reglamento ✅
-          </div>
-        </Card>
-      )}
-
-      {tab === 'Historial' && (
-        <div style={{ animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
-          <p style={{ fontSize: 'var(--t-xs)', color: 'var(--muted)', marginTop: 0, marginBottom: 12 }}>
-            Registro inmutable. Nadie puede editar ni eliminar estas acciones.
-          </p>
-          {Dr.LOG.map((l, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, padding: '11px 14px', marginBottom: 8, background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
-              <span className="mono" style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', flexShrink: 0, paddingTop: 1 }}>{l.date}</span>
-              <span style={{ flex: 1, fontSize: 'var(--t-sm)', color: 'var(--text)', lineHeight: 1.4 }}>{l.text}</span>
-              <Chip tone="green" icon={<span>🔒</span>}>Verificado</Chip>
-            </div>
-          ))}
-        </div>
-      )}
+      {window.MB_LigaReal ? React.createElement(window.MB_LigaReal, {}) : null}
     </div>
   );
 }
