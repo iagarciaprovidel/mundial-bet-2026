@@ -24,10 +24,12 @@
       completeEmailLink: noFB,
       getMyProfile() { return Promise.resolve(null); },
       setDisplayName: noFB,
-      createGroup: noFB, renameGroup: noFB, deleteGroup: noFB,
+      createGroup: noFB, renameGroup: noFB, deleteGroup: noFB, setGroupOpen: noFB,
       joinGroupById: noFB, joinGroupByCode: noFB, chooseNoGroup: noFB,
+      approveRequest: noFB, rejectRequest: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
+      subscribeJoinRequests(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       savePrediction() { return Promise.reject('no-config'); },
       getMyPrediction() { return Promise.resolve(null); },
       subscribePredictions() { return () => {}; },
@@ -65,6 +67,22 @@
     const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let s = ''; for (let i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)];
     return s;
+  }
+
+  // Une al usuario a un equipo. Abierto → entra directo. Cerrado → crea
+  // solicitud pendiente que el admin debe aprobar.
+  async function joinGroupDoc(g) {
+    const u = auth.currentUser;
+    const data = g.data() || {};
+    if (data.open === false) {
+      await db.collection('joinRequests').doc(u.uid + '_' + g.id).set({
+        uid: u.uid, email: u.email || null, nombre: u.displayName || u.email || 'Jugador',
+        groupId: g.id, groupName: data.name, ts: FV.serverTimestamp(),
+      });
+      return { pending: true, name: data.name };
+    }
+    await db.collection('users').doc(u.uid).set({ groupId: g.id, groupName: data.name, noGroup: false }, { merge: true });
+    return { id: g.id, name: data.name };
   }
 
   window.MBFirebase = {
@@ -124,16 +142,18 @@
     },
 
     // ── Grupos (solo admin debería escribir; las reglas lo refuerzan) ──
-    createGroup(name) {
+    createGroup(name, open) {
       const u = auth.currentUser;
       return db.collection('groups').add({
         name: String(name || '').trim() || 'Equipo',
         code: genCode(),
+        open: open !== false,                 // por defecto ABIERTO
         owner: u ? (u.email || null) : null,
         creado: FV.serverTimestamp(),
       });
     },
     renameGroup(id, name) { return db.collection('groups').doc(id).update({ name: String(name || '').trim() }); },
+    setGroupOpen(id, open) { return db.collection('groups').doc(id).update({ open: !!open }); },
     deleteGroup(id) { return db.collection('groups').doc(id).delete(); },
     subscribeGroups(cb) {
       return db.collection('groups').onSnapshot(function (s) {
@@ -147,13 +167,13 @@
       return db.collection('users').where('groupId', '==', groupId)
         .onSnapshot(function (s) { cb(s.docs.map(function (d) { return d.data(); })); }, function () { cb([]); });
     },
-    // El usuario se autoasigna a UN equipo (por lista o por código).
+    // El usuario se une a UN equipo (por lista o por código). Abierto → directo;
+    // cerrado → queda como solicitud pendiente (devuelve { pending:true }).
     async joinGroupById(groupId) {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       const g = await db.collection('groups').doc(groupId).get();
       if (!g.exists) return Promise.reject('grupo-no-existe');
-      await db.collection('users').doc(u.uid).set({ groupId: g.id, groupName: g.data().name }, { merge: true });
-      return { id: g.id, name: g.data().name };
+      return joinGroupDoc(g);
     },
     async joinGroupByCode(code) {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
@@ -161,15 +181,24 @@
       if (!c) return Promise.reject('codigo-vacio');
       const q = await db.collection('groups').where('code', '==', c).limit(1).get();
       if (q.empty) return Promise.reject('codigo-invalido');
-      const g = q.docs[0];
-      await db.collection('users').doc(u.uid).set({ groupId: g.id, groupName: g.data().name }, { merge: true });
-      return { id: g.id, name: g.data().name };
+      return joinGroupDoc(q.docs[0]);
     },
     // El usuario decide NO pertenecer a ningún equipo (juega individual).
     chooseNoGroup() {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       return db.collection('users').doc(u.uid).set({ noGroup: true, groupId: null, groupName: null }, { merge: true });
     },
+
+    // ── Solicitudes de ingreso (equipos cerrados) ──
+    subscribeJoinRequests(groupId, cb) {
+      return db.collection('joinRequests').where('groupId', '==', groupId)
+        .onSnapshot(function (s) { cb(s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { cb([]); });
+    },
+    async approveRequest(req) {
+      await db.collection('users').doc(req.uid).set({ groupId: req.groupId, groupName: req.groupName, noGroup: false }, { merge: true });
+      await db.collection('joinRequests').doc(req.id).delete();
+    },
+    rejectRequest(reqId) { return db.collection('joinRequests').doc(reqId).delete(); },
 
     // Guarda la predicción de marcador (las reglas validan dueño + antes del kickoff)
     savePrediction(matchId, golesLocal, golesVisita) {

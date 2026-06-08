@@ -14,15 +14,17 @@
   // ── Fila de un equipo ─────────────────────────────────────
   function GroupRow({ g }) {
     const [members, setMembers] = useState([]);
+    const [reqs, setReqs] = useState([]);
     const [copied, setCopied] = useState(false);
+    const isOpen = g.open !== false;
     useEffect(() => {
-      const unsub = FB().subscribeGroupMembers ? FB().subscribeGroupMembers(g.id, setMembers) : null;
-      return () => { if (typeof unsub === 'function') unsub(); };
+      const u1 = FB().subscribeGroupMembers ? FB().subscribeGroupMembers(g.id, setMembers) : null;
+      const u2 = FB().subscribeJoinRequests ? FB().subscribeJoinRequests(g.id, setReqs) : null;
+      return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
     }, [g.id]);
 
     const copy = () => {
-      const code = g.code || '';
-      try { if (navigator.clipboard) navigator.clipboard.writeText(code); } catch (e) {}
+      try { if (navigator.clipboard) navigator.clipboard.writeText(g.code || ''); } catch (e) {}
       setCopied(true); setTimeout(() => setCopied(false), 1500);
     };
     const rename = () => {
@@ -34,6 +36,9 @@
         FB().deleteGroup(g.id).catch(e => alert('Error: ' + (e && e.message || e)));
       }
     };
+    const toggleOpen = () => FB().setGroupOpen(g.id, !isOpen).catch(e => alert('Error: ' + (e && e.message || e)));
+    const approve = (r) => FB().approveRequest(r).catch(e => alert('Error: ' + (e && e.message || e)));
+    const reject = (r) => FB().rejectRequest(r.id).catch(e => alert('Error: ' + (e && e.message || e)));
 
     return (
       <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-md)', padding: '12px 14px', marginBottom: 10 }}>
@@ -44,11 +49,35 @@
           <button onClick={rename} title="Renombrar" style={iconBtn}>✏️</button>
           <button onClick={del} title="Eliminar equipo" style={iconBtn}>🗑️</button>
         </div>
+
+        {/* Abierto / Cerrado */}
+        <button onClick={toggleOpen} className="mb-press" title="Cambiar acceso" style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', marginBottom: 8, padding: '7px 10px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-1)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 'var(--t-2xs)', textAlign: 'left' }}>
+          <span style={{ fontSize: 14 }}>{isOpen ? '🔓' : '🔒'}</span>
+          <span style={{ flex: 1, fontWeight: 700 }}>{isOpen ? 'Abierto' : 'Cerrado'}</span>
+          <span style={{ color: 'var(--muted-2)' }}>{isOpen ? 'cualquiera entra directo' : 'tú apruebas a cada uno'}</span>
+          <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>cambiar</span>
+        </button>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '8px 10px', background: 'var(--surface-1)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Código:</span>
           <code className="mono" style={{ flex: 1, fontWeight: 800, letterSpacing: '0.12em', color: 'var(--gold-light)', fontSize: 'var(--t-md)' }}>{g.code || '—'}</code>
           <button onClick={copy} className="mb-press" style={{ ...addBtn, padding: '6px 12px', color: copied ? 'var(--success)' : 'var(--text)' }}>{copied ? '✓ Copiado' : '📋 Copiar'}</button>
         </div>
+
+        {/* Solicitudes pendientes (equipos cerrados) */}
+        {reqs.length > 0 && (
+          <div style={{ marginBottom: 8, padding: '8px 10px', background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 'var(--r-md)' }}>
+            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Solicitudes de ingreso ({reqs.length})</div>
+            {reqs.map(r => (
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
+                <span style={{ flex: 1, fontSize: 'var(--t-2xs)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre || r.email || 'Jugador'}{r.email ? <span style={{ color: 'var(--muted-2)' }}> · {r.email}</span> : null}</span>
+                <button onClick={() => approve(r)} className="mb-press" title="Aceptar" style={{ border: 'none', borderRadius: 'var(--r-pill)', padding: '5px 10px', background: 'var(--success)', color: '#04210f', fontWeight: 800, fontSize: 'var(--t-3xs)', cursor: 'pointer' }}>✓ Aceptar</button>
+                <button onClick={() => reject(r)} className="mb-press" title="Rechazar" style={{ border: '1px solid var(--border-2)', borderRadius: 'var(--r-pill)', padding: '5px 9px', background: 'none', color: 'var(--danger)', fontWeight: 700, fontSize: 'var(--t-3xs)', cursor: 'pointer' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {members.length === 0
             ? <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Aún nadie se ha unido. Comparte el código de arriba.</span>

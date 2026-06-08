@@ -28,17 +28,23 @@
       if (n.length < 2) { alert('Escribe tu nombre o apodo (mínimo 2 letras).'); return null; }
       return n;
     };
+    const onJoined = (res) => {
+      if (res && res.pending) {
+        alert('✅ Solicitud enviada a "' + res.name + '". Es un equipo cerrado: el administrador debe aceptarte. Por ahora entras, y cuando te acepten aparecerás en el equipo.');
+        onSkip();
+      } else { onDone(); }
+    };
     const joinById = (g) => {
       const n = ensureName(); if (!n) return;
       setBusy(true);
-      FB().setDisplayName(n).then(() => FB().joinGroupById(g.id)).then(onDone).catch(fail).finally(() => setBusy(false));
+      FB().setDisplayName(n).then(() => FB().joinGroupById(g.id)).then(onJoined).catch(fail).finally(() => setBusy(false));
     };
     const joinByCode = () => {
       const n = ensureName(); if (!n) return;
       const c = code.trim();
       if (!c) { alert('Escribe el código de tu equipo.'); return; }
       setBusy(true);
-      FB().setDisplayName(n).then(() => FB().joinGroupByCode(c)).then(onDone).catch(fail).finally(() => setBusy(false));
+      FB().setDisplayName(n).then(() => FB().joinGroupByCode(c)).then(onJoined).catch(fail).finally(() => setBusy(false));
     };
     // Jugar sin equipo (individual). Si no se puede guardar (reglas), entra igual esta sesión.
     const playSolo = () => {
@@ -82,13 +88,16 @@
             ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '12px 0' }}>Todavía no hay equipos creados. Pídele a tu organizador que cree uno.</div>
             : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {groups.map(g => (
-                  <button key={g.id} onClick={() => joinById(g)} disabled={busy} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', textAlign: 'left' }}>
-                    <span style={{ fontSize: 18 }}>👥</span>
-                    <span style={{ flex: 1, fontWeight: 700, fontSize: 'var(--t-md)' }}>{g.name}</span>
-                    <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 700 }}>Unirme →</span>
-                  </button>
-                ))}
+                {groups.map(g => {
+                  const closed = g.open === false;
+                  return (
+                    <button key={g.id} onClick={() => joinById(g)} disabled={busy} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', textAlign: 'left' }}>
+                      <span style={{ fontSize: 16 }}>{closed ? '🔒' : '👥'}</span>
+                      <span style={{ flex: 1, fontWeight: 700, fontSize: 'var(--t-md)' }}>{g.name}</span>
+                      <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 700 }}>{closed ? 'Pedir unirme →' : 'Unirme →'}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
 

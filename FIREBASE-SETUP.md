@@ -29,14 +29,19 @@ service cloud.firestore {
     // Perfiles de usuario
     match /users/{uid} {
       allow read:          if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && (request.auth.uid == uid || isAdmin());
       allow delete:        if isAdmin();
     }
-    // Grupos: cualquier usuario autenticado puede leerlos (para auto-asignarse
-    // a su grupo por correo); solo el ADMIN crea / edita / borra.
+    // Grupos: cualquier usuario autenticado puede leerlos; solo el ADMIN escribe.
     match /groups/{gid} {
       allow read:                  if request.auth != null;
       allow create, update, delete: if isAdmin();
+    }
+    // Solicitudes de ingreso a equipos cerrados.
+    match /joinRequests/{rid} {
+      allow read:   if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
     }
     // Predicciones (ya existente)
     match /predictions/{pid} {
