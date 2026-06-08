@@ -25,8 +25,6 @@
       return () => { alive = false; };
     }, [user]);
 
-    if (!groups.length) return null;
-
     const join = (g) => {
       if (!user) { alert('Inicia sesión para unirte a un equipo.'); return; }
       setBusy(true);
@@ -42,6 +40,11 @@
           <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>Equipos de apostadores</h3>
           <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>{groups.length} {groups.length === 1 ? 'equipo' : 'equipos'}</span>
         </div>
+        {groups.length === 0 && (
+          <div style={{ padding: '16px', borderRadius: 'var(--r-md)', background: 'rgba(13,20,15,0.82)', border: '1px dashed var(--border-2)', textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
+            Aún no hay equipos de apostadores. Crea el tuyo con el botón <strong style={{ color: 'var(--gold-light)' }}>👥 Mis equipos</strong> (abajo a la derecha).
+          </div>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {groups.map(g => {
             const mine = g.id === myGroupId;
