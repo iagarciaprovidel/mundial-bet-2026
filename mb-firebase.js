@@ -24,8 +24,10 @@
       completeEmailLink: noFB,
       getMyProfile() { return Promise.resolve(null); },
       setDisplayName: noFB,
+      isGroupAdmin() { return false; },
       createGroup: noFB, renameGroup: noFB, deleteGroup: noFB, setGroupOpen: noFB,
-      joinGroupById: noFB, joinGroupByCode: noFB, chooseNoGroup: noFB,
+      addAdmin: noFB, removeAdmin: noFB,
+      joinGroupById: noFB, chooseNoGroup: noFB,
       approveRequest: noFB, rejectRequest: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
@@ -62,15 +64,8 @@
     }
   }
 
-  // Código de invitación legible (sin caracteres ambiguos: sin O,0,I,1).
-  function genCode() {
-    const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let s = ''; for (let i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)];
-    return s;
-  }
-
   // Une al usuario a un equipo. Abierto → entra directo. Cerrado → crea
-  // solicitud pendiente que el admin debe aprobar.
+  // solicitud pendiente que algún admin del equipo debe aprobar.
   async function joinGroupDoc(g) {
     const u = auth.currentUser;
     const data = g.data() || {};
@@ -141,19 +136,31 @@
       ]).then(function (r) { try { window.dispatchEvent(new Event('mb-auth-refresh')); } catch (e) {} return r; });
     },
 
-    // ── Grupos (solo admin debería escribir; las reglas lo refuerzan) ──
-    createGroup(name, open) {
-      const u = auth.currentUser;
-      return db.collection('groups').add({
-        name: String(name || '').trim() || 'Equipo',
-        code: genCode(),
+    // ── Equipos ──
+    // Cualquiera puede crear un equipo: el creador queda como ADMIN y miembro.
+    isGroupAdmin(group, user) {
+      const u = user || auth.currentUser;
+      if (!u || !group || !group.adminEmails) return false;
+      return group.adminEmails.indexOf(String(u.email || '').toLowerCase()) !== -1;
+    },
+    async createGroup(name, open) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const email = String(u.email || '').toLowerCase();
+      const nm = String(name || '').trim() || 'Equipo';
+      const ref = await db.collection('groups').add({
+        name: nm,
         open: open !== false,                 // por defecto ABIERTO
-        owner: u ? (u.email || null) : null,
+        adminEmails: [email],
+        ownerName: u.displayName || email || null,
         creado: FV.serverTimestamp(),
       });
+      await db.collection('users').doc(u.uid).set({ groupId: ref.id, groupName: nm, noGroup: false }, { merge: true });
+      return { id: ref.id, name: nm };
     },
     renameGroup(id, name) { return db.collection('groups').doc(id).update({ name: String(name || '').trim() }); },
     setGroupOpen(id, open) { return db.collection('groups').doc(id).update({ open: !!open }); },
+    addAdmin(groupId, email) { return db.collection('groups').doc(groupId).update({ adminEmails: FV.arrayUnion(String(email || '').trim().toLowerCase()) }); },
+    removeAdmin(groupId, email) { return db.collection('groups').doc(groupId).update({ adminEmails: FV.arrayRemove(String(email || '').trim().toLowerCase()) }); },
     deleteGroup(id) { return db.collection('groups').doc(id).delete(); },
     subscribeGroups(cb) {
       return db.collection('groups').onSnapshot(function (s) {
@@ -174,14 +181,6 @@
       const g = await db.collection('groups').doc(groupId).get();
       if (!g.exists) return Promise.reject('grupo-no-existe');
       return joinGroupDoc(g);
-    },
-    async joinGroupByCode(code) {
-      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
-      const c = String(code || '').trim().toUpperCase();
-      if (!c) return Promise.reject('codigo-vacio');
-      const q = await db.collection('groups').where('code', '==', c).limit(1).get();
-      if (q.empty) return Promise.reject('codigo-invalido');
-      return joinGroupDoc(q.docs[0]);
     },
     // El usuario decide NO pertenecer a ningún equipo (juega individual).
     chooseNoGroup() {

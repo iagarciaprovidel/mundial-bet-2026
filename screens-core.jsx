@@ -219,6 +219,9 @@ function Dashboard({ user, onNav, onPredict }) {
       </div>
       <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center', marginTop: -8 }}>📊 Datos de ejemplo · el torneo aún no comienza</div>
 
+      {/* Equipos de apostadores (creados por los usuarios) */}
+      {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
+
       {/* próximos partidos */}
       <div>
         <SectionHead title="Próximos partidos" action="Ver todos" onAction={() => onNav('partidos')} />

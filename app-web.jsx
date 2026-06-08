@@ -553,6 +553,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
           <MetricW label="ROI" value={'+' + me.roi + '%'} tone="var(--success)" icon="📈" />
         </div>
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: -8 }}>📊 Datos de ejemplo · el torneo aún no comienza</div>
+        {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
         {next && (
         <div>
           <SectionHead title="Próximo partido" action="Ver todos" onAction={() => onNav('partidos')} />

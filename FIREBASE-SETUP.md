@@ -22,38 +22,42 @@ Firestore Database → **Rules** → pega esto y publica:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAdmin() {
-      return request.auth != null &&
-        request.auth.token.email in ['ia.garcia.providel@gmail.com', 'sgarciao@gmail.com'];
+    function signedIn() { return request.auth != null; }
+    // ¿El usuario es admin de ESE equipo? (su correo está en adminEmails del grupo)
+    function isTeamAdmin(gid) {
+      return signedIn() &&
+        request.auth.token.email.lower() in
+        get(/databases/$(database)/documents/groups/$(gid)).data.adminEmails;
     }
-    // Perfiles de usuario
     match /users/{uid} {
-      allow read:          if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow create, update: if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow delete:        if isAdmin();
+      allow read:   if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid;
+      // el dueño edita su perfil; un admin de un equipo puede asignar a alguien a ESE equipo (aprobar)
+      allow update: if signedIn() && (request.auth.uid == uid
+                      || (request.resource.data.groupId != null && isTeamAdmin(request.resource.data.groupId)));
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
-    // Grupos: cualquier usuario autenticado puede leerlos; solo el ADMIN escribe.
     match /groups/{gid} {
-      allow read:                  if request.auth != null;
-      allow create, update, delete: if isAdmin();
+      allow read:   if signedIn();
+      // cualquiera crea un equipo, pero debe incluirse a sí mismo como admin
+      allow create: if signedIn() && request.auth.token.email.lower() in request.resource.data.adminEmails;
+      allow update, delete: if isTeamAdmin(gid);
     }
-    // Solicitudes de ingreso a equipos cerrados.
     match /joinRequests/{rid} {
-      allow read:   if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
+      allow read:   if signedIn() && (resource.data.uid == request.auth.uid || isTeamAdmin(resource.data.groupId));
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isTeamAdmin(resource.data.groupId));
     }
-    // Predicciones (ya existente)
     match /predictions/{pid} {
-      allow read:  if request.auth != null;
-      allow write: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read:  if signedIn();
+      allow write: if signedIn() && request.resource.data.uid == request.auth.uid;
     }
   }
 }
 ```
 
-> Si agregas más admins, edítalos en **dos** lugares: la lista `request.auth.token.email in [...]`
-> de estas reglas **y** `window.MB_ADMIN_EMAILS` en `firebase-config.js`.
+> Modelo nuevo: **no hay un admin global**. Cada equipo tiene su lista `adminEmails`
+> (el creador entra ahí, y puede agregar más correos como admins desde "Mis equipos").
 
 ## Cómo se usa
 1. Inicia sesión con tu correo admin (`ia.garcia.providel@gmail.com`) → aparece el botón **🔐 Admin** (abajo a la izquierda).

@@ -11,7 +11,6 @@
   function TeamSelectModal({ onDone, onSkip }) {
     const [groups, setGroups] = useState([]);
     const [name, setName] = useState('');
-    const [code, setCode] = useState('');
     const [busy, setBusy] = useState(false);
 
     useEffect(() => {
@@ -19,10 +18,7 @@
       return () => { if (typeof unsub === 'function') unsub(); };
     }, []);
 
-    const fail = (e) => {
-      const m = (e && e.message) || e;
-      alert(m === 'codigo-invalido' ? 'Ese código no existe. Revísalo con quien te invitó.' : 'No se pudo unir: ' + m);
-    };
+    const fail = (e) => alert('No se pudo: ' + ((e && e.message) || e));
     const ensureName = () => {
       const n = name.trim();
       if (n.length < 2) { alert('Escribe tu nombre o apodo (mínimo 2 letras).'); return null; }
@@ -30,7 +26,7 @@
     };
     const onJoined = (res) => {
       if (res && res.pending) {
-        alert('✅ Solicitud enviada a "' + res.name + '". Es un equipo cerrado: el administrador debe aceptarte. Por ahora entras, y cuando te acepten aparecerás en el equipo.');
+        alert('✅ Solicitud enviada a "' + res.name + '". Es un equipo cerrado: un administrador debe aceptarte. Por ahora entras, y cuando te acepten aparecerás en el equipo.');
         onSkip();
       } else { onDone(); }
     };
@@ -39,12 +35,14 @@
       setBusy(true);
       FB().setDisplayName(n).then(() => FB().joinGroupById(g.id)).then(onJoined).catch(fail).finally(() => setBusy(false));
     };
-    const joinByCode = () => {
+    // Crear mi propio equipo (quedo como admin + miembro).
+    const createTeam = () => {
       const n = ensureName(); if (!n) return;
-      const c = code.trim();
-      if (!c) { alert('Escribe el código de tu equipo.'); return; }
+      const teamName = window.prompt('Nombre de tu nuevo equipo:');
+      if (!teamName || !teamName.trim()) return;
+      const closed = window.confirm('¿El equipo será CERRADO (tú apruebas a cada uno)?\n\nAceptar = Cerrado 🔒\nCancelar = Abierto 🔓');
       setBusy(true);
-      FB().setDisplayName(n).then(() => FB().joinGroupByCode(c)).then(onJoined).catch(fail).finally(() => setBusy(false));
+      FB().setDisplayName(n).then(() => FB().createGroup(teamName.trim(), !closed)).then(() => onDone()).catch(fail).finally(() => setBusy(false));
     };
     // Jugar sin equipo (individual). Si no se puede guardar (reglas), entra igual esta sesión.
     const playSolo = () => {
@@ -69,23 +67,10 @@
           <input value={name} onChange={e => setName(e.target.value)} maxLength={24} placeholder="ej: Sergio, El Profeta, Tío Juan…"
             style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', marginBottom: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-md)', fontWeight: 700 }} />
 
-          {/* Código */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
-            <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') joinByCode(); }}
-              placeholder="CÓDIGO (ej: FAMIL26)" maxLength={10}
-              style={{ flex: 1, minWidth: 0, padding: '11px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-mono)', fontWeight: 800, letterSpacing: '0.12em', fontSize: 'var(--t-md)', textAlign: 'center' }} />
-            <button onClick={joinByCode} disabled={busy} className="mb-press" style={{ flexShrink: 0, padding: '11px 16px', borderRadius: 'var(--r-md)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: busy ? 0.6 : 1 }}>Unirme</button>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-2)' }} />
-            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>o elige de la lista</span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-2)' }} />
-          </div>
-
           {/* Lista de equipos */}
+          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 8 }}>Únete a un equipo</div>
           {groups.length === 0
-            ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '12px 0' }}>Todavía no hay equipos creados. Pídele a tu organizador que cree uno.</div>
+            ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '12px 0' }}>Todavía no hay equipos. ¡Crea el primero abajo! 👇</div>
             : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {groups.map(g => {
@@ -101,7 +86,10 @@
               </div>
             )}
 
-          <button onClick={playSolo} disabled={busy} className="mb-press" style={{ width: '100%', marginTop: 16, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
+          <button onClick={createTeam} disabled={busy} className="mb-press" style={{ width: '100%', marginTop: 16, padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>
+            ➕ Crear un equipo nuevo
+          </button>
+          <button onClick={playSolo} disabled={busy} className="mb-press" style={{ width: '100%', marginTop: 8, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
             🙋 Jugar sin equipo (individual)
           </button>
           <button onClick={() => FB().signOut && FB().signOut()} style={{ display: 'block', margin: '14px auto 0', background: 'none', border: 'none', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
@@ -126,7 +114,6 @@
     }, [user, refresh]);
 
     if (!user) return null;
-    if (FB().isAdmin && FB().isAdmin(user)) return null; // el admin no elige equipo
     if (skipped) return null;                        // entró sin equipo (esta sesión)
     if (profile === undefined) return null;          // aún cargando perfil
     if (profile && (profile.groupId || profile.noGroup)) return null; // ya decidió (equipo o individual)
