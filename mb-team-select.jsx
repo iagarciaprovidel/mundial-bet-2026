@@ -27,6 +27,9 @@
       'apodo-tomado': 'Ese apodo ya está en uso. Elige otro.',
       'apodo-fijo': 'Ya tienes un apodo y no se puede cambiar.',
       'nombre-vacio': 'Escribe tu nombre o apodo.',
+      'ya-tienes-equipo': 'Ya creaste un equipo. Solo puedes tener uno.',
+      'nombre-equipo-tomado': 'Ya existe un equipo con ese nombre. Elige otro.',
+      'nombre-equipo-corto': 'El nombre del equipo debe tener al menos 3 caracteres.',
     };
     const fail = (e) => { const c = (e && e.message) || e; alert(APODO_ERR[c] || ('No se pudo: ' + c)); };
     const ensureName = () => {
@@ -112,6 +115,100 @@
     );
   }
 
+  // ── Selector de equipo reutilizable (unirse / cambiar / crear / individual) ──
+  // Se abre desde cualquier parte con window.MB_openTeamPicker(). NO pide apodo
+  // (eso ya se eligió). Sirve para que un "individual" se pase a un equipo.
+  function TeamPicker({ onClose }) {
+    const [groups, setGroups] = useState([]);
+    const [profile, setProfile] = useState(null);
+    const [owns, setOwns] = useState(false);
+    const [busy, setBusy] = useState(false);
+    useEffect(() => { const u = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null; return () => { if (typeof u === 'function') u(); }; }, []);
+    const refresh = () => { if (FB().getMyProfile) FB().getMyProfile().then(p => setProfile(p || null)).catch(() => {}); if (FB().ownsGroup) FB().ownsGroup().then(setOwns).catch(() => {}); };
+    useEffect(() => { refresh(); }, []);
+
+    const valid = groups.filter(g => g && g.name && String(g.name).trim());
+    const myGid = profile && profile.groupId;
+    const ERR = {
+      'ya-tienes-equipo': 'Ya creaste un equipo. Solo puedes tener uno.',
+      'nombre-equipo-tomado': 'Ya existe un equipo con ese nombre. Elige otro.',
+      'nombre-equipo-corto': 'El nombre del equipo debe tener al menos 3 caracteres.',
+    };
+    const fail = (e) => { const c = (e && e.message) || e; alert(ERR[c] || ('No se pudo: ' + c)); };
+    const join = (g) => {
+      if (g.id === myGid) return;
+      setBusy(true);
+      FB().joinGroupById(g.id).then(res => {
+        if (res && res.pending) alert('✅ Solicitud enviada a "' + res.name + '". Es un equipo cerrado: un administrador debe aceptarte.');
+        onClose();
+      }).catch(fail).finally(() => setBusy(false));
+    };
+    const create = () => {
+      const teamName = window.prompt('Nombre de tu nuevo equipo:');
+      if (!teamName || !teamName.trim()) return;
+      const closed = window.confirm('¿El equipo será CERRADO (tú apruebas a cada uno)?\n\nAceptar = Cerrado 🔒\nCancelar = Abierto 🔓');
+      setBusy(true);
+      FB().createGroup(teamName.trim(), !closed).then(() => onClose()).catch(fail).finally(() => setBusy(false));
+    };
+    const solo = () => { setBusy(true); FB().chooseNoGroup().then(() => onClose()).catch(fail).finally(() => setBusy(false)); };
+
+    const modal = (
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)', padding: 24, width: 'min(440px, 94vw)', maxHeight: '90vh', overflow: 'auto', boxShadow: 'var(--sh-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <span style={{ fontSize: 24 }}>👥</span>
+            <div style={{ flex: 1 }}>
+              <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-xl)' }}>Tu equipo</h2>
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{profile && profile.groupName ? 'Actual: ' + profile.groupName : (profile && profile.noGroup ? 'Juegas individual' : 'Sin equipo')}</div>
+            </div>
+            <button onClick={onClose} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15 }}>✕</button>
+          </div>
+
+          {valid.length > 0 && (
+            <>
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 8 }}>Únete a un equipo</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {valid.map(g => {
+                  const closed = g.open === false, mine = g.id === myGid;
+                  return (
+                    <button key={g.id} onClick={() => join(g)} disabled={busy || mine} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 'var(--r-md)', border: mine ? '1px solid var(--gold)' : '1px solid var(--border-2)', background: mine ? 'rgba(212,175,55,0.12)' : 'var(--surface-2)', color: 'var(--text)', cursor: mine ? 'default' : 'pointer', textAlign: 'left' }}>
+                      <span style={{ fontSize: 16 }}>{closed ? '🔒' : '👥'}</span>
+                      <span style={{ flex: 1, fontWeight: 700, fontSize: 'var(--t-md)' }}>{g.name}</span>
+                      <span style={{ fontSize: 'var(--t-2xs)', color: mine ? 'var(--gold-light)' : 'var(--gold-light)', fontWeight: 700 }}>{mine ? '★ tu equipo' : (closed ? 'Pedir unirme →' : 'Unirme →')}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          <button onClick={create} disabled={busy || owns} title={owns ? 'Ya creaste un equipo' : ''} className="mb-press" style={{ width: '100%', marginTop: 16, padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: owns ? 'not-allowed' : 'pointer', opacity: owns ? 0.5 : 1, background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>
+            ➕ Crear un equipo nuevo
+          </button>
+          {owns && <div style={{ fontSize: 9, color: 'var(--muted-2)', textAlign: 'center', marginTop: 4 }}>Solo puedes tener un equipo propio.</div>}
+          {!(profile && profile.noGroup) && (
+            <button onClick={solo} disabled={busy} className="mb-press" style={{ width: '100%', marginTop: 8, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
+              🙋 Jugar sin equipo (individual)
+            </button>
+          )}
+        </div>
+      </div>
+    );
+    return ReactDOM.createPortal(modal, document.body);
+  }
+
+  function TeamPickerLauncher() {
+    const [open, setOpen] = useState(false);
+    useEffect(() => {
+      const on = () => setOpen(true);
+      window.addEventListener('mb-open-teampicker', on);
+      return () => window.removeEventListener('mb-open-teampicker', on);
+    }, []);
+    return open ? <TeamPicker onClose={() => setOpen(false)} /> : null;
+  }
+  // Abrir el selector desde cualquier parte (perfil, inicio, etc.).
+  window.MB_openTeamPicker = function () { try { window.dispatchEvent(new Event('mb-open-teampicker')); } catch (e) {} };
+
   function TeamGate() {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [profile, setProfile] = useState(undefined); // undefined = cargando
@@ -125,13 +222,14 @@
       return () => { alive = false; };
     }, [user, refresh]);
 
-    if (!user) return null;
-    if (skipped) return null;                        // entró sin equipo (esta sesión)
-    if (profile === undefined) return null;          // aún cargando perfil
-    // Se cierra solo cuando YA eligió su apodo Y decidió equipo (o individual).
-    if (profile && profile.apodoSet && (profile.groupId || profile.noGroup)) return null;
     const skip = () => { try { sessionStorage.setItem('mb_team_skip', '1'); } catch (e) {} setSkipped(true); };
-    return <TeamSelectModal onDone={() => setRefresh(r => r + 1)} onSkip={skip} />;
+    // El gate (bienvenida) solo aparece si falta apodo o decisión de equipo.
+    let gate = null;
+    if (user && !skipped && profile !== undefined && !(profile && profile.apodoSet && (profile.groupId || profile.noGroup))) {
+      gate = <TeamSelectModal onDone={() => setRefresh(r => r + 1)} onSkip={skip} />;
+    }
+    // El launcher (selector reutilizable) siempre montado si hay sesión.
+    return <React.Fragment>{gate}{user ? <TeamPickerLauncher /> : null}</React.Fragment>;
   }
 
   window.MB_TeamGate = TeamGate;

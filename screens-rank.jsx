@@ -181,6 +181,11 @@ function Perfil() {
         <h2 className="display" style={{ margin: '4px 0 6px', fontSize: 'var(--t-2xl)' }}>{dispName}</h2>
         <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{authUser.email || ''}</div>
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, marginTop: 3 }}>{teamName}</div>
+        {window.MB_openTeamPicker && (
+          <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ marginTop: 10, padding: '8px 16px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(74,144,226,0.5)', background: 'rgba(74,144,226,0.12)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>
+            {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>

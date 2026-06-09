@@ -26,6 +26,7 @@
       setDisplayName: noFB,
       isGroupAdmin() { return false; },
       createGroup: noFB, renameGroup: noFB, deleteGroup: noFB, setGroupOpen: noFB,
+      ownsGroup() { return Promise.resolve(false); },
       addAdmin: noFB, removeAdmin: noFB,
       joinGroupById: noFB, chooseNoGroup: noFB,
       approveRequest: noFB, rejectRequest: noFB,
@@ -187,19 +188,34 @@
       if (!u || !group || !group.adminEmails) return false;
       return group.adminEmails.indexOf(String(u.email || '').toLowerCase()) !== -1;
     },
+    // 1 equipo por persona: cada usuario puede crear como máximo uno (queda
+    // como dueño/admin). Nombre mínimo 3 y único (sin distinguir mayúsculas).
     async createGroup(name, open) {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       const email = String(u.email || '').toLowerCase();
-      const nm = String(name || '').trim() || 'Equipo';
+      const nm = String(name || '').trim();
+      if (nm.length < 3) return Promise.reject('nombre-equipo-corto');
+      const mine = await db.collection('groups').where('ownerUid', '==', u.uid).limit(1).get();
+      if (!mine.empty) return Promise.reject('ya-tienes-equipo');
+      const lower = nm.toLowerCase();
+      const dup = await db.collection('groups').where('nameLower', '==', lower).limit(1).get();
+      if (!dup.empty) return Promise.reject('nombre-equipo-tomado');
       const ref = await db.collection('groups').add({
-        name: nm,
+        name: nm, nameLower: lower,
         open: open !== false,                 // por defecto ABIERTO
         adminEmails: [email],
+        ownerUid: u.uid,
         ownerName: u.displayName || email || null,
         creado: FV.serverTimestamp(),
       });
       await db.collection('users').doc(u.uid).set({ groupId: ref.id, groupName: nm, noGroup: false }, { merge: true });
       return { id: ref.id, name: nm };
+    },
+    // ¿El usuario ya creó un equipo? (para mostrar/ocultar el botón de crear)
+    async ownsGroup() {
+      const u = auth.currentUser; if (!u) return false;
+      const snap = await db.collection('groups').where('ownerUid', '==', u.uid).limit(1).get();
+      return !snap.empty;
     },
     renameGroup(id, name) { return db.collection('groups').doc(id).update({ name: String(name || '').trim() }); },
     setGroupOpen(id, open) { return db.collection('groups').doc(id).update({ open: !!open }); },

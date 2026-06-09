@@ -932,6 +932,11 @@ function PerfilWeb() {
           <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)' }}>{dispName}</h2>
           <div style={{ color: 'var(--muted)', fontWeight: 600, fontSize: 'var(--t-sm)' }}>{authUser.email || ''}</div>
           <div style={{ color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', marginTop: 3 }}>{teamName}</div>
+          {window.MB_openTeamPicker && (
+            <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ marginTop: 10, padding: '7px 14px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(74,144,226,0.5)', background: 'rgba(74,144,226,0.12)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>
+              {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
+            </button>
+          )}
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
             <MetricW label="Posición" value={pos ? '#' + pos : '—'} tone="var(--info)" icon="📊" />
             <MetricW label="Saldo" value={fmt(saldo)} tone="var(--gold-light)" icon="🏆" />
