@@ -47,6 +47,8 @@
 
   firebase.initializeApp(cfg);
   const auth = firebase.auth();
+  // Sesión persistente: sobrevive a recargas y al cierre del navegador.
+  try { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {}); } catch (e) {}
   const db = firebase.firestore();
   window.MB_FB_READY = true;
 
