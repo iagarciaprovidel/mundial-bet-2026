@@ -73,7 +73,8 @@
       return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
     }, [user]);
 
-    const note = (txt) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '22px 16px' }}>{txt}</div>;
+    // Mismo recuadro que el Ranking (Card): fondo opaco + borde azul.
+    const note = (txt) => <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '26px 16px' }}>{txt}</div>;
     if (!user) return note('Inicia sesión para ver la liga.');
 
     const countByGroup = {}, sumByGroup = {};
