@@ -67,11 +67,6 @@ function Onboarding({ onFinish }) {
             background: 'var(--surface-1)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-md)', cursor: 'pointer',
           }}>Continuar</button>
         : <div style={{ position: 'relative', zIndex: 1 }}><GoldButton onClick={() => onFinish('zayu')}>¡Empezar a jugar!</GoldButton></div>}
-      <button onClick={() => onFinish('zayu')} className="mb-press" style={{
-        width: '100%', marginTop: 10, padding: '11px', borderRadius: 'var(--r-pill)', cursor: 'pointer',
-        background: 'none', border: '1px solid rgba(255,255,255,0.28)', color: 'var(--gold-light)',
-        fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', position: 'relative', zIndex: 1,
-      }}>Saltar introducción ✕</button>
     </div>
   );
 }
