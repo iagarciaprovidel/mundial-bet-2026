@@ -384,6 +384,12 @@ function TeamModal({ team, onClose }) {
 // ── Sidebar ───────────────────────────────────────────────
 function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+  const [mine, setMine] = useStateW(null);
+  useEffectW(() => {
+    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeMe) { setMine(null); return undefined; }
+    const un = window.MBFirebase.subscribeMe(setMine);
+    return () => { if (typeof un === 'function') un(); };
+  }, [authUser]);
   const [installable, setInstallable] = useStateW(!!window.__deferredPrompt);
   useEffectW(() => {
     const on = () => setInstallable(true), off = () => setInstallable(false);
@@ -456,6 +462,7 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
             <div style={{ minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser.displayName || 'Jugador'}</div>
               <div style={{ fontSize: 9, color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser.email || ''}</div>
+              <div style={{ fontSize: 9, color: 'var(--gold-light)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mine && mine.groupName ? '👥 ' + mine.groupName : (mine && mine.noGroup ? '🙋 Individual' : 'Sin equipo')}</div>
             </div>
           </button>
           <button onClick={() => window.MBFirebase && window.MBFirebase.signOut()} title="Cerrar sesión" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 700 }}>Salir</button>
@@ -503,7 +510,7 @@ function Topbar({ tab, me, onFlagClick, onGroup, onNav }) {
       padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'rgba(8,15,10,0.7)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-        {group && <button onClick={() => onNav && onNav('ranking')} className="mb-press" title="Ver los jugadores" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--t-md)', color: 'var(--gold-light)', fontWeight: 800, whiteSpace: 'nowrap', padding: 0 }}>👥 {group}</button>}
+        {group && <button onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers()} className="mb-press" title="Ver integrantes de tu equipo" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--t-md)', color: 'var(--gold-light)', fontWeight: 800, whiteSpace: 'nowrap', padding: 0 }}>👥 {group}</button>}
       </div>
       <FlagTicker onSelect={onFlagClick} onGroup={onGroup} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>

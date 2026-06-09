@@ -306,12 +306,14 @@ function Root() {
   const AdminLauncher = window.MB_AdminLauncher;
   const TeamGate = window.MB_TeamGate;
   const HelpLauncher = window.MB_HelpLauncher;
+  const TeamMembers = window.MB_TeamMembersLauncher;
   return (
     <React.Fragment>
       <Cmp />
       {AdminLauncher ? <AdminLauncher /> : null}
       {TeamGate ? <TeamGate /> : null}
       {HelpLauncher ? <HelpLauncher /> : null}
+      {TeamMembers ? <TeamMembers /> : null}
     </React.Fragment>
   );
 }

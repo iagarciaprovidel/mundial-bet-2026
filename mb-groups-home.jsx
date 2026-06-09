@@ -1,53 +1,115 @@
 /* ============================================================
-   MundialBet Club 2026 — "Equipos de apostadores" en el Inicio
-   Lista TODOS los equipos con su cantidad de jugadores. Al tocar
-   un equipo, muestra sus jugadores (solo el apodo). Datos reales
-   de Firestore. Expone window.MB_GroupsHome.
+   MundialBet Club 2026 — "Equipos de apostadores" (Inicio) +
+   vista de equipo (integrantes con fecha de ingreso y ganancias).
+   Datos reales de Firestore. Expone:
+     window.MB_GroupsHome           — lista de equipos en el Inicio
+     window.MB_openTeamMembers(id)  — abre la ficha de un equipo (id
+                                       opcional: sin id = tu equipo)
+     window.MB_TeamMembersLauncher  — se monta global en el bootstrap
    ============================================================ */
 (function () {
   const { useState, useEffect } = React;
   const FB = () => window.MBFirebase || {};
+  const SAL = 90000;
+  const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
   function initials(name) {
     const p = String(name || '').trim().split(/\s+/);
     return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase();
   }
+  function fmtDate(ts) {
+    try {
+      const d = ts && typeof ts.toDate === 'function' ? ts.toDate() : (ts && ts.seconds ? new Date(ts.seconds * 1000) : null);
+      return d ? d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
+    } catch (e) { return '—'; }
+  }
 
-  function MembersModal({ group, members, onClose }) {
-    const closed = group.open === false;
-    return (
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(6,8,15,0.72)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)', padding: 22, width: 'min(420px, 94vw)', maxHeight: '85vh', overflow: 'auto', boxShadow: 'var(--sh-4)' }}>
+  // ── Ficha de un equipo: solo sus integrantes, con fecha de ingreso y ganancias ──
+  function TeamMembersModal({ teamId, onClose }) {
+    const [groups, setGroups] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [gid, setGid] = useState(teamId || null);
+    useEffect(() => {
+      const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
+      const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
+      return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
+    }, []);
+    useEffect(() => {
+      if (!teamId && FB().getMyProfile) FB().getMyProfile().then(p => setGid((p && p.groupId) || null)).catch(() => {});
+    }, [teamId]);
+
+    const meUid = (FB().currentUser && FB().currentUser() || {}).uid;
+    const group = groups.find(g => g.id === gid) || null;
+    const closed = group && group.open === false;
+    const members = users.filter(u => u.groupId === gid).sort((a, b) => saldoOf(b) - saldoOf(a) || ((a.creado && a.creado.seconds) || 0) - ((b.creado && b.creado.seconds) || 0));
+
+    const modal = (
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1150, background: 'rgba(6,8,15,0.78)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)', padding: 22, width: 'min(460px, 94vw)', maxHeight: '86vh', overflow: 'auto', boxShadow: 'var(--sh-4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <span style={{ fontSize: 24 }}>{closed ? '🔒' : '👥'}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-xl)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{group.name}</h2>
-              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{members.length} {members.length === 1 ? 'jugador' : 'jugadores'} · {closed ? 'Cerrado' : 'Abierto'}</div>
+              {/* nombre del grupo arriba */}
+              <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-xl)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{group ? group.name : 'Equipo'}</h2>
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{members.length} {members.length === 1 ? 'integrante' : 'integrantes'}{group ? ' · ' + (closed ? 'Cerrado' : 'Abierto') : ''}</div>
             </div>
             <button onClick={onClose} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15 }}>✕</button>
           </div>
-          {members.length === 0
-            ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '16px 0' }}>Aún no hay jugadores en este equipo.</div>
-            : (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {members.map((m, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < members.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                    <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(m.nombre)}</span>
-                    <span style={{ flex: 1, fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.nombre || 'Jugador'}</span>
+
+          {!gid
+            ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '18px 8px' }}>No perteneces a ningún equipo.<br /><span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Únete a uno desde tu <strong style={{ color: 'var(--gold-light)' }}>Perfil</strong>.</span></div>
+            : members.length === 0
+              ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '16px 0' }}>Aún no hay integrantes en este equipo.</div>
+              : (
+                <>
+                  {/* encabezado de columnas */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '34px 1fr 84px', gap: 10, padding: '0 2px 6px', borderBottom: '1px solid var(--border)', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span />
+                    <span>Jugador · ingreso</span>
+                    <span style={{ textAlign: 'right' }}>Saldo</span>
                   </div>
-                ))}
-              </div>
-            )}
+                  {members.map((m, i) => {
+                    const saldo = saldoOf(m), gan = saldo - SAL, mine = m.uid === meUid;
+                    return (
+                      <div key={m.uid || i} style={{ display: 'grid', gridTemplateColumns: '34px 1fr 84px', gap: 10, alignItems: 'center', padding: '10px 2px', borderBottom: i < members.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', background: mine ? 'rgba(212,175,55,0.10)' : 'transparent', borderRadius: 'var(--r-sm)' }}>
+                        <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(m.nombre)}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.nombre || 'Jugador'}{mine && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
+                          <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>📅 Ingresó {fmtDate(m.creado)}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div className="num" style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>{fmt(saldo)}</div>
+                          <div className="num" style={{ fontSize: 9, fontWeight: 700, color: gan >= 0 ? 'var(--success)' : 'var(--danger)' }}>{gan >= 0 ? '+' : ''}{fmt(gan)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
         </div>
       </div>
     );
+    return ReactDOM.createPortal(modal, document.body);
   }
+
+  function TeamMembersLauncher() {
+    const [tid, setTid] = useState(undefined); // undefined = cerrado
+    useEffect(() => {
+      const on = (e) => setTid((e && e.detail) || null);
+      window.addEventListener('mb-open-team', on);
+      return () => window.removeEventListener('mb-open-team', on);
+    }, []);
+    return tid !== undefined ? <TeamMembersModal teamId={tid || null} onClose={() => setTid(undefined)} /> : null;
+  }
+  // id opcional: sin id abre TU equipo.
+  window.MB_openTeamMembers = function (teamId) { try { window.dispatchEvent(new CustomEvent('mb-open-team', { detail: teamId || null })); } catch (e) {} };
+  window.MB_TeamMembersLauncher = TeamMembersLauncher;
 
   function GroupsHome() {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [groups, setGroups] = useState([]);
     const [users, setUsers] = useState([]);
     const [profile, setProfile] = useState(null);
-    const [openGroup, setOpenGroup] = useState(null);
 
     useEffect(() => {
       const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
@@ -68,12 +130,9 @@
     if (!user) return null;
     const groupsList = groups.filter(g => g && g.name && String(g.name).trim()); // oculta equipos sin nombre
     const myId = profile && profile.groupId;
-    const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : 90000;
-    const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
     const countByGroup = {}, sumByGroup = {};
     users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); } });
     const avgOf = (gid) => { const n = countByGroup[gid] || 0; return n ? Math.round(sumByGroup[gid] / n) : 0; };
-    const membersOf = (gid) => users.filter(u => u.groupId === gid);
 
     return (
       <div style={{ marginTop: 4, background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' }}>
@@ -96,7 +155,7 @@
                 .map((row, i) => {
                   const g = row.g, mine = g.id === myId, closed = g.open === false;
                   return (
-                    <div key={g.id} onClick={() => setOpenGroup(g)} className="mb-press" title={`Ver jugadores de ${g.name}`} style={{
+                    <div key={g.id} onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers(g.id)} className="mb-press" title={`Ver integrantes de ${g.name}`} style={{
                       display: 'grid', gridTemplateColumns: '24px 1fr 84px 56px', gap: 8, alignItems: 'center', padding: '10px 4px', cursor: 'pointer',
                       borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.05)',
                       background: mine ? 'rgba(212,175,55,0.10)' : 'transparent',
@@ -116,7 +175,6 @@
                 })}
             </div>
           )}
-        {openGroup && ReactDOM.createPortal(<MembersModal group={openGroup} members={membersOf(openGroup.id)} onClose={() => setOpenGroup(null)} />, document.body)}
       </div>
     );
   }
