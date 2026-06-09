@@ -1,0 +1,18 @@
+{
+  "name": "mundialbet-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agente de MundialBet: carga cuotas reales (API-Football) y liquida apuestas en Firestore.",
+  "main": "index.js",
+  "scripts": {
+    "gen": "node gen-fixtures.js",
+    "start": "node gen-fixtures.js && node index.js",
+    "discover": "node gen-fixtures.js && node index.js discover"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

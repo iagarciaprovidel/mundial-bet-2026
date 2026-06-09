@@ -1,0 +1,42 @@
+name: Agente MundialBet
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # cada 15 minutos (UTC). El script sólo gasta API si hay partido en vivo o cuotas pendientes.
+  workflow_dispatch:          # permite ejecutarlo a mano desde la pestaña Actions
+    inputs:
+      mode:
+        description: 'Escribe "discover" para sólo listar partidos (no escribe nada).'
+        required: false
+        default: ''
+
+concurrency:
+  group: agente-mundialbet
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias del agente
+        working-directory: agent
+        run: npm install --no-audit --no-fund
+
+      - name: Generar fixtures (desde wc2026.js)
+        working-directory: agent
+        run: node gen-fixtures.js
+
+      - name: Ejecutar agente
+        working-directory: agent
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          WC_LEAGUE_ID: ${{ vars.WC_LEAGUE_ID }}
+          WC_SEASON: ${{ vars.WC_SEASON }}
+        run: node index.js ${{ github.event.inputs.mode }}
