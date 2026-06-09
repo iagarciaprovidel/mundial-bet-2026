@@ -82,7 +82,8 @@
     var apk = document.createElement('div');
     apk.style.cssText = 'max-width:560px;margin:8px auto 0;font-size:11px;color:rgba(255,255,255,0.5);text-align:center;';
     var apkLink = document.createElement('a');
-    apkLink.href = 'mundialbet.apk'; apkLink.setAttribute('download', '');
+    // El APK se sirve desde GitHub Pages (Firebase Hosting plan Spark bloquea ejecutables).
+    apkLink.href = 'https://iagarciaprovidel.github.io/mundial-bet-2026/mundialbet.apk'; apkLink.setAttribute('download', 'mundialbet.apk');
     apkLink.textContent = T('Descargar');
     apkLink.style.cssText = 'color:var(--gold-light,#F0CE5A);font-weight:700;text-decoration:none;';
     apk.appendChild(document.createTextNode(T('¿Prefieres el APK de Android?') + ' '));
