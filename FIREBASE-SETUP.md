@@ -56,8 +56,10 @@ service cloud.firestore {
       allow write: if signedIn();
     }
     // Apuestas: cada quien crea/edita/borra las suyas. El agente liquida.
+    // (resource == null permite leer un doc que aún no existe: necesario para
+    //  la transacción de placeBet al apostar por primera vez en un partido.)
     match /bets/{bid} {
-      allow read:                   if signedIn() && resource.data.uid == request.auth.uid;
+      allow read:                   if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
       allow create, update:         if signedIn() && request.resource.data.uid == request.auth.uid;
       allow delete:                 if signedIn() && resource.data.uid == request.auth.uid;
     }
