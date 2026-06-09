@@ -169,7 +169,7 @@ async function main() {
   const oddsN = await ensureOdds();
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
 
-  let settled = 0;
+  let settled = 0, results = 0;
   for (const m of matches) {
     if (m.status !== 'FINISHED') continue;
     const ft = m.score && m.score.fullTime;
@@ -180,11 +180,23 @@ async function main() {
     let apiResult = gh > ga ? 'home' : (gh < ga ? 'away' : 'draw');
     let ourResult = apiResult;
     if (!mm.sameOrient && apiResult !== 'draw') ourResult = apiResult === 'home' ? 'away' : 'home';
+    // Goles en NUESTRA orientación (local/visita como en la app).
+    const ghOur = mm.sameOrient ? gh : ga;
+    const gaOur = mm.sameOrient ? ga : gh;
+    // Guarda el marcador en el doc de odds (lo lee la app para mostrar el resultado).
+    const odoc = await db.collection('odds').doc(mm.our.id).get();
+    if (!(odoc.exists && odoc.data().finished)) {
+      await db.collection('odds').doc(mm.our.id).set({
+        finished: true, gh: ghOur, ga: gaOur, result: ourResult,
+        finishedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      results++;
+    }
     const n = await settle(mm.our, ourResult);
-    if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${gh}-${ga} ${mm.our.away} → ${ourResult}): ${n} apuesta(s).`); }
+    if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} → ${ourResult}): ${n} apuesta(s).`); }
   }
 
-  console.log(`\nResumen: ${oddsN} cuota(s) generada(s), ${settled} apuesta(s) liquidada(s).`);
+  console.log(`\nResumen: ${oddsN} cuota(s) generada(s), ${results} resultado(s) guardado(s), ${settled} apuesta(s) liquidada(s).`);
 }
 
 main().catch((e) => { console.error('ERROR:', (e && e.message) || e); process.exit(1); });

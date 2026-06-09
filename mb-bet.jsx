@@ -73,7 +73,30 @@
 
     if (!user) return null; // solo apostadores logueados ven la caja
 
-    // Resultado ya liquidado
+    // Partido TERMINADO: muestra el marcador final (y el resultado de tu apuesta si jugaste).
+    const finished = odds && odds.finished;
+    if (finished) {
+      const gh = (odds.gh != null) ? odds.gh : '–';
+      const ga = (odds.ga != null) ? odds.ga : '–';
+      const settledBet = bet && (bet.status === 'won' || bet.status === 'lost');
+      const won = bet && bet.status === 'won';
+      return (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 11px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)' }}>
+            <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>🏁 Final</span>
+            <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
+          </div>
+          {settledBet && (
+            <div style={{ marginTop: 6, padding: '7px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (won ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: won ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: won ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}</span>
+              <span className="num">{won ? '+' + fmt(Math.round(bet.stake * bet.odd)) : '−' + fmt(bet.stake)}</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Resultado ya liquidado (por si el marcador aún no llegó pero la apuesta sí)
     if (bet && bet.status && bet.status !== 'open') {
       const won = bet.status === 'won';
       return (
@@ -88,7 +111,11 @@
       setErr(''); setOk(''); setBusy(true);
       FB().placeBet(m, pick, stake)
         .then(() => { setOk('¡Apuesta registrada!'); setSel(null); })
-        .catch((e) => { setErr(ERRORS[e] || 'No se pudo registrar la apuesta.'); })
+        .catch((e) => {
+          const code = (e && e.code) || e;
+          setErr(ERRORS[code] || ('No se pudo: ' + ((e && e.message) || code)));
+          console.error('[MundialBet] placeBet falló:', e);
+        })
         .then(() => setBusy(false));
     };
     const cancel = () => {
