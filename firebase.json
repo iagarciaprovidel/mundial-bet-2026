@@ -8,7 +8,11 @@
       "**/node_modules/**",
       "agent/**",
       "*.md",
-      "make_*.py"
+      "**/*.py",
+      "**/*.sh",
+      "**/*.exe",
+      "**/*.bat",
+      "**/*.cmd"
     ],
     "rewrites": [
       { "source": "**", "destination": "/index.html" }
