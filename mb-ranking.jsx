@@ -184,7 +184,76 @@
     );
   }
 
+  // ── Ranking de equipos (por promedio de saldo). Tocar = ficha del equipo ──
+  function TeamsReal({ limit }) {
+    const user = window.MB_useAuth ? window.MB_useAuth() : null;
+    const [groups, setGroups] = useState([]);
+    const [users, setUsers] = useState([]);
+    useEffect(() => {
+      if (!user) return undefined;
+      const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
+      const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
+      return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
+    }, [user]);
+    if (!user) return signIn('Inicia sesión para ver el ranking de equipos.', false);
+    const note = (t) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '14px 8px' }}>{t}</div>;
+    const cnt = {}, sum = {};
+    users.forEach(u => { if (u.groupId) { cnt[u.groupId] = (cnt[u.groupId] || 0) + 1; sum[u.groupId] = (sum[u.groupId] || 0) + saldoOf(u); } });
+    const teams = groups.filter(g => g && g.name && String(g.name).trim())
+      .map(g => { const n = cnt[g.id] || 0; return { g: g, n: n, pts: n ? Math.round(sum[g.id] / n) : 0 }; })
+      .sort((a, b) => b.pts - a.pts || b.n - a.n || tsMillis(a.g.creado) - tsMillis(b.g.creado));
+    const shown = limit ? teams.slice(0, limit) : teams;
+    if (!shown.length) return note('Aún no hay equipos.');
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {shown.map((t, i) => (
+          <div key={t.g.id} onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers(t.g.id)} className="mb-press" title={`Ver integrantes de ${t.g.name}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderRadius: 'var(--r-sm)', cursor: 'pointer', borderBottom: i < shown.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+            <span style={{ width: 20, textAlign: 'center', color: i < 3 ? 'var(--gold-light)' : 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)' }}>{i + 1}</span>
+            <span style={{ fontSize: 15, flexShrink: 0 }}>{t.g.open === false ? '🔒' : '👥'}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.g.name}</div>
+              <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{t.n} {t.n === 1 ? 'jugador' : 'jugadores'}</div>
+            </div>
+            <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(t.pts)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── Preguntas frecuentes (10) ──
+  const FAQ = [
+    { q: '¿Cómo funciona el juego?', a: 'Cada jugador parte con 90.000 puntos y apuesta al ganador de los partidos del Mundial. Gana quien más puntos junte.' },
+    { q: '¿Los puntos son dinero real?', a: 'No. Son 90.000 puntos virtuales para jugar la polla entre amigos y familia. No se gana ni se pierde dinero real.' },
+    { q: '¿Cómo apuesto a un partido?', a: 'En el menú "Apostar", elige Local, Empate o Visitante, escribe el monto (mínimo 1.000) y confirma. También puedes apostar desde el Inicio.' },
+    { q: '¿Cómo se calculan las ganancias?', a: 'Si aciertas, ganas el monto apostado multiplicado por la cuota. Si fallas, pierdes lo que apostaste.' },
+    { q: '¿Qué es la cuota?', a: 'Es el número que multiplica tu apuesta si aciertas. Mientras más difícil el resultado, más alta la cuota y más se paga.' },
+    { q: '¿Puedo cambiar o cancelar una apuesta?', a: 'Sí, mientras el partido no haya empezado. Al comenzar el partido la apuesta se cierra y ya no se puede modificar.' },
+    { q: '¿Cuándo se pagan las apuestas?', a: 'Automáticamente cuando termina el partido: el sistema actualiza tu saldo y tu posición en el ranking.' },
+    { q: '¿Cómo creo o me uno a un equipo?', a: 'Desde tu Perfil, con el botón de equipo. Puedes crear 1 equipo propio o unirte a uno existente. También puedes jugar individual.' },
+    { q: '¿Cómo se calcula el ranking de equipos?', a: 'Por el promedio de puntos de sus integrantes, así los equipos grandes y chicos compiten parejo.' },
+    { q: '¿Puedo quedarme sin puntos?', a: 'Sí, puedes llegar a 0. En la segunda fase del torneo habrá una recarga de puntos para todos.' },
+  ];
+  function FaqReal() {
+    const [open, setOpen] = useState(-1);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {FAQ.map((f, i) => (
+          <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', overflow: 'hidden' }}>
+            <button onClick={() => setOpen(open === i ? -1 : i)} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '11px 13px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
+              <span style={{ flex: 1 }}>{i + 1}. {f.q}</span>
+              <span style={{ color: 'var(--gold-light)', flexShrink: 0, fontSize: 18, lineHeight: 1 }}>{open === i ? '−' : '+'}</span>
+            </button>
+            {open === i && <div style={{ padding: '0 13px 12px', fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>{f.a}</div>}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   window.MB_RankingReal = RankingReal;
   window.MB_LigaReal = LigaReal;
   window.MB_ActivityReal = ActivityReal;
+  window.MB_TeamsReal = TeamsReal;
+  window.MB_FAQ = FaqReal;
 })();

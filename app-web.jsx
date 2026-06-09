@@ -842,9 +842,15 @@ function PodiumWeb({ top3 }) {
 
 function RankingWeb() {
   return (
-    <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', maxWidth: 680, margin: '0 auto' }}>
-      <Card style={{ padding: '8px 16px' }}>
+    <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <Card title="🏅 Ranking de jugadores" style={{ padding: '14px 16px' }}>
         {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
+      </Card>
+      <Card title="👥 Ranking de equipos" style={{ padding: '14px 16px' }}>
+        {window.MB_TeamsReal ? React.createElement(window.MB_TeamsReal, {}) : null}
+      </Card>
+      <Card title="❓ Preguntas frecuentes" style={{ padding: '14px 16px' }}>
+        {window.MB_FAQ ? React.createElement(window.MB_FAQ, {}) : null}
       </Card>
     </div>
   );
