@@ -56,6 +56,22 @@
   const ADMINS = (window.MB_ADMIN_EMAILS || []).map(function (e) { return String(e).toLowerCase(); });
   const isAdminEmail = (email) => !!email && ADMINS.indexOf(String(email).toLowerCase()) !== -1;
 
+  // Suscripción en vivo con reintentos: si la lectura falla (p. ej. la sesión
+  // aún no propagó el token a Firestore al cargar), reintenta en vez de quedar
+  // vacía para siempre. No borra los datos previos mientras reintenta.
+  function liveCollection(makeRef, mapDocs, cb) {
+    let stopped = false, unsub = null, tries = 0;
+    function attach() {
+      unsub = makeRef().onSnapshot(function (s) { tries = 0; cb(mapDocs(s)); }, function (e) {
+        console.warn('[MundialBet] live retry:', e && e.message);
+        if (!stopped && tries < 6) { tries++; setTimeout(function () { if (!stopped) attach(); }, 1200); }
+        else cb([]);
+      });
+    }
+    attach();
+    return function () { stopped = true; if (typeof unsub === 'function') unsub(); };
+  }
+
   const SALDO_INICIAL = 90000; // puntos virtuales con los que parte cada jugador
 
   // Crea/actualiza el perfil del usuario al iniciar sesión
@@ -191,17 +207,20 @@
     removeAdmin(groupId, email) { return db.collection('groups').doc(groupId).update({ adminEmails: FV.arrayRemove(String(email || '').trim().toLowerCase()) }); },
     deleteGroup(id) { return db.collection('groups').doc(id).delete(); },
     subscribeGroups(cb) {
-      return db.collection('groups').onSnapshot(function (s) {
-        const arr = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
-        arr.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
-        cb(arr);
-      }, function (e) { console.warn('[MundialBet] grupos:', e && e.message); cb([]); });
+      return liveCollection(
+        function () { return db.collection('groups'); },
+        function (s) {
+          const arr = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+          arr.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
+          return arr;
+        }, cb);
     },
     // Todos los usuarios registrados (jugadores reales). Para el ranking.
     subscribeUsers(cb) {
-      return db.collection('users').onSnapshot(function (s) {
-        cb(s.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); }));
-      }, function () { cb([]); });
+      return liveCollection(
+        function () { return db.collection('users'); },
+        function (s) { return s.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); }); },
+        cb);
     },
     // Miembros de un equipo (solo el admin puede leer todos los users según reglas)
     subscribeGroupMembers(groupId, cb) {
