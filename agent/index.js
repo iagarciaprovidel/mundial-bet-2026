@@ -108,7 +108,10 @@ async function ensureOdds() {
     const h = (new Date(o.kickoff).getTime() - now) / 3600000;
     if (!(h > 0 && h <= ODDS_WINDOW_H)) continue;
     const doc = await db.collection('odds').doc(o.id).get();
-    if (doc.exists && doc.data().home) continue;             // ya tiene (o fue editada a mano)
+    const d = doc.exists ? doc.data() : null;
+    // Respeta cuotas puestas a mano ('manual') y no re-genera las que ya son del modelo.
+    // Las de prueba/sembradas (sin 'fuente') SÍ se reemplazan por las del modelo.
+    if (d && d.home && (d.fuente === 'manual' || d.fuente === 'modelo')) continue;
     const od = modelOdds(o.homeCode, o.awayCode);
     await db.collection('odds').doc(o.id).set({
       home: od.home, draw: od.draw, away: od.away, fuente: 'modelo',
