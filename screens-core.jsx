@@ -16,7 +16,7 @@ function Onboarding({ onFinish }) {
   const [step, setStep] = useStateC(0);
 
   const steps = [
-    { emoji: '🏆', title: '¡Bienvenido a Polla Mundial 2026!',
+    { emoji: '🏆', title: '¡Bienvenido a MundialBet Club 2026!',
       body: 'Demuestra que sabes más de fútbol que todos tus amigos y tu familia. 🔥', accent: 'var(--gold-light)' },
     { emoji: '💰', title: 'Tienes 90.000 puntos',
       body: 'Apuesta al ganador de cada partido. Si aciertas, ganas según la cuota: mientras más arriesgas, más ganas.', accent: 'var(--mex-light)' },
@@ -192,6 +192,9 @@ function Dashboard({ user, onNav, onPredict }) {
         <h1 className="display" style={{ fontSize: 'var(--t-2xl)', margin: '4px 0 2px', color: 'var(--text)' }}>
           {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
         </h1>
+        {authUser && (meRec && meRec.groupName
+          ? <button onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers()} className="mb-press" title="Ver integrantes de tu equipo" style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 3px', cursor: 'pointer', fontSize: 'var(--t-xs)', fontWeight: 800, color: 'var(--gold-light)' }}>👥 {meRec.groupName}</button>
+          : <div style={{ margin: '0 0 3px', fontSize: 'var(--t-xs)', fontWeight: 700, color: 'var(--muted-2)' }}>{meRec && meRec.noGroup ? '🙋 Juegas individual' : 'Sin equipo'}</div>)}
         <p style={{ margin: 0, color: daysLeft > 0 ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 700 }}>
           {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>¡El Mundial 2026 ya comenzó! ⚡</>}
         </p>

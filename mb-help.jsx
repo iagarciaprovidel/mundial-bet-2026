@@ -9,7 +9,7 @@
 
   const SECTIONS = [
     { icon: '🎯', title: 'El objetivo', body: 'Gana quien junte más puntos al final del Mundial. Compite con tus amigos y familia en el ranking.' },
-    { icon: '💰', title: 'Empiezas con 90.000 puntos', body: 'Son tus puntos para apostar. No es dinero real: es el juego de la polla entre amigos.' },
+    { icon: '💰', title: 'Empiezas con 90.000 puntos', body: 'Son tus puntos para apostar. No es dinero real: es el juego de pronósticos entre amigos.' },
     { icon: '⚽', title: 'Apuesta al ganador', body: 'En cada partido eliges: gana el Local, Empate o gana el Visitante (1 · X · 2). Pones el monto que quieras (mínimo 1.000).' },
     { icon: '📊', title: 'Las cuotas', body: 'Cada opción tiene una cuota. Si aciertas, ganas monto × cuota. Si fallas, pierdes lo apostado. Mientras más difícil (cuota más alta), más se paga.' },
     { icon: '✏️', title: 'Puedes cambiar o cancelar', body: 'Antes de que empiece el partido puedes cambiar tu elección o cancelar y recuperar tus puntos. Al empezar el partido, la apuesta se cierra.' },
@@ -27,7 +27,7 @@
             <span style={{ fontSize: 24 }}>📖</span>
             <div style={{ flex: 1 }}>
               <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-xl)' }}>Cómo se juega</h2>
-              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Las reglas de la polla</div>
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Las reglas del juego</div>
             </div>
             <button onClick={onClose} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15 }}>✕</button>
           </div>

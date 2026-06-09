@@ -572,6 +572,9 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
           <h2 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 2px' }}>
             {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>
           </h2>
+          {authUser && (meRec && meRec.groupName
+            ? <button onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers()} className="mb-press" title="Ver integrantes de tu equipo" style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 4px', cursor: 'pointer', fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>👥 {meRec.groupName}</button>
+            : <div style={{ margin: '0 0 4px', fontSize: 'var(--t-sm)', fontWeight: 700, color: 'var(--muted-2)' }}>{meRec && meRec.noGroup ? '🙋 Juegas individual' : 'Sin equipo'}</div>)}
           <p style={{ margin: 0, color: 'var(--gold-light)', fontSize: 'var(--t-md)', fontWeight: 600 }}>
             {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>¡El Mundial 2026 ya comenzó! ⚡</>}
           </p>

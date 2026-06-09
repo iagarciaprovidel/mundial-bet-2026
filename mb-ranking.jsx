@@ -224,7 +224,7 @@
   // ── Preguntas frecuentes (10) ──
   const FAQ = [
     { q: '¿Cómo funciona el juego?', a: 'Cada jugador parte con 90.000 puntos y apuesta al ganador de los partidos del Mundial. Gana quien más puntos junte.' },
-    { q: '¿Los puntos son dinero real?', a: 'No. Son 90.000 puntos virtuales para jugar la polla entre amigos y familia. No se gana ni se pierde dinero real.' },
+    { q: '¿Los puntos son dinero real?', a: 'No. Son 90.000 puntos virtuales para jugar entre amigos y familia. No se gana ni se pierde dinero real.' },
     { q: '¿Cómo apuesto a un partido?', a: 'En el menú "Apostar", elige Local, Empate o Visitante, escribe el monto (mínimo 1.000) y confirma. También puedes apostar desde el Inicio.' },
     { q: '¿Cómo se calculan las ganancias?', a: 'Si aciertas, ganas el monto apostado multiplicado por la cuota. Si fallas, pierdes lo que apostaste.' },
     { q: '¿Qué es la cuota?', a: 'Es el número que multiplica tu apuesta si aciertas. Mientras más difícil el resultado, más alta la cuota y más se paga.' },
