@@ -48,6 +48,19 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
       allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isTeamAdmin(resource.data.groupId));
     }
+    // Cuotas por partido (las carga el agente). Lectura libre para apostar.
+    // TEMP: escritura abierta a logueados para pruebas; con el agente se
+    // restringe solo al service account.
+    match /odds/{mid} {
+      allow read:  if signedIn();
+      allow write: if signedIn();
+    }
+    // Apuestas: cada quien crea/edita/borra las suyas. El agente liquida.
+    match /bets/{bid} {
+      allow read:                   if signedIn() && resource.data.uid == request.auth.uid;
+      allow create, update:         if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete:                 if signedIn() && resource.data.uid == request.auth.uid;
+    }
     match /predictions/{pid} {
       allow read:  if signedIn();
       allow write: if signedIn() && request.resource.data.uid == request.auth.uid;

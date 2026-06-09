@@ -12,6 +12,15 @@
     const p = String(name || '').trim().split(/\s+/);
     return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase();
   }
+  const SALDO_INICIAL = 90000;
+  function saldoOf(u) { return (u && typeof u.saldo === 'number') ? u.saldo : SALDO_INICIAL; }
+  function fmt(n) { return Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.'); }
+  // Flecha ↑/↓ comparando saldo actual con el guardado por el agente (prevSaldo).
+  function Arrow({ cur, prev }) {
+    if (typeof prev !== 'number' || prev === cur) return null;
+    const up = cur > prev;
+    return <span style={{ color: up ? 'var(--success)' : 'var(--danger)', fontSize: 11, marginLeft: 4 }}>{up ? '▲' : '▼'}</span>;
+  }
 
   function RankingReal({ compact, limit }) {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
@@ -27,12 +36,12 @@
     if (users === undefined) return note('Cargando…');
     if (!users.length) return note('Aún no hay jugadores registrados. ¡Sé el primero!');
 
-    const list = users.slice().sort((a, b) => (a.nombre || a.email || '').localeCompare(b.nombre || b.email || ''));
+    const list = users.slice().sort((a, b) => saldoOf(b) - saldoOf(a) || tsMillis(a.creado) - tsMillis(b.creado));
     const shown = limit ? list.slice(0, limit) : list;
 
     return (
       <div>
-        {!compact && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', textAlign: 'center', marginBottom: 10 }}>El torneo aún no comienza · todos en 0 pts</div>}
+        {!compact && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', textAlign: 'center', marginBottom: 10 }}>Cada jugador parte con 90.000 puntos para apostar</div>}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {shown.map((u, i) => {
             const isMe = u.uid === user.uid;
@@ -44,7 +53,7 @@
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
                   <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
                 </div>
-                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>0 pts</span>
+                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={u.prevSaldo} /></span>
               </div>
             );
           })}
@@ -67,13 +76,13 @@
     const note = (txt) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '22px 16px' }}>{txt}</div>;
     if (!user) return note('Inicia sesión para ver la liga.');
 
-    const countByGroup = {};
-    users.forEach(u => { if (u.groupId) countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; });
-    // pts en 0 → desempate por orden de ingreso (creado asc)
-    const teams = groups.map(g => ({ g: g, n: countByGroup[g.id] || 0, pts: 0 }))
+    const countByGroup = {}, sumByGroup = {};
+    users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); } });
+    // Equipo: promedio de saldo de sus jugadores; desempate por orden de creación.
+    const teams = groups.map(g => { const n = countByGroup[g.id] || 0; return { g: g, n: n, pts: n ? Math.round(sumByGroup[g.id] / n) : 0 }; })
       .sort((a, b) => b.pts - a.pts || tsMillis(a.g.creado) - tsMillis(b.g.creado)).slice(0, 20);
     const players = users.slice()
-      .sort((a, b) => 0 - 0 || tsMillis(a.creado) - tsMillis(b.creado)).slice(0, 20);
+      .sort((a, b) => saldoOf(b) - saldoOf(a) || tsMillis(a.creado) - tsMillis(b.creado)).slice(0, 20);
 
     const card = { background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' };
     const head = { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 };
@@ -97,7 +106,7 @@
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.g.name}</div>
                   <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{t.n} {t.n === 1 ? 'jugador' : 'jugadores'}</div>
                 </div>
-                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0 }}>{t.pts} pts</span>
+                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0 }}>{fmt(t.pts)}</span>
               </div>
             );
           })}
@@ -119,7 +128,7 @@
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.nombre || 'Jugador'}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
                   <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
                 </div>
-                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0 }}>0 pts</span>
+                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={u.prevSaldo} /></span>
               </div>
             );
           })}

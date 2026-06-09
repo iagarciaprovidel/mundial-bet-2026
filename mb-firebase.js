@@ -29,6 +29,9 @@
       addAdmin: noFB, removeAdmin: noFB,
       joinGroupById: noFB, chooseNoGroup: noFB,
       approveRequest: noFB, rejectRequest: noFB,
+      placeBet: noFB, cancelBet: noFB,
+      subscribeOdds(cb) { if (typeof cb === 'function') cb({}); return () => {}; },
+      subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
@@ -50,6 +53,8 @@
   const ADMINS = (window.MB_ADMIN_EMAILS || []).map(function (e) { return String(e).toLowerCase(); });
   const isAdminEmail = (email) => !!email && ADMINS.indexOf(String(email).toLowerCase()) !== -1;
 
+  const SALDO_INICIAL = 90000; // puntos virtuales con los que parte cada jugador
+
   // Crea/actualiza el perfil del usuario al iniciar sesión
   async function ensureProfile(user) {
     if (!user) return;
@@ -61,7 +66,11 @@
         email: user.email || null,
         foto: user.photoURL || null,
         creado: FV.serverTimestamp(),
+        saldo: SALDO_INICIAL,
       });
+    } else if (snap.data().saldo === undefined) {
+      // backfill: usuarios antiguos sin saldo
+      await ref.set({ saldo: SALDO_INICIAL }, { merge: true });
     }
   }
 
@@ -193,6 +202,61 @@
     chooseNoGroup() {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       return db.collection('users').doc(u.uid).set({ noGroup: true, groupId: null, groupName: null }, { merge: true });
+    },
+
+    // ── Apuestas (ganador del partido: home/draw/away) ──
+    // Cuotas por partido (las carga el agente en la colección `odds`, id = matchId).
+    subscribeOdds(cb) {
+      return db.collection('odds').onSnapshot(function (s) {
+        const map = {}; s.docs.forEach(function (d) { map[d.id] = d.data(); });
+        cb(map);
+      }, function () { cb({}); });
+    },
+    subscribeMyBets(cb) {
+      const u = auth.currentUser; if (!u) { cb([]); return function () {}; }
+      return db.collection('bets').where('uid', '==', u.uid)
+        .onSnapshot(function (s) { cb(s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { cb([]); });
+    },
+    // Apuesta al ganador. pick: 'home' | 'draw' | 'away'. stake en puntos (mín 1.000).
+    // Si ya había apuesta abierta en ese partido, la reemplaza (devuelve lo anterior).
+    async placeBet(match, pick, stake) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      stake = Math.floor(Number(stake) || 0);
+      if (['home', 'draw', 'away'].indexOf(pick) === -1) return Promise.reject('pick-invalido');
+      if (stake < 1000) return Promise.reject('min-1000');
+      if (new Date(match.kickoff).getTime() <= Date.now()) return Promise.reject('cerrado');
+      const oddsSnap = await db.collection('odds').doc(match.id).get();
+      const odds = oddsSnap.exists ? oddsSnap.data() : null;
+      if (!odds || !odds[pick]) return Promise.reject('sin-cuota');
+      const odd = Number(odds[pick]);
+      const userRef = db.collection('users').doc(u.uid);
+      const betRef = db.collection('bets').doc(u.uid + '_' + match.id);
+      return db.runTransaction(async function (tx) {
+        const us = await tx.get(userRef);
+        const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
+        const prev = await tx.get(betRef);
+        const refund = (prev.exists && prev.data().status === 'open') ? (prev.data().stake || 0) : 0;
+        if (saldo + refund < stake) throw 'saldo-insuficiente';
+        tx.set(userRef, { saldo: saldo + refund - stake }, { merge: true });
+        tx.set(betRef, {
+          uid: u.uid, matchId: match.id, md: match.md || null, pick: pick, stake: stake, odd: odd,
+          home: match.home, away: match.away, status: 'open', creado: FV.serverTimestamp(),
+        });
+      });
+    },
+    // Cancela la apuesta abierta de un partido (antes del kickoff) y devuelve el saldo.
+    async cancelBet(matchId) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const userRef = db.collection('users').doc(u.uid);
+      const betRef = db.collection('bets').doc(u.uid + '_' + matchId);
+      return db.runTransaction(async function (tx) {
+        const bs = await tx.get(betRef);
+        if (!bs.exists || bs.data().status !== 'open') return;
+        const us = await tx.get(userRef);
+        const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
+        tx.set(userRef, { saldo: saldo + (bs.data().stake || 0) }, { merge: true });
+        tx.delete(betRef);
+      });
     },
 
     // ── Solicitudes de ingreso (equipos cerrados) ──

@@ -67,8 +67,11 @@
 
     if (!user) return null;
     const myId = profile && profile.groupId;
-    const countByGroup = {};
-    users.forEach(u => { if (u.groupId) countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; });
+    const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : 90000;
+    const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
+    const countByGroup = {}, sumByGroup = {};
+    users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); } });
+    const avgOf = (gid) => { const n = countByGroup[gid] || 0; return n ? Math.round(sumByGroup[gid] / n) : 0; };
     const membersOf = (gid) => users.filter(u => u.groupId === gid);
 
     return (
@@ -87,7 +90,7 @@
                 <span style={{ textAlign: 'center' }}>Jugadores</span>
                 <span style={{ textAlign: 'right' }}>Pts</span>
               </div>
-              {groups.map(g => ({ g: g, n: countByGroup[g.id] || 0, pts: 0 }))
+              {groups.map(g => ({ g: g, n: countByGroup[g.id] || 0, pts: avgOf(g.id) }))
                 .sort((a, b) => b.pts - a.pts || b.n - a.n || (a.g.name || '').localeCompare(b.g.name || ''))
                 .map((row, i) => {
                   const g = row.g, mine = g.id === myId, closed = g.open === false;
@@ -106,7 +109,7 @@
                         </div>
                       </div>
                       <span style={{ textAlign: 'center', fontSize: 'var(--t-sm)', color: 'var(--muted)', fontWeight: 700 }}>{row.n}</span>
-                      <span className="num" style={{ textAlign: 'right', color: 'var(--gold-light)', fontWeight: 700 }}>{row.pts}</span>
+                      <span className="num" style={{ textAlign: 'right', color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-2xs)' }}>{fmt(row.pts)}</span>
                     </div>
                   );
                 })}
