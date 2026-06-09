@@ -79,6 +79,7 @@
 
     if (!user) return signIn('Inicia sesión para ver la liga.', true);
 
+    const note = (txt) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '14px 8px' }}>{txt}</div>;
     const countByGroup = {}, sumByGroup = {};
     users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); } });
     // Equipo: promedio de saldo de sus jugadores; desempate por orden de creación.
