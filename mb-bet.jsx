@@ -16,8 +16,11 @@
   const store = { odds: {}, bets: {}, saldo: null, ready: false, listeners: new Set() };
   function emit() { store.listeners.forEach((fn) => { try { fn(); } catch (e) {} }); }
   let started = false, unsubs = [];
-  function start() {
-    if (started) return; started = true;
+  // (Re)crea las suscripciones a cuotas/apuestas/saldo. Las cuotas requieren
+  // sesión (reglas), por eso hay que rehacerlas cuando la sesión esté lista.
+  function resubscribe() {
+    unsubs.forEach((u) => { try { if (typeof u === 'function') u(); } catch (e) {} });
+    unsubs = [];
     const fb = FB();
     if (fb.subscribeOdds) unsubs.push(fb.subscribeOdds((o) => { store.odds = o || {}; store.ready = true; emit(); }));
     if (fb.subscribeMyBets) unsubs.push(fb.subscribeMyBets((list) => {
@@ -27,11 +30,16 @@
       store.saldo = (u && typeof u.saldo === 'number') ? u.saldo : (u ? SALDO_INICIAL : null); emit();
     }));
   }
-  // Reinicia las suscripciones cuando cambia la sesión (login/logout).
-  window.addEventListener('mb-auth-refresh', () => {
-    unsubs.forEach((u) => { try { if (typeof u === 'function') u(); } catch (e) {} });
-    unsubs = []; started = false; store.bets = {}; store.saldo = null; emit(); start();
-  });
+  function start() {
+    if (started) return; started = true;
+    const fb = FB();
+    // Reconecta en CADA cambio de sesión (login / logout / restauración al cargar).
+    // Así las cuotas se cargan cuando Firebase ya restauró la sesión, no antes.
+    if (fb.onAuth) { fb.onAuth(function () { store.bets = {}; store.saldo = null; emit(); resubscribe(); }); }
+    else { resubscribe(); }
+  }
+  // Si cambia el apodo, refrescamos también.
+  window.addEventListener('mb-auth-refresh', function () { resubscribe(); });
 
   function useBetStore() {
     const [, force] = useState(0);
