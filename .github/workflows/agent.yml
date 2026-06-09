@@ -35,8 +35,7 @@ jobs:
       - name: Ejecutar agente
         working-directory: agent
         env:
-          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          WC_LEAGUE_ID: ${{ vars.WC_LEAGUE_ID }}
-          WC_SEASON: ${{ vars.WC_SEASON }}
+          WC_COMP: ${{ vars.WC_COMP }}
         run: node index.js ${{ github.event.inputs.mode }}
