@@ -195,6 +195,23 @@ function Dashboard({ user, onNav, onPredict }) {
   const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
   const greetName = (authUser && authUser.displayName) ? authUser.displayName : null;
+  // Datos reales del jugador
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const [hdrUsers, setHdrUsers] = useStateC([]);
+  useEffectC(() => {
+    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setHdrUsers([]); return undefined; }
+    const un = window.MBFirebase.subscribeUsers(setHdrUsers);
+    return () => { if (typeof un === 'function') un(); };
+  }, [authUser]);
+  const SAL = 90000;
+  const fmtN = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
+  const saldoOfU = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  const meRec = authUser ? hdrUsers.find(u => u.uid === authUser.uid) : null;
+  const myPts = meRec ? saldoOfU(meRec) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
+  const myPos = meRec ? (hdrUsers.slice().sort((a, b) => saldoOfU(b) - saldoOfU(a)).findIndex(u => u.uid === authUser.uid) + 1) : 0;
+  const myBets = (store && authUser) ? Object.keys(store.bets).map(k => store.bets[k]) : [];
+  const mySettled = myBets.filter(b => b.status === 'won' || b.status === 'lost');
+  const myAcc = mySettled.length ? Math.round((mySettled.filter(b => b.status === 'won').length / mySettled.length) * 100) : 0;
 
   return (
     <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 18, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
@@ -204,18 +221,23 @@ function Dashboard({ user, onNav, onPredict }) {
           {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
         </h1>
         <p style={{ margin: 0, color: daysLeft > 0 ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 700 }}>
-          {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>Llevas {me.streak} aciertos seguidos ⚡</>}
+          {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>¡El Mundial 2026 ya comenzó! ⚡</>}
         </p>
       </div>
 
-      {/* métricas 2x2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <Metric label="Mis monedas" value={Dc.fmt(me.coins)} tone="var(--gold-light)" icon="⚽" />
-        <Metric label="Posición" value={'#' + me.rank} tone="var(--usa-light)" icon="📊" />
-        <Metric label="Aciertos" value={me.hits + '%'} tone="var(--success)" icon="🎯" />
-        <Metric label="ROI" value={(me.roi >= 0 ? '+' : '') + me.roi + '%'} tone={me.roi >= 0 ? 'var(--success)' : 'var(--danger)'} icon="📈" />
-      </div>
-      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center', marginTop: -8 }}>📊 Datos de ejemplo · el torneo aún no comienza</div>
+      {/* métricas 2x2 (reales) */}
+      {authUser ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Metric label="Mis monedas" value={fmtN(myPts)} tone="var(--gold-light)" icon="⚽" />
+          <Metric label="Posición" value={myPos ? '#' + myPos : '—'} tone="var(--usa-light)" icon="📊" />
+          <Metric label="Apuestas" value={String(myBets.length)} tone="var(--text)" icon="🎟️" />
+          <Metric label="Aciertos" value={mySettled.length ? myAcc + '%' : '—'} tone="var(--success)" icon="🎯" />
+        </div>
+      ) : (
+        <Card style={{ textAlign: 'center', padding: '16px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
+          🔒 <strong style={{ color: 'var(--text)' }}>Inicia sesión</strong> para ver tus monedas, posición y apuestas.
+        </Card>
+      )}
 
       {/* Equipos de apostadores (creados por los usuarios) */}
       {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
