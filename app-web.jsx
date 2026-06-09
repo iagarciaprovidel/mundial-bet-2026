@@ -24,7 +24,7 @@ const TWEAK_DEFAULTS_W = /*EDITMODE-BEGIN*/{
 
 const NAV_W = [
   { id: 'inicio',   label: 'Inicio',   icon: '🏠' },
-  { id: 'partidos', label: 'Partidos', icon: '⚽' },
+  { id: 'partidos', label: 'Apostar',  icon: '⚽' },
   { id: 'equipos',  label: 'Equipos',  icon: '🌍' },
   { id: 'ranking',  label: 'Ranking',  icon: '🏆' },
   { id: 'liga',     label: 'Liga',     icon: '💰' },
@@ -33,7 +33,7 @@ const NAV_W = [
 ];
 
 const TITLES = {
-  inicio: 'Inicio', partidos: 'Partidos', equipos: 'Equipos y grupos',
+  inicio: 'Inicio', partidos: 'Apostar', equipos: 'Equipos y grupos',
   ranking: 'Ranking', liga: 'Liga', perfil: 'Mi perfil', feed: 'Feed social',
   quiniela: 'Quiniela anónima', admin: 'Panel Admin',
 };

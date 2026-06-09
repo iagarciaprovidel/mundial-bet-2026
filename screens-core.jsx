@@ -14,17 +14,17 @@ const {
 // ─────────────────────────────────────────────────────────
 function Onboarding({ onFinish }) {
   const [step, setStep] = useStateC(0);
-  const [chosen, setChosen] = useStateC('zayu');
 
   const steps = [
-    { mascot: 'zayu', title: '¡Bienvenido a MundialBet Club 2026!',
-      body: 'Aquí vas a demostrar que sabes más de fútbol que todos tus amigos. 🔥', accent: 'var(--mex-light)' },
-    { mascot: 'maple', title: 'El juego es justo',
-      body: 'Todos ven los pronósticos pero nadie sabe quién apostó qué… hasta que el partido comienza. 🔒', accent: 'var(--can-light)' },
-    { mascot: 'clutch', title: 'Elige tu mascota',
-      body: 'Ella definirá tu estilo y tu color en el grupo.', accent: 'var(--usa-light)' },
+    { emoji: '🏆', title: '¡Bienvenido a Polla Mundial 2026!',
+      body: 'Demuestra que sabes más de fútbol que todos tus amigos y tu familia. 🔥', accent: 'var(--gold-light)' },
+    { emoji: '💰', title: 'Tienes 90.000 puntos',
+      body: 'Apuesta al ganador de cada partido. Si aciertas, ganas según la cuota: mientras más arriesgas, más ganas.', accent: 'var(--mex-light)' },
+    { emoji: '📈', title: 'Sube en el ranking',
+      body: 'El que más puntos junte, manda. Crea tu equipo, invita a tu gente y a competir. ¡Mucha suerte!', accent: 'var(--usa-light)' },
   ];
   const cur = steps[step];
+  const last = step === steps.length - 1;
 
   return (
     <div className="mb-app-bg" style={{
@@ -43,37 +43,12 @@ function Onboarding({ onFinish }) {
       </div>
 
       <div key={step} style={{ flex: 1, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-        <div style={{ position: 'relative', marginBottom: 24 }}>
-          <div style={{
-            position: 'absolute', inset: -24, borderRadius: '50%',
-            background: `radial-gradient(circle, ${cur.accent}33, transparent 70%)`,
-          }} />
-          <div style={{ position: 'relative', animation: step === 0 ? 'mb-bounce 1.4s var(--ease-spring) infinite' : 'none' }}>
-            <MascotAvatar mascot={cur.mascot} size={140} glow jersey />
-          </div>
+        <div style={{ position: 'relative', marginBottom: 22 }}>
+          <div style={{ position: 'absolute', inset: -30, borderRadius: '50%', background: `radial-gradient(circle, ${cur.accent}33, transparent 70%)` }} />
+          <div style={{ position: 'relative', fontSize: 96, lineHeight: 1, filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.55))', animation: step === 0 ? 'mb-bounce 1.4s var(--ease-spring) infinite' : 'none' }}>{cur.emoji}</div>
         </div>
         <h1 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 12px', color: cur.accent, maxWidth: 300, textWrap: 'balance', textShadow: '0 1px 3px rgba(0,0,0,0.92), 0 2px 16px rgba(0,0,0,0.55)' }}>{cur.title}</h1>
         <p style={{ fontSize: 'var(--t-md)', color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, maxWidth: 290, margin: 0, textShadow: '0 1px 10px rgba(0,0,0,0.65)' }}>{cur.body}</p>
-
-        {step === 2 && (
-          <div style={{ display: 'flex', gap: 10, marginTop: 26 }}>
-            {['zayu', 'maple', 'clutch'].map(id => {
-              const mm = Mc[id], active = chosen === id;
-              return (
-                <button key={id} onClick={() => setChosen(id)} className="mb-press" style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer',
-                  padding: '12px 8px', width: 86, borderRadius: 'var(--r-lg)',
-                  background: active ? `${mm.color}22` : 'var(--surface-1)',
-                  border: active ? `1.5px solid ${mm.light}` : '1.5px solid var(--border)',
-                  boxShadow: active ? `0 0 16px ${mm.light}55` : 'none', transition: 'all var(--dur-base) var(--ease-out)',
-                }}>
-                  <MascotAvatar mascot={id} size={46} ring={active} />
-                  <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 700, color: active ? mm.light : 'var(--muted)' }}>Equipo {mm.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* indicadores */}
@@ -86,15 +61,17 @@ function Onboarding({ onFinish }) {
         ))}
       </div>
 
-      {step < 2
+      {!last
         ? <button onClick={() => setStep(step + 1)} className="mb-press" style={{
             width: '100%', padding: '13px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', position: 'relative', zIndex: 1,
             background: 'var(--surface-1)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-md)', cursor: 'pointer',
           }}>Continuar</button>
-        : <div style={{ position: 'relative', zIndex: 1 }}><GoldButton onClick={() => onFinish(chosen)}>¡Empezar a jugar!</GoldButton></div>}
-      <button onClick={() => onFinish('zayu')} style={{
-        background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', fontSize: 'var(--t-2xs)', marginTop: 12, cursor: 'pointer', fontFamily: 'var(--font-body)', position: 'relative', zIndex: 1, textShadow: '0 1px 8px rgba(0,0,0,0.6)',
-      }}>Saltar introducción</button>
+        : <div style={{ position: 'relative', zIndex: 1 }}><GoldButton onClick={() => onFinish('zayu')}>¡Empezar a jugar!</GoldButton></div>}
+      <button onClick={() => onFinish('zayu')} className="mb-press" style={{
+        width: '100%', marginTop: 10, padding: '11px', borderRadius: 'var(--r-pill)', cursor: 'pointer',
+        background: 'none', border: '1px solid rgba(255,255,255,0.28)', color: 'var(--gold-light)',
+        fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', position: 'relative', zIndex: 1,
+      }}>Saltar introducción ✕</button>
     </div>
   );
 }

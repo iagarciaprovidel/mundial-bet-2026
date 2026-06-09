@@ -77,7 +77,7 @@ function Header({ me, accent, role, onAdmin }) {
 // ── Bottom nav ────────────────────────────────────────────
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: '🏠' },
-  { id: 'partidos', label: 'Partidos', icon: '⚽' },
+  { id: 'partidos', label: 'Apostar', icon: '⚽' },
   { id: 'equipos', label: 'Equipos', icon: '🌍' },
   { id: 'ranking', label: 'Ranking', icon: '🏆' },
   { id: 'liga', label: 'Liga', icon: '💰' },
@@ -139,7 +139,8 @@ function MobileFlagTicker({ onSelect }) {
 // ── App ───────────────────────────────────────────────────
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const [onboard, setOnboard] = useStateA(true);
+  // La intro se muestra SOLO la primera vez (se recuerda en el dispositivo).
+  const [onboard, setOnboard] = useStateA(function () { try { return localStorage.getItem('mb_intro_done') !== '1'; } catch (e) { return true; } });
   const [closeScreen, setCloseScreen] = useStateA(false);
   const [tab, setTab] = useStateA('inicio');
   const [me, setMe] = useStateA(Da.ME);
@@ -182,7 +183,8 @@ function App() {
   };
 
   const finishOnboarding = (mascot) => {
-    setMe(m => ({ ...m, mascot }));
+    try { localStorage.setItem('mb_intro_done', '1'); } catch (e) {} // no volver a mostrarla
+    setMe(m => ({ ...m, mascot: mascot || m.mascot }));
     setOnboard(false);
   };
 
