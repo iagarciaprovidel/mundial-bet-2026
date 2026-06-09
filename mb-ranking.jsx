@@ -21,6 +21,10 @@
     const up = cur > prev;
     return <span style={{ color: up ? 'var(--success)' : 'var(--danger)', fontSize: 11, marginLeft: 4 }}>{up ? '▲' : '▼'}</span>;
   }
+  // Mensaje uniforme de "inicia sesión" (mismo candado/tamaño en toda la app).
+  const signIn = (text, card) => window.MB_SignInNote
+    ? React.createElement(window.MB_SignInNote, { text: text, card: card })
+    : <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>{text}</div>;
 
   function RankingReal({ compact, limit }) {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
@@ -32,7 +36,7 @@
     }, [user]);
 
     const note = (txt) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '22px 16px' }}>{txt}</div>;
-    if (!user) return note('Inicia sesión para ver a los jugadores registrados.');
+    if (!user) return signIn('Inicia sesión para ver a los jugadores registrados.', false);
     if (users === undefined) return note('Cargando…');
     if (!users.length) return note('Aún no hay jugadores registrados. ¡Sé el primero!');
 
@@ -73,9 +77,7 @@
       return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
     }, [user]);
 
-    // Mismo recuadro que el Ranking (Card): fondo opaco + borde azul.
-    const note = (txt) => <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '26px 16px' }}>{txt}</div>;
-    if (!user) return note('Inicia sesión para ver la liga.');
+    if (!user) return signIn('Inicia sesión para ver la liga.', true);
 
     const countByGroup = {}, sumByGroup = {};
     users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); } });
@@ -159,7 +161,7 @@
     }, [user]);
 
     const note = (txt) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '18px 12px' }}>{txt}</div>;
-    if (!user) return note('Inicia sesión para ver la actividad.');
+    if (!user) return signIn('Inicia sesión para ver la actividad.', false);
 
     const events = [];
     groups.forEach(g => events.push({ ms: tsMillis(g.creado), icon: '🆕', text: 'Se creó el equipo «' + (g.name || '') + '»' + (g.ownerName && String(g.ownerName).indexOf('@') === -1 ? ' · por ' + g.ownerName : '') }));

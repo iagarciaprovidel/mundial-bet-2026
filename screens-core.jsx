@@ -234,9 +234,7 @@ function Dashboard({ user, onNav, onPredict }) {
           <Metric label="Aciertos" value={mySettled.length ? myAcc + '%' : '—'} tone="var(--success)" icon="🎯" />
         </div>
       ) : (
-        <Card style={{ textAlign: 'center', padding: '16px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
-          🔒 <strong style={{ color: 'var(--text)' }}>Inicia sesión</strong> para ver tus monedas, posición y apuestas.
-        </Card>
+        window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
       )}
 
       {/* Equipos de apostadores (creados por los usuarios) */}

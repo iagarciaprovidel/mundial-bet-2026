@@ -576,9 +576,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             <MetricW label="Aciertos" value={mySettled.length ? myAcc + '%' : '—'} tone="var(--success)" icon="🎯" />
           </div>
         ) : (
-          <Card style={{ textAlign: 'center', padding: '16px 18px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
-            🔒 <strong style={{ color: 'var(--text)' }}>Inicia sesión</strong> para ver tus monedas, posición y apuestas.
-          </Card>
+          window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
         )}
         {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
         {next && (
@@ -913,11 +911,7 @@ function PerfilWeb() {
   if (!authUser) {
     return (
       <div style={{ maxWidth: 460, margin: '0 auto', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-        <Card style={{ textAlign: 'center', padding: '32px 22px' }}>
-          <div style={{ fontSize: 34, marginBottom: 10 }}>🔒</div>
-          <div style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: 'var(--text)' }}>Inicia sesión para ver tu perfil</div>
-          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 6 }}>Aquí verás tu saldo, tu posición y tu historial de apuestas.</div>
-        </Card>
+        {window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tu perfil', card: true }) : null}
       </div>
     );
   }

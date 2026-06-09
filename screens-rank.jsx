@@ -151,11 +151,7 @@ function Perfil() {
   if (!authUser) {
     return (
       <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-        <Card style={{ textAlign: 'center', padding: '32px 20px' }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>🔒</div>
-          <div style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: 'var(--text)' }}>Inicia sesión para ver tu perfil</div>
-          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 6 }}>Aquí verás tu saldo, tu posición y tu historial de apuestas.</div>
-        </Card>
+        {window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tu perfil', card: true }) : null}
       </div>
     );
   }

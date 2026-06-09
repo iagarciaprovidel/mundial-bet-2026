@@ -136,5 +136,21 @@
     );
   }
 
-  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton });
+  // Mensaje uniforme de "inicia sesión": mismo candado y mismo tamaño en todas partes.
+  // card=true → recuadro propio (fondo opaco + borde azul); card=false → contenido
+  // centrado para colocar dentro de una Card existente.
+  function SignInNote({ text, card }) {
+    const inner = (
+      <React.Fragment>
+        <div style={{ fontSize: 30, lineHeight: 1, marginBottom: 8 }}>🔒</div>
+        <div style={{ fontSize: 'var(--t-sm)', fontWeight: 700, color: 'var(--text)' }}>{text || 'Inicia sesión para continuar.'}</div>
+      </React.Fragment>
+    );
+    if (card) {
+      return <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', textAlign: 'center', padding: '26px 18px' }}>{inner}</div>;
+    }
+    return <div style={{ textAlign: 'center', padding: '22px 16px' }}>{inner}</div>;
+  }
+
+  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton, MB_SignInNote: SignInNote });
 })();
