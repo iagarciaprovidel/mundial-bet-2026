@@ -1,10 +1,10 @@
 {
-  "id": "/mundial-bet-2026/",
-  "name": "MundialBet Club 2026",
-  "short_name": "MundialBet",
-  "description": "Liga de pronósticos del Mundial 2026",
-  "start_url": "/mundial-bet-2026/",
-  "scope": "/mundial-bet-2026/",
+  "id": ".",
+  "name": "Polla Mundial 2026",
+  "short_name": "La Polla",
+  "description": "La polla del Mundial 2026 entre amigos y familia",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#0D1F3C",
@@ -60,7 +60,7 @@
       "name": "Ver Partidos",
       "short_name": "Partidos",
       "description": "Accede rápido a los próximos partidos",
-      "url": "/mundial-bet-2026/?tab=partidos",
+      "url": "?tab=partidos",
       "icons": [
         {
           "src": "sc-partidos.png",
@@ -73,7 +73,7 @@
       "name": "Ver Ranking",
       "short_name": "Ranking",
       "description": "Mira la posición en el torneo",
-      "url": "/mundial-bet-2026/?tab=ranking",
+      "url": "?tab=ranking",
       "icons": [
         {
           "src": "sc-ranking.png",
