@@ -507,7 +507,7 @@ function Topbar({ tab, me, onFlagClick, onGroup, onNav }) {
       </div>
       <FlagTicker onSelect={onFlagClick} onGroup={onGroup} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <CoinBadge amount={me.coins} />
+        {window.MB_SaldoBadge ? React.createElement(window.MB_SaldoBadge) : null}
         <MascotAvatar mascot={me.mascot} size={38} />
       </div>
     </header>
@@ -579,32 +579,18 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
           window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
         )}
         {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
-        {next && (
-          <Card glow="var(--sh-2)" title="Próximo partido" action="Ver todos" onAction={() => onNav('partidos')}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <Chip tone="blue">Grupo {next.group} · J{next.md}</Chip>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {daysLeft > 0 && <Chip tone="gold" icon={<span>⏳</span>}>Faltan {daysLeft} días</Chip>}
-                <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>
-                  {new Date(next.kickoff).toLocaleString('es-CL', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                </span>
+        {(() => {
+          const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };
+          if (!day.list.length) return null;
+          return (
+            <div>
+              <SectionHead title={day.today ? 'Partidos de hoy' : 'Próximos partidos'} action="Ver todos" onAction={() => onNav('partidos')} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {day.list.map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, marginBottom: 14 }}>
-              <div onClick={() => openTeam(next.home)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ficha de ${next.home}` : undefined} style={{ textAlign: 'center', flex: 1, cursor: onTeam ? 'pointer' : 'default' }}>
-                <img src={`https://flagcdn.com/h60/${next.homeCode}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 40, width: 'auto', borderRadius: 4, boxShadow: 'var(--sh-2)' }} />
-                <div style={{ fontWeight: 700, marginTop: 6 }}>{next.home}</div>
-              </div>
-              <span style={{ fontSize: 'var(--t-lg)', color: 'var(--muted-2)', fontWeight: 700 }}>vs</span>
-              <div onClick={() => openTeam(next.away)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ficha de ${next.away}` : undefined} style={{ textAlign: 'center', flex: 1, cursor: onTeam ? 'pointer' : 'default' }}>
-                <img src={`https://flagcdn.com/h60/${next.awayCode}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 40, width: 'auto', borderRadius: 4, boxShadow: 'var(--sh-2)' }} />
-                <div style={{ fontWeight: 700, marginTop: 6 }}>{next.away}</div>
-              </div>
-            </div>
-            <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', textAlign: 'center' }}>📍 {next.stadium}</div>
-            <div style={{ marginTop: 4 }}><RefLineWeb m={next} /></div>
-          </Card>
-        )}
+          );
+        })()}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

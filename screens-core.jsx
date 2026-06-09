@@ -240,15 +240,22 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Equipos de apostadores (creados por los usuarios) */}
       {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
 
-      {/* próximos partidos */}
-      <div>
-        <SectionHead title="Próximos partidos" action="Ver todos" onAction={() => onNav('partidos')} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {fallback.map((m, idx) => (
-            <NextMatchCard key={m.id} m={m} featured={idx === 0} daysLeft={daysLeft} onPredict={onPredict} />
-          ))}
-        </div>
-      </div>
+      {/* partidos del día: apostables; los terminados aparecen al final con el marcador */}
+      {(() => {
+        const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };
+        const list = day.list.length ? day.list : fallback;
+        if (!list.length) return null;
+        return (
+          <div>
+            <SectionHead title={day.today ? 'Partidos de hoy' : 'Próximos partidos'} action="Ver todos" onAction={() => onNav('partidos')} />
+            <div>
+              {window.MobileFixtureCard
+                ? list.map(m => React.createElement(window.MobileFixtureCard, { key: m.id, m: m }))
+                : fallback.map((m, idx) => <NextMatchCard key={m.id} m={m} featured={idx === 0} daysLeft={daysLeft} onPredict={onPredict} />)}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Botón a Equipos y Grupos */}
       <div>

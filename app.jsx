@@ -60,7 +60,7 @@ function Header({ me, accent, role, onAdmin }) {
             <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, letterSpacing: '0.1em', marginLeft: 2 }}>MUNDIAL 2026</span>
           </span>
         </div>
-        <CoinBadge amount={me.coins} />
+        {window.MB_SaldoBadge ? React.createElement(window.MB_SaldoBadge) : null}
         {window.MB_LoginButton ? React.createElement(window.MB_LoginButton, { compact: true }) : null}
         {role === 'Admin / Tesorero' && (
           <button onClick={onAdmin} className="mb-press" style={{

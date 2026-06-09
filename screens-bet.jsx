@@ -346,4 +346,4 @@ function Quiniela() {
   );
 }
 
-Object.assign(window, { Partidos, Quiniela });
+Object.assign(window, { Partidos, Quiniela, MobileFixtureCard });

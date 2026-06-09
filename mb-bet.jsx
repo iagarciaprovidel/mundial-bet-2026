@@ -226,6 +226,35 @@
 
   window.MB_BetBox = BetBox;
 
+  // Badge de saldo real para la barra superior (móvil y web). Lee el saldo
+  // en vivo del store; se oculta si no hay sesión.
+  function SaldoBadge() {
+    const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
+    const s = useBetStore();
+    if (!user) return null;
+    const saldo = (typeof s.saldo === 'number') ? s.saldo : SALDO_INICIAL;
+    return window.CoinBadge ? React.createElement(window.CoinBadge, { amount: saldo }) : <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 800 }}>{fmt(saldo)}</span>;
+  }
+  window.MB_SaldoBadge = SaldoBadge;
+
+  // Partidos del "día foco": el del próximo partido por jugar (o el último si ya
+  // terminó todo). Ordena: por jugar primero (apostables), terminados al final.
+  // oddsMap (del store) sirve para saber cuáles ya terminaron (finished).
+  window.MB_dayFixtures = function (oddsMap) {
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    if (!fx.length) return { list: [], today: false };
+    const now = Date.now();
+    const dstr = (ms) => new Date(ms).toLocaleDateString('sv'); // YYYY-MM-DD local
+    const rows = fx.map((m) => { const ko = new Date(m.kickoff).getTime(); const od = (oddsMap && oddsMap[m.id]) || {}; return { m, ko, finished: !!od.finished }; });
+    rows.sort((a, b) => a.ko - b.ko);
+    const nextUp = rows.find((x) => !x.finished && x.ko > now) || rows.find((x) => !x.finished) || rows[rows.length - 1];
+    if (!nextUp) return { list: [], today: false };
+    const focus = dstr(nextUp.ko);
+    const day = rows.filter((x) => dstr(x.ko) === focus);
+    day.sort((a, b) => (a.finished ? 1 : 0) - (b.finished ? 1 : 0) || a.ko - b.ko);
+    return { list: day.map((x) => x.m), today: focus === dstr(now) };
+  };
+
   // ── Sembrar cuotas de PRUEBA (solo para ver la UI antes del agente real) ──
   // Uso: abrir consola del navegador estando logueado y ejecutar  MB_seedOdds()
   // Genera cuotas estables (deterministas por equipos) para todos los fixtures.
