@@ -508,6 +508,7 @@ function Topbar({ tab, me, onFlagClick, onGroup, onNav }) {
       <FlagTicker onSelect={onFlagClick} onGroup={onGroup} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         {window.MB_SaldoBadge ? React.createElement(window.MB_SaldoBadge) : null}
+        <button onClick={() => window.MB_openHelp && window.MB_openHelp()} title="Cómo se juega" className="mb-press" style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--gold-light)', cursor: 'pointer', fontSize: 15, fontWeight: 800 }}>?</button>
         <MascotAvatar mascot={me.mascot} size={38} />
       </div>
     </header>

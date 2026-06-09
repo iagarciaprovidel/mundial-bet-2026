@@ -229,35 +229,20 @@ function Dashboard({ user, onNav, onPredict }) {
         );
       })()}
 
-      {/* Botón a Equipos y Grupos */}
-      <div>
-        <button onClick={() => onNav('equipos')} style={{
-          width: '100%',
-          padding: '14px 16px',
-          borderRadius: 'var(--r-lg)',
-          border: '1.5px solid var(--usa-light)',
-          background: 'rgba(46,139,192,0.1)',
-          color: 'var(--text)',
-          fontFamily: 'var(--font-body)',
-          fontWeight: 700,
-          fontSize: 'var(--t-sm)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          transition: 'all var(--dur-base) var(--ease-out)',
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.background = 'rgba(46,139,192,0.2)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.background = 'rgba(46,139,192,0.1)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }}>
-          🌍 Ver Equipos y Grupos
-        </button>
+      {/* Accesos rápidos: reglas + equipos (Equipos ya está en el menú de abajo) */}
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button onClick={() => window.MB_openHelp && window.MB_openHelp()} className="mb-press" style={{
+          flex: 1, padding: '13px 10px', borderRadius: 'var(--r-lg)', cursor: 'pointer',
+          border: '1.5px solid rgba(212,175,55,0.5)', background: 'var(--coin-bg)', color: 'var(--gold-light)',
+          fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+        }}>📖 Cómo se juega</button>
+        <button onClick={() => onNav('equipos')} className="mb-press" style={{
+          flex: 1, padding: '13px 10px', borderRadius: 'var(--r-lg)', cursor: 'pointer',
+          border: '1.5px solid var(--usa-light)', background: 'rgba(46,139,192,0.1)', color: 'var(--text)',
+          fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+        }}>🌍 Equipos</button>
       </div>
 
       {/* jugadores registrados (real) */}

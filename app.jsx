@@ -61,6 +61,7 @@ function Header({ me, accent, role, onAdmin }) {
           </span>
         </div>
         {window.MB_SaldoBadge ? React.createElement(window.MB_SaldoBadge) : null}
+        <button onClick={() => window.MB_openHelp && window.MB_openHelp()} title="Cómo se juega" className="mb-press" style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--gold-light)', cursor: 'pointer', fontSize: 14, fontWeight: 800, flexShrink: 0 }}>?</button>
         {window.MB_LoginButton ? React.createElement(window.MB_LoginButton, { compact: true }) : null}
         {role === 'Admin / Tesorero' && (
           <button onClick={onAdmin} className="mb-press" style={{

@@ -290,6 +290,7 @@ window.addEventListener('appinstalled', function () {
 <script type="text/babel" src="mb-team-select.jsx"></script>
 <script type="text/babel" src="mb-groups-home.jsx"></script>
 <script type="text/babel" src="mb-ranking.jsx"></script>
+<script type="text/babel" src="mb-help.jsx"></script>
 
 <!-- Bootstrap responsive: escritorio (>=1024px) -> AppWeb, móvil -> App -->
 <script type="text/babel">
@@ -304,11 +305,13 @@ function Root() {
   const Cmp = wide ? window.AppWeb : window.App;
   const AdminLauncher = window.MB_AdminLauncher;
   const TeamGate = window.MB_TeamGate;
+  const HelpLauncher = window.MB_HelpLauncher;
   return (
     <React.Fragment>
       <Cmp />
       {AdminLauncher ? <AdminLauncher /> : null}
       {TeamGate ? <TeamGate /> : null}
+      {HelpLauncher ? <HelpLauncher /> : null}
     </React.Fragment>
   );
 }
