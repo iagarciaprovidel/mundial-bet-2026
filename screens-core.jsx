@@ -229,29 +229,10 @@ function Dashboard({ user, onNav, onPredict }) {
         );
       })()}
 
-      {/* Accesos rápidos: reglas + equipos (Equipos ya está en el menú de abajo) */}
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={() => window.MB_openHelp && window.MB_openHelp()} className="mb-press" style={{
-          flex: 1, padding: '13px 10px', borderRadius: 'var(--r-lg)', cursor: 'pointer',
-          border: '1.5px solid rgba(212,175,55,0.5)', background: 'var(--coin-bg)', color: 'var(--gold-light)',
-          fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-        }}>📖 Cómo se juega</button>
-        <button onClick={() => onNav('equipos')} className="mb-press" style={{
-          flex: 1, padding: '13px 10px', borderRadius: 'var(--r-lg)', cursor: 'pointer',
-          border: '1.5px solid var(--usa-light)', background: 'rgba(46,139,192,0.1)', color: 'var(--text)',
-          fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-        }}>🌍 Equipos</button>
-      </div>
-
-      {/* jugadores registrados (real) */}
-      <div>
-        <SectionHead title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} />
-        <Card style={{ padding: '6px 14px' }}>
-          {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 5 }) : null}
-        </Card>
-      </div>
+      {/* jugadores registrados (real) — título dentro de la card */}
+      <Card title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 14px' }}>
+        {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 5 }) : null}
+      </Card>
     </div>
   );
 }
