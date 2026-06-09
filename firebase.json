@@ -12,7 +12,10 @@
       "**/*.sh",
       "**/*.exe",
       "**/*.bat",
-      "**/*.cmd"
+      "**/*.cmd",
+      "**/*.apk",
+      "**/*.aab",
+      "**/*.jar"
     ],
     "rewrites": [
       { "source": "**", "destination": "/index.html" }
