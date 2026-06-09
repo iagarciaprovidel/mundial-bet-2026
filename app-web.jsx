@@ -458,7 +458,6 @@ function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
               <div style={{ fontSize: 9, color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser.email || ''}</div>
             </div>
           </button>
-          {window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold-light)', fontSize: 14, padding: '0 2px' }}>✏️</button>}
           <button onClick={() => window.MBFirebase && window.MBFirebase.signOut()} title="Cerrar sesión" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 700 }}>Salir</button>
         </div>
       ) : (
@@ -928,10 +927,7 @@ function PerfilWeb() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <Card style={{ textAlign: 'center', padding: '24px 18px' }}>
           <div style={{ width: 88, height: 88, borderRadius: '50%', margin: '0 auto', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 30, color: 'var(--gold-light)' }}>{ini}</div>
-          <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            {dispName}
-            {window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--gold-light)' }}>✏️</button>}
-          </h2>
+          <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)' }}>{dispName}</h2>
           <div style={{ color: 'var(--muted)', fontWeight: 600, fontSize: 'var(--t-sm)' }}>{authUser.email || ''}</div>
           <div style={{ color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', marginTop: 3 }}>{teamName}</div>
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>

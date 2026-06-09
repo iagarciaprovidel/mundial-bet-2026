@@ -69,9 +69,12 @@
         creado: FV.serverTimestamp(),
         saldo: SALDO_INICIAL,
       });
-    } else if (snap.data().saldo === undefined) {
-      // backfill: usuarios antiguos sin saldo
-      await ref.set({ saldo: SALDO_INICIAL }, { merge: true });
+    } else {
+      const d = snap.data();
+      const patch = {};
+      if (d.saldo === undefined) patch.saldo = SALDO_INICIAL;                 // backfill saldo
+      if (d.apodoSet && !d.nombreLower && d.nombre) patch.nombreLower = String(d.nombre).toLowerCase(); // backfill para unicidad
+      if (Object.keys(patch).length) await ref.set(patch, { merge: true });
     }
   }
 
@@ -136,15 +139,26 @@
     },
 
     // Nombre/apodo elegido por la persona (actualiza Auth + Firestore).
-    setDisplayName(nombre) {
+    // Reglas: máx 10 caracteres, único (no repetido), y NO se puede cambiar
+    // una vez elegido (apodoSet). Rechaza con códigos para mensajes claros.
+    async setDisplayName(nombre) {
       const u = auth.currentUser;
       if (!u) return Promise.reject('no-auth');
       const name = String(nombre || '').trim();
       if (!name) return Promise.reject('nombre-vacio');
-      return Promise.all([
+      if (name.length > 10) return Promise.reject('apodo-largo');
+      const ref = db.collection('users').doc(u.uid);
+      const mine = await ref.get();
+      if (mine.exists && mine.data().apodoSet) return Promise.reject('apodo-fijo');
+      const lower = name.toLowerCase();
+      const dup = await db.collection('users').where('nombreLower', '==', lower).limit(1).get();
+      if (!dup.empty && dup.docs[0].id !== u.uid) return Promise.reject('apodo-tomado');
+      await Promise.all([
         u.updateProfile({ displayName: name }).catch(function () {}),
-        db.collection('users').doc(u.uid).set({ nombre: name, apodoSet: true }, { merge: true }),
-      ]).then(function (r) { try { window.dispatchEvent(new Event('mb-auth-refresh')); } catch (e) {} return r; });
+        ref.set({ nombre: name, nombreLower: lower, apodoSet: true }, { merge: true }),
+      ]);
+      try { window.dispatchEvent(new Event('mb-auth-refresh')); } catch (e) {}
+      return true;
     },
 
     // ── Equipos ──

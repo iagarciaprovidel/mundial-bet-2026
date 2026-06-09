@@ -182,10 +182,7 @@ function Perfil() {
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ textAlign: 'center', marginBottom: 18 }}>
         <div style={{ width: 92, height: 92, borderRadius: '50%', margin: '0 auto 8px', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 32, color: 'var(--gold-light)' }}>{ini}</div>
-        <h2 className="display" style={{ margin: '4px 0 6px', fontSize: 'var(--t-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          {dispName}
-          {window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--gold-light)' }}>✏️</button>}
-        </h2>
+        <h2 className="display" style={{ margin: '4px 0 6px', fontSize: 'var(--t-2xl)' }}>{dispName}</h2>
         <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{authUser.email || ''}</div>
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, marginTop: 3 }}>{teamName}</div>
       </div>

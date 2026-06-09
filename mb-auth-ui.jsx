@@ -20,15 +20,6 @@
     return user;
   }
 
-  function editMyName() {
-    const u = window.MBFirebase && window.MBFirebase.currentUser && window.MBFirebase.currentUser();
-    const cur = (u && u.displayName) || '';
-    const v = window.prompt('Tu nombre o apodo (como te verán los demás):', cur);
-    if (v != null && v.trim() && window.MBFirebase.setDisplayName) {
-      window.MBFirebase.setDisplayName(v.trim()).catch((e) => alert('No se pudo cambiar: ' + ((e && e.message) || e)));
-    }
-  }
-
   function signInGoogle() {
     window.MBFirebase.signInGoogle().catch((e) => {
       const code = (e && e.code) || e;
@@ -130,7 +121,6 @@
               {group && <div style={{ fontSize: 9, color: 'var(--gold-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👥 {group}</div>}
             </div>
           )}
-          <button onClick={editMyName} className="mb-press" title="Cambiar mi nombre / apodo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold-light)', fontSize: 13, padding: '0 2px' }}>✏️</button>
           <button onClick={() => window.MBFirebase.signOut()} className="mb-press" title="Cerrar sesión" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 700, padding: compact ? '0 0 0 4px' : 0 }}>Salir</button>
         </div>
       );
@@ -146,5 +136,5 @@
     );
   }
 
-  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton, MB_editName: editMyName });
+  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton });
 })();
