@@ -1,7 +1,7 @@
 /* ============================================================
    Screens: Ranking + Liga + Perfil
    ============================================================ */
-const { useState: useStateR } = React;
+const { useState: useStateR, useEffect: useEffectR } = React;
 const Dr = window.MB;
 const Mr = Dr.MASCOTS;
 const {
@@ -138,39 +138,64 @@ function AchievementBadge({ a }) {
   );
 }
 
-function Perfil({ user }) {
-  const me = user;
-  const m = Mr[me.mascot];
-  const best = Dr.MY_BETS.find(b => b.result === 'exact');
+function Perfil() {
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
-  const dispName = authUser ? (authUser.displayName || 'Jugador') : me.name;
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const [users, setUsers] = useStateR([]);
+  useEffectR(() => {
+    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setUsers([]); return undefined; }
+    const un = window.MBFirebase.subscribeUsers(setUsers);
+    return () => { if (typeof un === 'function') un(); };
+  }, [authUser]);
+
+  if (!authUser) {
+    return (
+      <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+        <Card style={{ textAlign: 'center', padding: '32px 20px' }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>🔒</div>
+          <div style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: 'var(--text)' }}>Inicia sesión para ver tu perfil</div>
+          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 6 }}>Aquí verás tu saldo, tu posición y tu historial de apuestas.</div>
+        </Card>
+      </div>
+    );
+  }
+
+  const SAL = 90000;
+  const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
+  const ms = (t) => (t && typeof t.toMillis === 'function') ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
+  const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  const meRec = users.find(u => u.uid === authUser.uid) || null;
+  const saldo = meRec ? saldoOf(meRec) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
+  const dispName = authUser.displayName || (meRec && meRec.nombre) || 'Jugador';
+  const teamName = (meRec && meRec.groupName) ? '👥 ' + meRec.groupName : ((meRec && meRec.noGroup) ? '🙋 Individual' : 'Sin equipo');
+  const ini = (() => { const p = String(dispName).trim().split(/\s+/); return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase(); })();
+  const sorted = users.slice().sort((a, b) => saldoOf(b) - saldoOf(a) || ms(a.creado) - ms(b.creado));
+  const pos = meRec ? (sorted.findIndex(u => u.uid === authUser.uid) + 1) : 0;
+  const bets = store ? Object.keys(store.bets).map(k => store.bets[k]) : [];
+  bets.sort((a, b) => ms(b.creado) - ms(a.creado));
+  const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
+  const wonN = settled.filter(b => b.status === 'won').length;
+  const aciertos = settled.length ? Math.round((wonN / settled.length) * 100) : 0;
+  const PICK = (b) => (b.pick === 'home' ? b.home : b.pick === 'away' ? b.away : 'Empate');
+
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      {/* header perfil */}
       <div style={{ textAlign: 'center', marginBottom: 18 }}>
-        <div style={{ display: 'inline-block', marginBottom: 8 }}><MascotAvatar mascot={me.mascot} size={92} glow jersey /></div>
+        <div style={{ width: 92, height: 92, borderRadius: '50%', margin: '0 auto 8px', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 32, color: 'var(--gold-light)' }}>{ini}</div>
         <h2 className="display" style={{ margin: '4px 0 6px', fontSize: 'var(--t-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {dispName}
-          {authUser && window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--gold-light)' }}>✏️</button>}
+          {window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--gold-light)' }}>✏️</button>}
         </h2>
-        {authUser
-          ? <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{authUser.email || ''}</div>
-          : (
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Chip tone="green" icon={<span>{m.emoji}</span>}>Equipo {m.name}</Chip>
-            </div>
-          )}
+        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{authUser.email || ''}</div>
+        <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, marginTop: 3 }}>{teamName}</div>
       </div>
 
-      {/* stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
         {[
-          ['Monedas', Dr.fmt(me.coins), 'var(--gold-light)'],
-          ['Posición', '#' + me.rank, 'var(--info)'],
-          ['Racha', me.streak, 'var(--success)'],
-          ['Aciertos', me.hits + '%', 'var(--success)'],
-          ['ROI', '+' + me.roi + '%', 'var(--success)'],
-          ['Pronósticos', me.preds, 'var(--text)'],
+          ['Saldo', fmt(saldo), 'var(--gold-light)'],
+          ['Posición', pos ? '#' + pos : '—', 'var(--info)'],
+          ['Apuestas', String(bets.length), 'var(--text)'],
+          ['Aciertos', settled.length ? aciertos + '%' : '—', 'var(--success)'],
         ].map(([k, v, c]) => (
           <Card key={k} style={{ padding: '12px 8px', textAlign: 'center' }}>
             <div className="num" style={{ fontSize: 'var(--t-lg)', color: c }}>{v}</div>
@@ -179,48 +204,26 @@ function Perfil({ user }) {
         ))}
       </div>
 
-      {/* gráfico evolución */}
-      <SectionHead title="Evolución de monedas" />
-      <Card style={{ marginBottom: 18 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>
-          <span>Inicio: <span className="mono" style={{ color: 'var(--text)' }}>10.000</span></span>
-          <span>Actual: <span className="mono" style={{ color: 'var(--gold-light)' }}>{Dr.fmt(me.coins)}</span></span>
-        </div>
-        <CoinChart data={Dr.COIN_HISTORY} />
+      <Card title="Mi historial de apuestas" style={{ padding: '14px 14px', marginBottom: 18 }}>
+        {bets.length === 0
+          ? <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)', padding: '16px 8px' }}>Aún no has hecho apuestas.<br /><span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Ve a <strong style={{ color: 'var(--gold-light)' }}>Partidos</strong> y apuesta al ganador.</span></div>
+          : bets.map((b, i) => {
+            const open = b.status === 'open';
+            const won = b.status === 'won';
+            const delta = won ? Math.round((b.stake || 0) * (b.odd || 0)) : (b.status === 'lost' ? -(b.stake || 0) : 0);
+            const badge = open ? { txt: 'Abierta', col: 'var(--info)', bg: 'rgba(74,144,226,0.12)' } : won ? { txt: '✓ Ganaste', col: 'var(--success)', bg: 'var(--success-bg)' } : { txt: '✕ Perdiste', col: '#e98b8b', bg: 'rgba(220,80,80,0.10)' };
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: i < bets.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.home} vs {b.away}</div>
+                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{fmt(b.stake)} a {PICK(b)} @ {Number(b.odd).toFixed(2)}</div>
+                </div>
+                <span style={{ fontSize: 9, fontWeight: 700, color: badge.col, background: badge.bg, padding: '3px 8px', borderRadius: 'var(--r-pill)', whiteSpace: 'nowrap' }}>{badge.txt}</span>
+                <span className="num" style={{ minWidth: 52, textAlign: 'right', fontSize: 'var(--t-sm)', color: open ? 'var(--muted)' : (delta >= 0 ? 'var(--success)' : 'var(--danger)') }}>{open ? '—' : (delta >= 0 ? '+' : '') + fmt(delta)}</span>
+              </div>
+            );
+          })}
       </Card>
-
-      {/* mejor / peor */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
-        <Card style={{ flex: 1, borderColor: 'rgba(0,200,90,0.3)' }}>
-          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 700, marginBottom: 4 }}>🔥 Mejor apuesta</div>
-          <div style={{ fontSize: 'var(--t-xs)', color: 'var(--text)' }}>Brasil 2-0 Suiza</div>
-          <div className="num" style={{ color: 'var(--success)', fontSize: 'var(--t-md)', marginTop: 4 }}>+1.750 ·×3.5</div>
-        </Card>
-        <Card style={{ flex: 1, borderColor: 'rgba(232,64,64,0.3)' }}>
-          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', fontWeight: 700, marginBottom: 4 }}>🫎 Peor apuesta</div>
-          <div style={{ fontSize: 'var(--t-xs)', color: 'var(--text)' }}>Chile 1-2 Perú</div>
-          <div className="num" style={{ color: 'var(--danger)', fontSize: 'var(--t-md)', marginTop: 4 }}>−500</div>
-        </Card>
-      </div>
-
-      {/* historial */}
-      <SectionHead title="Últimas apuestas" />
-      <Card style={{ padding: '6px 14px', marginBottom: 18 }}>
-        {Dr.MY_BETS.map((b, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: i < Dr.MY_BETS.length - 1 ? '1px solid var(--border)' : 'none' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 'var(--t-sm)' }}>{b.match}</div>
-              <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{b.bet}</div>
-            </div>
-            <ResultBadge result={b.result} pts={b.pts} />
-            <span className="num" style={{ minWidth: 52, textAlign: 'right', fontSize: 'var(--t-sm)', color: b.delta >= 0 ? 'var(--success)' : 'var(--danger)' }}>{b.delta >= 0 ? '+' : ''}{Dr.fmt(b.delta)}</span>
-          </div>
-        ))}
-      </Card>
-
-      {/* logros */}
-      <SectionHead title="Logros" />
-      {Dr.ACHIEVEMENTS.map(a => <AchievementBadge key={a.id} a={a} />)}
     </div>
   );
 }

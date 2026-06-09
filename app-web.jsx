@@ -878,71 +878,94 @@ function Sparkline({ data, w = 300, h = 70 }) {
   );
 }
 
-function PerfilWeb({ me }) {
+function PerfilWeb() {
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
-  const dispName = authUser ? (authUser.displayName || 'Jugador') : me.name;
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const [users, setUsers] = useStateW([]);
+  useEffectW(() => {
+    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setUsers([]); return undefined; }
+    const un = window.MBFirebase.subscribeUsers(setUsers);
+    return () => { if (typeof un === 'function') un(); };
+  }, [authUser]);
+
+  // Sin sesión: estado limpio (sin datos demo), homologado con el resto.
+  if (!authUser) {
+    return (
+      <div style={{ maxWidth: 460, margin: '0 auto', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+        <Card style={{ textAlign: 'center', padding: '32px 22px' }}>
+          <div style={{ fontSize: 34, marginBottom: 10 }}>🔒</div>
+          <div style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: 'var(--text)' }}>Inicia sesión para ver tu perfil</div>
+          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 6 }}>Aquí verás tu saldo, tu posición y tu historial de apuestas.</div>
+        </Card>
+      </div>
+    );
+  }
+
+  const SAL = 90000;
+  const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
+  const ms = (t) => (t && typeof t.toMillis === 'function') ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
+  const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  const meRec = users.find(u => u.uid === authUser.uid) || null;
+  const saldo = meRec ? saldoOf(meRec) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
+  const dispName = authUser.displayName || (meRec && meRec.nombre) || 'Jugador';
+  const teamName = (meRec && meRec.groupName) ? '👥 ' + meRec.groupName : ((meRec && meRec.noGroup) ? '🙋 Individual' : 'Sin equipo');
+  const ini = (() => { const p = String(dispName).trim().split(/\s+/); return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase(); })();
+
+  // Posición real por saldo (entre todos los jugadores registrados)
+  const sorted = users.slice().sort((a, b) => saldoOf(b) - saldoOf(a) || ms(a.creado) - ms(b.creado));
+  const pos = meRec ? (sorted.findIndex(u => u.uid === authUser.uid) + 1) : 0;
+
+  // Historial real de apuestas (del store compartido)
+  const bets = store ? Object.keys(store.bets).map(k => store.bets[k]) : [];
+  bets.sort((a, b) => ms(b.creado) - ms(a.creado));
+  const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
+  const wonN = settled.filter(b => b.status === 'won').length;
+  const aciertos = settled.length ? Math.round((wonN / settled.length) * 100) : 0;
+  const PICK = (b) => (b.pick === 'home' ? b.home : b.pick === 'away' ? b.away : 'Empate');
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.3fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <Card style={{ textAlign: 'center', padding: '24px 18px' }}>
-          <div style={{ display: 'inline-block' }}><MascotAvatar mascot={me.mascot} size={88} glow jersey /></div>
+          <div style={{ width: 88, height: 88, borderRadius: '50%', margin: '0 auto', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 30, color: 'var(--gold-light)' }}>{ini}</div>
           <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             {dispName}
-            {authUser && window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--gold-light)' }}>✏️</button>}
+            {window.MB_editName && <button onClick={() => window.MB_editName()} title="Cambiar mi apodo" className="mb-press" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--gold-light)' }}>✏️</button>}
           </h2>
-          <div style={{ color: 'var(--muted)', fontWeight: 600, fontSize: 'var(--t-sm)' }}>{authUser ? (authUser.email || '') : 'Inicia sesión para tu perfil'}</div>
+          <div style={{ color: 'var(--muted)', fontWeight: 600, fontSize: 'var(--t-sm)' }}>{authUser.email || ''}</div>
+          <div style={{ color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', marginTop: 3 }}>{teamName}</div>
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-            <MetricW label="Posición" value={me.rank ? '#' + me.rank : '—'} tone="var(--info)" icon="📊" />
-            <MetricW label="Puntos" value={me.pts} tone="var(--gold-light)" icon="🏆" />
+            <MetricW label="Posición" value={pos ? '#' + pos : '—'} tone="var(--info)" icon="📊" />
+            <MetricW label="Saldo" value={fmt(saldo)} tone="var(--gold-light)" icon="🏆" />
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-            <MetricW label="Aciertos" value={me.hits + '%'} tone="var(--success)" icon="🎯" />
-            <MetricW label="ROI" value={me.roi + '%'} tone="var(--success)" icon="📈" />
+            <MetricW label="Apuestas" value={bets.length} tone="var(--text)" icon="🎟️" />
+            <MetricW label="Aciertos" value={settled.length ? aciertos + '%' : '—'} tone="var(--success)" icon="🎯" />
           </div>
         </Card>
-        <div>
-          <SectionHead title="Logros" />
-          <Card style={{ padding: '6px 16px' }}>
-            {Dw.ACHIEVEMENTS.map((a, i) => (
-              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 0', borderBottom: i < Dw.ACHIEVEMENTS.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', opacity: a.unlocked ? 1 : 0.45 }}>
-                <MascotAvatar mascot={a.mascot} size={34} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)' }}>{a.name}</div>
-                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>{a.note}</div>
-                </div>
-                <span>{a.unlocked ? '✅' : '🔒'}</span>
-              </div>
-            ))}
-          </Card>
-        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div>
-          <SectionHead title="Evolución de monedas" />
-          <Card>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
-              <span className="num" style={{ fontSize: 'var(--t-3xl)', color: 'var(--gold-light)' }}>{Dw.fmt(me.coins)}</span>
-              <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>monedas actuales</span>
-            </div>
-            <Sparkline data={Dw.COIN_HISTORY} />
-          </Card>
-        </div>
-        <div>
-          <SectionHead title="Mi historial de apuestas" />
-          <Card style={{ padding: '4px 16px' }}>
-            {Dw.MY_BETS.map((b, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < Dw.MY_BETS.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)' }}>{b.match}</div>
-                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>{b.bet}</div>
+        <Card title="Mi historial de apuestas" style={{ padding: '14px 16px' }}>
+          {bets.length === 0
+            ? <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)', padding: '20px 8px' }}>Aún no has hecho apuestas.<br /><span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Ve a <strong style={{ color: 'var(--gold-light)' }}>Partidos</strong> y apuesta al ganador.</span></div>
+            : bets.map((b, i) => {
+              const open = b.status === 'open';
+              const won = b.status === 'won';
+              const delta = won ? Math.round((b.stake || 0) * (b.odd || 0)) : (b.status === 'lost' ? -(b.stake || 0) : 0);
+              const badge = open ? { txt: 'Abierta', col: 'var(--info)', bg: 'rgba(74,144,226,0.12)' } : won ? { txt: '✓ Ganaste', col: 'var(--success)', bg: 'var(--success-bg)' } : { txt: '✕ Perdiste', col: '#e98b8b', bg: 'rgba(220,80,80,0.10)' };
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < bets.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.home} vs {b.away}</div>
+                    <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>aposté {fmt(b.stake)} a {PICK(b)} @ {Number(b.odd).toFixed(2)}</div>
+                  </div>
+                  <span style={{ fontSize: 'var(--t-3xs)', fontWeight: 700, color: badge.col, background: badge.bg, padding: '3px 9px', borderRadius: 'var(--r-pill)', whiteSpace: 'nowrap' }}>{badge.txt}</span>
+                  <span className="num" style={{ width: 72, textAlign: 'right', color: open ? 'var(--muted)' : (delta >= 0 ? 'var(--success)' : 'var(--danger)'), fontWeight: 700 }}>{open ? '—' : (delta >= 0 ? '+' : '') + fmt(delta)}</span>
                 </div>
-                <ResultBadge result={b.result} pts={b.pts} />
-                <span className="num" style={{ width: 70, textAlign: 'right', color: b.delta >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>{b.delta >= 0 ? '+' : ''}{Dw.fmt(b.delta)}</span>
-              </div>
-            ))}
-          </Card>
-        </div>
+              );
+            })}
+        </Card>
       </div>
     </div>
   );
