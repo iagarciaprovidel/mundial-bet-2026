@@ -22,7 +22,8 @@
     const validGroups = groups.filter(g => g && g.name && String(g.name).trim());
 
     const APODO_ERR = {
-      'apodo-largo': 'El apodo no puede tener más de 10 caracteres.',
+      'apodo-corto': 'El apodo debe tener al menos 3 caracteres.',
+      'apodo-largo': 'El apodo no puede tener más de 20 caracteres.',
       'apodo-tomado': 'Ese apodo ya está en uso. Elige otro.',
       'apodo-fijo': 'Ya tienes un apodo y no se puede cambiar.',
       'nombre-vacio': 'Escribe tu nombre o apodo.',
@@ -30,8 +31,8 @@
     const fail = (e) => { const c = (e && e.message) || e; alert(APODO_ERR[c] || ('No se pudo: ' + c)); };
     const ensureName = () => {
       const n = name.trim();
-      if (n.length < 2) { alert('Escribe tu nombre o apodo (mínimo 2 letras).'); return null; }
-      if (n.length > 10) { alert('El apodo no puede tener más de 10 caracteres.'); return null; }
+      if (n.length < 3) { alert('Escribe tu nombre o apodo (mínimo 3 caracteres).'); return null; }
+      if (n.length > 20) { alert('El apodo no puede tener más de 20 caracteres.'); return null; }
       return n;
     };
     const onJoined = (res) => {
@@ -74,9 +75,9 @@
 
           {/* Nombre / apodo */}
           <label style={{ display: 'block', fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 5 }}>Tu nombre o apodo (como te verán los demás)</label>
-          <input value={name} onChange={e => setName(e.target.value)} maxLength={10} placeholder="ej: Sergio, ElProfeta…"
+          <input value={name} onChange={e => setName(e.target.value)} maxLength={20} placeholder="ej: Sergio, El Profeta…"
             style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', marginBottom: 4, borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-md)', fontWeight: 700 }} />
-          <div style={{ fontSize: 9, color: 'var(--muted-2)', marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}><span>⚠️ Máx 10 caracteres · único · no se podrá cambiar</span><span className="num">{name.trim().length}/10</span></div>
+          <div style={{ fontSize: 9, color: 'var(--muted-2)', marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}><span>⚠️ 3 a 20 caracteres · único · no se podrá cambiar</span><span className="num">{name.trim().length}/20</span></div>
 
           {/* Lista de equipos (solo equipos con nombre válido) */}
           {validGroups.length > 0 && (

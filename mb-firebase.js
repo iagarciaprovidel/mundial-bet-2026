@@ -146,7 +146,8 @@
       if (!u) return Promise.reject('no-auth');
       const name = String(nombre || '').trim();
       if (!name) return Promise.reject('nombre-vacio');
-      if (name.length > 10) return Promise.reject('apodo-largo');
+      if (name.length < 3) return Promise.reject('apodo-corto');
+      if (name.length > 20) return Promise.reject('apodo-largo');
       const ref = db.collection('users').doc(u.uid);
       const mine = await ref.get();
       if (mine.exists && mine.data().apodoSet) return Promise.reject('apodo-fijo');
