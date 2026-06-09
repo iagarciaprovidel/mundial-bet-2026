@@ -29,9 +29,10 @@
       addAdmin: noFB, removeAdmin: noFB,
       joinGroupById: noFB, chooseNoGroup: noFB,
       approveRequest: noFB, rejectRequest: noFB,
-      placeBet: noFB, cancelBet: noFB,
+      placeBet: noFB, cancelBet: noFB, setOdds: noFB,
       subscribeOdds(cb) { if (typeof cb === 'function') cb({}); return () => {}; },
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
+      subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
@@ -217,6 +218,12 @@
       return db.collection('bets').where('uid', '==', u.uid)
         .onSnapshot(function (s) { cb(s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { cb([]); });
     },
+    // Mi documento de usuario en vivo (para mostrar el saldo actualizado al apostar).
+    subscribeMe(cb) {
+      const u = auth.currentUser; if (!u) { cb(null); return function () {}; }
+      return db.collection('users').doc(u.uid)
+        .onSnapshot(function (d) { cb(d.exists ? Object.assign({ id: d.id }, d.data()) : null); }, function () { cb(null); });
+    },
     // Apuesta al ganador. pick: 'home' | 'draw' | 'away'. stake en puntos (mín 1.000).
     // Si ya había apuesta abierta en ese partido, la reemplaza (devuelve lo anterior).
     async placeBet(match, pick, stake) {
@@ -243,6 +250,14 @@
           home: match.home, away: match.away, status: 'open', creado: FV.serverTimestamp(),
         });
       });
+    },
+    // Carga/actualiza las cuotas de un partido (lo hará el agente; también
+    // sirve para sembrar cuotas de prueba). odds = { home, draw, away }.
+    setOdds(matchId, odds) {
+      return db.collection('odds').doc(String(matchId)).set({
+        home: Number(odds.home) || null, draw: Number(odds.draw) || null, away: Number(odds.away) || null,
+        actualizado: FV.serverTimestamp(),
+      }, { merge: true });
     },
     // Cancela la apuesta abierta de un partido (antes del kickoff) y devuelve el saldo.
     async cancelBet(matchId) {

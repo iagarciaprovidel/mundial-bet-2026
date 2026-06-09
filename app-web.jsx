@@ -659,6 +659,7 @@ function FixtureCardWeb({ m, onTeam }) {
       </div>
       <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center' }}>📍 {m.stadium}</div>
       <RefLineWeb m={m} />
+      {window.MB_BetBox ? <window.MB_BetBox m={m} /> : null}
     </Card>
   );
 }

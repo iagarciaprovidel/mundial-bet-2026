@@ -194,6 +194,7 @@ function MobileFixtureCard({ m }) {
           </div>
         ) : null;
       })()}
+      {window.MB_BetBox ? <window.MB_BetBox m={m} /> : null}
     </Card>
   );
 }
