@@ -66,6 +66,7 @@
     }, [user]);
 
     if (!user) return null;
+    const groupsList = groups.filter(g => g && g.name && String(g.name).trim()); // oculta equipos sin nombre
     const myId = profile && profile.groupId;
     const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : 90000;
     const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
@@ -77,10 +78,10 @@
     return (
       <div style={{ marginTop: 4, background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
-          <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>Equipos de apostadores <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {groups.length}</span></h3>
+          <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>Equipos de apostadores <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {groupsList.length}</span></h3>
           <button onClick={() => window.MB_openMyTeams && window.MB_openMyTeams()} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.55)', background: 'var(--coin-bg)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' }}>👥 Mis equipos</button>
         </div>
-        {groups.length === 0
+        {groupsList.length === 0
           ? <div style={{ padding: '12px', borderRadius: 'var(--r-md)', background: 'rgba(8,12,9,0.5)', border: '1px dashed var(--border-2)', textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Aún no hay equipos. Crea el tuyo con <strong style={{ color: 'var(--gold-light)' }}>👥 Mis equipos</strong>.</div>
           : (
             <div>
@@ -90,7 +91,7 @@
                 <span style={{ textAlign: 'center' }}>Jugadores</span>
                 <span style={{ textAlign: 'right' }}>Pts</span>
               </div>
-              {groups.map(g => ({ g: g, n: countByGroup[g.id] || 0, pts: avgOf(g.id) }))
+              {groupsList.map(g => ({ g: g, n: countByGroup[g.id] || 0, pts: avgOf(g.id) }))
                 .sort((a, b) => b.pts - a.pts || b.n - a.n || (a.g.name || '').localeCompare(b.g.name || ''))
                 .map((row, i) => {
                   const g = row.g, mine = g.id === myId, closed = g.open === false;

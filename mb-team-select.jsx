@@ -18,6 +18,9 @@
       return () => { if (typeof unsub === 'function') unsub(); };
     }, []);
 
+    // Ignora equipos sin nombre (datos de prueba/incompletos): no se muestran para unirse.
+    const validGroups = groups.filter(g => g && g.name && String(g.name).trim());
+
     const fail = (e) => alert('No se pudo: ' + ((e && e.message) || e));
     const ensureName = () => {
       const n = name.trim();
@@ -67,13 +70,12 @@
           <input value={name} onChange={e => setName(e.target.value)} maxLength={24} placeholder="ej: Sergio, El Profeta, Tío Juan…"
             style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', marginBottom: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-md)', fontWeight: 700 }} />
 
-          {/* Lista de equipos */}
-          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 8 }}>Únete a un equipo</div>
-          {groups.length === 0
-            ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '12px 0' }}>Todavía no hay equipos. ¡Crea el primero abajo! 👇</div>
-            : (
+          {/* Lista de equipos (solo equipos con nombre válido) */}
+          {validGroups.length > 0 && (
+            <>
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 8 }}>Únete a un equipo</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {groups.map(g => {
+                {validGroups.map(g => {
                   const closed = g.open === false;
                   return (
                     <button key={g.id} onClick={() => joinById(g)} disabled={busy} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', textAlign: 'left' }}>
@@ -84,7 +86,8 @@
                   );
                 })}
               </div>
-            )}
+            </>
+          )}
 
           <button onClick={createTeam} disabled={busy} className="mb-press" style={{ width: '100%', marginTop: 16, padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>
             ➕ Crear un equipo nuevo
