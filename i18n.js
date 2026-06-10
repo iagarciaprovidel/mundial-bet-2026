@@ -306,6 +306,11 @@
     'Jugadores': 'Players', 'Ver ranking': 'View ranking', 'Cerrado': 'Closed',
     'integrante': 'member', 'integrantes': 'members', 'jugadores': 'players', 'jugador': 'player',
     '⏱ Empieza en': '⏱ Starts in', 'hrs': 'hrs', 'seg': 'sec',
+    'Invitar': 'Invite', 'Copiado ✓': 'Copied ✓', 'Unirme': 'Join', 'Pedir unirme': 'Request to join', 'Ahora no': 'Not now',
+    'Te invitaron al equipo': 'You were invited to the team',
+    '¿Quieres unirte a este equipo?': 'Do you want to join this team?',
+    'Es un equipo cerrado: enviaremos tu solicitud para que un admin te acepte.': 'It’s a closed team: we’ll send your request for an admin to accept.',
+    '🔗 Enlace copiado. ¡Pégalo en WhatsApp para invitar!': '🔗 Link copied. Paste it in WhatsApp to invite!',
   };
 
   var DICT_PT = {
@@ -524,6 +529,11 @@
     'Jugadores': 'Jogadores', 'Ver ranking': 'Ver ranking', 'Cerrado': 'Fechado',
     'integrante': 'integrante', 'integrantes': 'integrantes', 'jugadores': 'jogadores', 'jugador': 'jogador',
     '⏱ Empieza en': '⏱ Começa em', 'hrs': 'hrs', 'seg': 'seg',
+    'Invitar': 'Convidar', 'Copiado ✓': 'Copiado ✓', 'Unirme': 'Entrar', 'Pedir unirme': 'Pedir para entrar', 'Ahora no': 'Agora não',
+    'Te invitaron al equipo': 'Você foi convidado para o time',
+    '¿Quieres unirte a este equipo?': 'Quer entrar neste time?',
+    'Es un equipo cerrado: enviaremos tu solicitud para que un admin te acepte.': 'É um time fechado: enviaremos seu pedido para um admin aceitar.',
+    '🔗 Enlace copiado. ¡Pégalo en WhatsApp para invitar!': '🔗 Link copiado. Cole no WhatsApp para convidar!',
   };
 
   // ── Reglas para frases dinámicas (orden importa) ──────────

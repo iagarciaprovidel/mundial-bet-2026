@@ -8,6 +8,21 @@
   const { useState, useEffect } = React;
   const FB = () => window.MBFirebase || {};
 
+  // Captura el equipo de un enlace de invitación (?join=<id>) y lo recuerda
+  // mientras dura la sesión (sobrevive al login por correo). Limpia la URL.
+  (function () {
+    try {
+      var jm = (location.search.match(/[?&]join=([^&#]+)/) || [])[1];
+      if (jm) {
+        sessionStorage.setItem('mb_pending_join', decodeURIComponent(jm));
+        var clean = location.pathname + location.search.replace(/([?&])join=[^&#]*(&|$)/, '$1').replace(/[?&]$/, '');
+        history.replaceState(null, '', clean || location.pathname);
+      }
+    } catch (e) {}
+  })();
+  const getPendingJoin = () => { try { return sessionStorage.getItem('mb_pending_join') || null; } catch (e) { return null; } };
+  const clearPendingJoin = () => { try { sessionStorage.removeItem('mb_pending_join'); } catch (e) {} };
+
   function TeamSelectModal({ onDone, onSkip }) {
     const [groups, setGroups] = useState([]);
     const [name, setName] = useState('');
@@ -209,6 +224,55 @@
   // Abrir el selector desde cualquier parte (perfil, inicio, etc.).
   window.MB_openTeamPicker = function () { try { window.dispatchEvent(new Event('mb-open-teampicker')); } catch (e) {} };
 
+  // Si hay una invitación pendiente (?join=...), ofrece unirse a ese equipo.
+  function JoinInviteHandler() {
+    const user = window.MB_useAuth ? window.MB_useAuth() : null;
+    const [profile, setProfile] = useState(undefined);
+    const [groups, setGroups] = useState([]);
+    const [pending, setPending] = useState(getPendingJoin());
+    const [busy, setBusy] = useState(false);
+    useEffect(() => {
+      if (!user) return undefined;
+      const un = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
+      return () => { if (typeof un === 'function') un(); };
+    }, [user]);
+    useEffect(() => {
+      let alive = true;
+      if (user && FB().getMyProfile) FB().getMyProfile().then(p => { if (alive) setProfile(p || null); }).catch(() => { if (alive) setProfile(null); });
+      else setProfile(undefined);
+      return () => { alive = false; };
+    }, [user]);
+
+    if (!user || !pending) return null;
+    if (profile === undefined) return null;
+    if (!(profile && profile.apodoSet)) return null;          // primero el apodo (lo pide el gate)
+    const done = () => { clearPendingJoin(); setPending(null); };
+    if (profile.groupId === pending) { done(); return null; } // ya está en ese equipo
+    const g = groups.find(x => x.id === pending);
+    if (groups.length && !g) { done(); return null; }         // el equipo ya no existe
+    if (!g) return null;                                       // aún cargando
+
+    const closed = g.open === false;
+    const accept = () => {
+      setBusy(true);
+      FB().joinGroupById(pending).then(res => {
+        if (res && res.pending) alert('✅ Solicitud enviada a "' + (res.name || g.name) + '". Es un equipo cerrado: un administrador debe aceptarte.');
+        done();
+      }).catch(e => alert('No se pudo unir: ' + ((e && e.message) || e))).finally(() => setBusy(false));
+    };
+    return ReactDOM.createPortal(
+      <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)', padding: 24, width: 'min(400px, 94vw)', boxShadow: 'var(--sh-4)', textAlign: 'center' }}>
+          <div style={{ fontSize: 34, marginBottom: 6 }}>🎉</div>
+          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>Te invitaron al equipo</div>
+          <h2 className="display" style={{ margin: '2px 0 6px', fontSize: 'var(--t-2xl)' }}>{g.name}</h2>
+          <p style={{ margin: '0 0 18px', fontSize: 'var(--t-sm)', color: 'var(--muted)' }}>{closed ? 'Es un equipo cerrado: enviaremos tu solicitud para que un admin te acepte.' : '¿Quieres unirte a este equipo?'}</p>
+          <button onClick={accept} disabled={busy} className="mb-press" style={{ width: '100%', padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>👥 {closed ? 'Pedir unirme' : 'Unirme'}</button>
+          <button onClick={done} disabled={busy} className="mb-press" style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>Ahora no</button>
+        </div>
+      </div>, document.body);
+  }
+
   function TeamGate() {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [profile, setProfile] = useState(undefined); // undefined = cargando
@@ -228,8 +292,8 @@
     if (user && !skipped && profile !== undefined && !(profile && profile.apodoSet && (profile.groupId || profile.noGroup))) {
       gate = <TeamSelectModal onDone={() => setRefresh(r => r + 1)} onSkip={skip} />;
     }
-    // El launcher (selector reutilizable) siempre montado si hay sesión.
-    return <React.Fragment>{gate}{user ? <TeamPickerLauncher /> : null}</React.Fragment>;
+    // El launcher (selector reutilizable) y el handler de invitación siempre montados si hay sesión.
+    return <React.Fragment>{gate}{user ? <TeamPickerLauncher /> : null}{user ? <JoinInviteHandler /> : null}</React.Fragment>;
   }
 
   window.MB_TeamGate = TeamGate;

@@ -23,12 +23,23 @@
       return d ? d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
     } catch (e) { return '—'; }
   }
+  // Enlace de invitación a un equipo y compartir (nativo / WhatsApp / copiar).
+  function inviteUrl(teamId) { return location.origin + location.pathname + '?join=' + teamId; }
+  function shareInvite(teamId, teamName) {
+    const url = inviteUrl(teamId);
+    const text = '¡Únete a mi equipo "' + teamName + '" en MundialBet Club! ' + url;
+    if (navigator.share) { navigator.share({ title: 'MundialBet Club', text: text }).catch(function () {}); return 'share'; }
+    try { if (navigator.clipboard) navigator.clipboard.writeText(url); } catch (e) {}
+    try { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); } catch (e) {}
+    return 'copied';
+  }
 
   // ── Ficha de un equipo: solo sus integrantes, con fecha de ingreso y ganancias ──
   function TeamMembersModal({ teamId, onClose }) {
     const [groups, setGroups] = useState([]);
     const [users, setUsers] = useState([]);
     const [gid, setGid] = useState(teamId || null);
+    const [copied, setCopied] = useState(false);
     useEffect(() => {
       const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
       const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
@@ -53,8 +64,12 @@
               <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-xl)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{group ? group.name : 'Equipo'}</h2>
               <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{members.length} {members.length === 1 ? 'integrante' : 'integrantes'}{group ? ' · ' + (closed ? 'Cerrado' : 'Abierto') : ''}</div>
             </div>
+            {gid && group && (
+              <button onClick={() => { const r = shareInvite(gid, group.name); if (r === 'copied') { setCopied(true); setTimeout(() => setCopied(false), 2000); } }} className="mb-press" title="Invitar gente a este equipo" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.55)', background: 'var(--coin-bg)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' }}>🔗 {copied ? 'Copiado ✓' : 'Invitar'}</button>
+            )}
             <button onClick={onClose} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15 }}>✕</button>
           </div>
+          {copied && <div style={{ marginBottom: 12, padding: '8px 11px', borderRadius: 'var(--r-md)', background: 'var(--coin-bg)', border: '1px solid rgba(212,175,55,0.4)', fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 700, textAlign: 'center' }}>🔗 Enlace copiado. ¡Pégalo en WhatsApp para invitar!</div>}
 
           {!gid
             ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '18px 8px' }}>No perteneces a ningún equipo.<br /><span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Únete a uno desde tu <strong style={{ color: 'var(--gold-light)' }}>Perfil</strong>.</span></div>
