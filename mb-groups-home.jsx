@@ -145,8 +145,8 @@
     if (!user) return null;
     const groupsList = groups.filter(g => g && g.name && String(g.name).trim()); // oculta equipos sin nombre
     const myId = profile && profile.groupId;
-    const countByGroup = {}, sumByGroup = {};
-    users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); } });
+    const countByGroup = {}, sumByGroup = {}, stakedByGroup = {};
+    users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); stakedByGroup[u.groupId] = (stakedByGroup[u.groupId] || 0) + (u.staked || 0); } });
     const avgOf = (gid) => { const n = countByGroup[gid] || 0; return n ? Math.round(sumByGroup[gid] / n) : 0; };
 
     return (
@@ -180,7 +180,7 @@
                         <span style={{ fontSize: 15, flexShrink: 0 }}>{closed ? '🔒' : '👥'}</span>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}{mine && <span style={{ color: 'var(--gold-light)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>★ tu equipo</span>}</div>
-                          <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{closed ? '🔒 Cerrado' : '🔓 Abierto'}</div>
+                          <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{closed ? '🔒 Cerrado' : '🔓 Abierto'}{stakedByGroup[g.id] > 0 ? ' · 🎟️ ' + fmt(stakedByGroup[g.id]) : ''}</div>
                         </div>
                       </div>
                       <span style={{ textAlign: 'center', fontSize: 'var(--t-sm)', color: 'var(--muted)', fontWeight: 700 }}>{row.n}</span>

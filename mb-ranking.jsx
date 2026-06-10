@@ -55,7 +55,7 @@
                 {window.MB_champAvatar ? window.MB_champAvatar(u.championCode, u.champion, u.nombre, 30) : <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
-                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
+                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}{u.staked > 0 ? ' · 🎟️ ' + fmt(u.staked) : ''}</div>
                 </div>
                 <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={u.prevSaldo} /></span>
               </div>
@@ -197,10 +197,10 @@
     }, [user]);
     if (!user) return signIn('Inicia sesión para ver el ranking de equipos.', false);
     const note = (t) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '14px 8px' }}>{t}</div>;
-    const cnt = {}, sum = {};
-    users.forEach(u => { if (u.groupId) { cnt[u.groupId] = (cnt[u.groupId] || 0) + 1; sum[u.groupId] = (sum[u.groupId] || 0) + saldoOf(u); } });
+    const cnt = {}, sum = {}, stk = {};
+    users.forEach(u => { if (u.groupId) { cnt[u.groupId] = (cnt[u.groupId] || 0) + 1; sum[u.groupId] = (sum[u.groupId] || 0) + saldoOf(u); stk[u.groupId] = (stk[u.groupId] || 0) + (u.staked || 0); } });
     const teams = groups.filter(g => g && g.name && String(g.name).trim())
-      .map(g => { const n = cnt[g.id] || 0; return { g: g, n: n, pts: n ? Math.round(sum[g.id] / n) : 0 }; })
+      .map(g => { const n = cnt[g.id] || 0; return { g: g, n: n, pts: n ? Math.round(sum[g.id] / n) : 0, stk: stk[g.id] || 0 }; })
       .sort((a, b) => b.pts - a.pts || b.n - a.n || tsMillis(a.g.creado) - tsMillis(b.g.creado));
     const shown = limit ? teams.slice(0, limit) : teams;
     if (!shown.length) return note('Aún no hay equipos.');
@@ -212,7 +212,7 @@
             <span style={{ fontSize: 15, flexShrink: 0 }}>{t.g.open === false ? '🔒' : '👥'}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.g.name}</div>
-              <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{t.n} {t.n === 1 ? 'jugador' : 'jugadores'}</div>
+              <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{t.n} {t.n === 1 ? 'jugador' : 'jugadores'}{t.stk > 0 ? ' · 🎟️ ' + fmt(t.stk) : ''}</div>
             </div>
             <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(t.pts)}</span>
           </div>

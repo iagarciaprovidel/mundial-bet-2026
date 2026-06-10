@@ -611,7 +611,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
         )}
         {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick)}
         {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
-        <Card title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 16px' }}>
+        <Card title="Apostadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 16px' }}>
           {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 6 }) : null}
         </Card>
       </div>
@@ -852,7 +852,7 @@ function PodiumWeb({ top3 }) {
 function RankingWeb() {
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <Card title="🏅 Ranking de jugadores" style={{ padding: '14px 16px' }}>
+      <Card title="🏅 Ranking de apostadores" style={{ padding: '14px 16px' }}>
         {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
       </Card>
       <Card title="👥 Ranking de equipos" style={{ padding: '14px 16px' }}>

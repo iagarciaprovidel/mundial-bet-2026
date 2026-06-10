@@ -57,7 +57,7 @@ function RankRow({ u, highlight }) {
 function Ranking() {
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Card title="🏅 Ranking de jugadores" style={{ padding: '12px 14px' }}>
+      <Card title="🏅 Ranking de apostadores" style={{ padding: '12px 14px' }}>
         {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
       </Card>
       <Card title="👥 Ranking de equipos" style={{ padding: '12px 14px' }}>

@@ -153,7 +153,8 @@ async function settle(our, ourResult) {
       const userRef = db.collection('users').doc(bet.uid);
       const us = await tx.get(userRef);
       const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
-      tx.set(userRef, { prevSaldo: saldo, saldo: saldo + pay }, { merge: true });
+      const staked0 = (us.exists && typeof us.data().staked === 'number') ? us.data().staked : 0;
+      tx.set(userRef, { prevSaldo: saldo, saldo: saldo + pay, staked: Math.max(0, staked0 - (bet.stake || 0)) }, { merge: true });
       tx.set(doc.ref, { status: w ? 'won' : 'lost', result: ourResult, payout: pay, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     });
     // Notifica el resultado al apostador.

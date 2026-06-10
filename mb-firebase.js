@@ -318,10 +318,11 @@
       return db.runTransaction(async function (tx) {
         const us = await tx.get(userRef);
         const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
+        const staked0 = (us.exists && typeof us.data().staked === 'number') ? us.data().staked : 0;
         const prev = await tx.get(betRef);
         const refund = (prev.exists && prev.data().status === 'open') ? (prev.data().stake || 0) : 0;
         if (saldo + refund < stake) throw 'saldo-insuficiente';
-        tx.set(userRef, { saldo: saldo + refund - stake }, { merge: true });
+        tx.set(userRef, { saldo: saldo + refund - stake, staked: Math.max(0, staked0 - refund + stake) }, { merge: true });
         tx.set(betRef, {
           uid: u.uid, matchId: match.id, md: match.md || null, pick: pick, stake: stake, odd: odd,
           home: match.home, away: match.away, status: 'open', creado: FV.serverTimestamp(),
@@ -346,7 +347,9 @@
         if (!bs.exists || bs.data().status !== 'open') return;
         const us = await tx.get(userRef);
         const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
-        tx.set(userRef, { saldo: saldo + (bs.data().stake || 0) }, { merge: true });
+        const staked0 = (us.exists && typeof us.data().staked === 'number') ? us.data().staked : 0;
+        const st = bs.data().stake || 0;
+        tx.set(userRef, { saldo: saldo + st, staked: Math.max(0, staked0 - st) }, { merge: true });
         tx.delete(betRef);
       });
     },

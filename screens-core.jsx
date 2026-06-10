@@ -243,7 +243,7 @@ function Dashboard({ user, onNav, onPredict }) {
       {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
 
       {/* jugadores registrados (real) — título dentro de la card */}
-      <Card title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 14px' }}>
+      <Card title="Apostadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 14px' }}>
         {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 5 }) : null}
       </Card>
     </div>
