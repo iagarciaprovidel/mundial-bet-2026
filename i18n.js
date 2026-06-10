@@ -311,6 +311,8 @@
     '¿Quieres unirte a este equipo?': 'Do you want to join this team?',
     'Es un equipo cerrado: enviaremos tu solicitud para que un admin te acepte.': 'It’s a closed team: we’ll send your request for an admin to accept.',
     '🔗 Enlace copiado. ¡Pégalo en WhatsApp para invitar!': '🔗 Link copied. Paste it in WhatsApp to invite!',
+    'Falta 1 día para el Mundial 2026 🏆': '1 day to the 2026 World Cup 🏆',
+    '¡El Mundial 2026 empieza hoy! 🔥': 'The 2026 World Cup starts today! 🔥',
   };
 
   var DICT_PT = {
@@ -534,6 +536,8 @@
     '¿Quieres unirte a este equipo?': 'Quer entrar neste time?',
     'Es un equipo cerrado: enviaremos tu solicitud para que un admin te acepte.': 'É um time fechado: enviaremos seu pedido para um admin aceitar.',
     '🔗 Enlace copiado. ¡Pégalo en WhatsApp para invitar!': '🔗 Link copiado. Cole no WhatsApp para convidar!',
+    'Falta 1 día para el Mundial 2026 🏆': 'Falta 1 dia para a Copa 2026 🏆',
+    '¡El Mundial 2026 empieza hoy! 🔥': 'A Copa 2026 começa hoje! 🔥',
   };
 
   // ── Reglas para frases dinámicas (orden importa) ──────────

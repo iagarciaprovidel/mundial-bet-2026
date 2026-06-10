@@ -543,7 +543,8 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
   const _now = Date.now();
   const _fx = (window.MB.WC_FIXTURES) || [];
   const next = _fx.filter(m => new Date(m.kickoff).getTime() > _now).sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1))[0] || _fx[0];
-  const daysLeft = next ? Math.max(0, Math.ceil((new Date(next.kickoff).getTime() - _now) / 86400000)) : 0;
+  const _msNext = next ? (new Date(next.kickoff).getTime() - _now) : -1;
+  const daysLeft = Math.max(0, Math.floor(_msNext / 86400000)); // mismo redondeo que la cuenta regresiva
   const hr = new Date().getHours();
   const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
@@ -576,7 +577,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             ? <button onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers()} className="mb-press" title="Ver integrantes de tu equipo" style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 4px', cursor: 'pointer', fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>👥 {meRec.groupName}</button>
             : <div style={{ margin: '0 0 4px', fontSize: 'var(--t-sm)', fontWeight: 700, color: 'var(--muted-2)' }}>{meRec && meRec.noGroup ? '🙋 Juegas individual' : 'Sin equipo'}</div>)}
           <p style={{ margin: 0, color: 'var(--gold-light)', fontSize: 'var(--t-md)', fontWeight: 600 }}>
-            {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>¡El Mundial 2026 ya comenzó! ⚡</>}
+            {_msNext <= 0 ? <>¡El Mundial 2026 ya comenzó! ⚡</> : daysLeft === 0 ? <>¡El Mundial 2026 empieza hoy! 🔥</> : daysLeft === 1 ? <>Falta 1 día para el Mundial 2026 🏆</> : <>Faltan {daysLeft} días para el Mundial 2026 🏆</>}
           </p>
         </div>
         {authUser ? (

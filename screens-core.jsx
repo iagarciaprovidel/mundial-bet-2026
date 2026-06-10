@@ -162,7 +162,8 @@ function Dashboard({ user, onNav, onPredict }) {
   const _fx = ((window.MB.WC_FIXTURES) || []).slice().sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
   const upcoming = _fx.filter(m => new Date(m.kickoff).getTime() > _now).slice(0, 3);
   const fallback = upcoming.length ? upcoming : _fx.slice(0, 3);
-  const daysLeft = fallback[0] ? Math.max(0, Math.ceil((new Date(fallback[0].kickoff).getTime() - _now) / 86400000)) : 0;
+  const _msNext = fallback[0] ? (new Date(fallback[0].kickoff).getTime() - _now) : -1;
+  const daysLeft = Math.max(0, Math.floor(_msNext / 86400000)); // mismo redondeo que la cuenta regresiva
   const hr = new Date().getHours();
   const saludo = hr < 12 ? '¡Buenos días,' : hr < 19 ? '¡Buenas tardes,' : '¡Buenas noches,';
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
@@ -195,8 +196,8 @@ function Dashboard({ user, onNav, onPredict }) {
         {authUser && (meRec && meRec.groupName
           ? <button onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers()} className="mb-press" title="Ver integrantes de tu equipo" style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 3px', cursor: 'pointer', fontSize: 'var(--t-xs)', fontWeight: 800, color: 'var(--gold-light)' }}>👥 {meRec.groupName}</button>
           : <div style={{ margin: '0 0 3px', fontSize: 'var(--t-xs)', fontWeight: 700, color: 'var(--muted-2)' }}>{meRec && meRec.noGroup ? '🙋 Juegas individual' : 'Sin equipo'}</div>)}
-        <p style={{ margin: 0, color: daysLeft > 0 ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 700 }}>
-          {daysLeft > 0 ? <>Faltan {daysLeft} días para el Mundial 2026 🏆</> : <>¡El Mundial 2026 ya comenzó! ⚡</>}
+        <p style={{ margin: 0, color: _msNext > 0 ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-sm)', fontWeight: 700 }}>
+          {_msNext <= 0 ? <>¡El Mundial 2026 ya comenzó! ⚡</> : daysLeft === 0 ? <>¡El Mundial 2026 empieza hoy! 🔥</> : daysLeft === 1 ? <>Falta 1 día para el Mundial 2026 🏆</> : <>Faltan {daysLeft} días para el Mundial 2026 🏆</>}
         </p>
       </div>
 
