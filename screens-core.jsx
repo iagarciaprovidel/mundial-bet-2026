@@ -215,9 +215,6 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Cuenta regresiva al próximo partido */}
       {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
 
-      {/* Equipos de apostadores (creados por los usuarios) */}
-      {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
-
       {/* partidos del día: apostables; los terminados aparecen al final con el marcador */}
       {(() => {
         const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };
@@ -234,6 +231,9 @@ function Dashboard({ user, onNav, onPredict }) {
           </div>
         );
       })()}
+
+      {/* Equipos de apostadores (abajo) */}
+      {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
 
       {/* jugadores registrados (real) — título dentro de la card */}
       <Card title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 14px' }}>
