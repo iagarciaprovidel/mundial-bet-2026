@@ -165,6 +165,26 @@ async function settle(our, ourResult) {
   return n;
 }
 
+// ── Recalcula el monto apostado (suma de apuestas abiertas) de cada usuario ──
+async function recomputeStaked() {
+  const bets = await db.collection('bets').where('status', '==', 'open').get();
+  const byUid = {};
+  bets.forEach(function (d) { const b = d.data(); byUid[b.uid] = (byUid[b.uid] || 0) + (b.stake || 0); });
+  const toUpdate = {};
+  Object.keys(byUid).forEach(function (uid) { toUpdate[uid] = byUid[uid]; });
+  // resetea a 0 los usuarios que tenían monto pero ya no tienen apuestas abiertas
+  try {
+    const withStaked = await db.collection('users').where('staked', '>', 0).get();
+    withStaked.forEach(function (d) { if (toUpdate[d.id] == null) toUpdate[d.id] = 0; });
+  } catch (e) {}
+  let n = 0;
+  for (const uid of Object.keys(toUpdate)) {
+    await db.collection('users').doc(uid).set({ staked: toUpdate[uid] }, { merge: true });
+    n++;
+  }
+  return n;
+}
+
 async function main() {
   if (!TOKEN) throw new Error('Falta FOOTBALL_DATA_TOKEN');
   console.log(`Agente MundialBet (football-data.org · ${COMP}) · ${new Date().toISOString()}`);
@@ -188,6 +208,9 @@ async function main() {
 
   const oddsN = await ensureOdds();
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
+
+  const stkN = await recomputeStaked();
+  if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
 
   const LIVE = ['IN_PLAY', 'PAUSED', 'SUSPENDED'];
   let settled = 0, results = 0, lives = 0;
