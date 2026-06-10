@@ -87,9 +87,9 @@
                     const saldo = saldoOf(m), gan = saldo - SAL, mine = m.uid === meUid;
                     return (
                       <div key={m.uid || i} style={{ display: 'grid', gridTemplateColumns: '34px 1fr 84px', gap: 10, alignItems: 'center', padding: '10px 2px', borderBottom: i < members.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', background: mine ? 'rgba(212,175,55,0.10)' : 'transparent', borderRadius: 'var(--r-sm)' }}>
-                        <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(m.nombre)}</span>
+                        {window.MB_champAvatar ? window.MB_champAvatar(m.championCode, m.champion, m.nombre, 32) : <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(m.nombre)}</span>}
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(m.championCode, m.champion)}{mine && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
+                          <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.nombre || 'Jugador'}{mine && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
                           <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>📅 Ingresó {fmtDate(m.creado)}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>

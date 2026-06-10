@@ -425,6 +425,17 @@
       style: { height: h || 11, width: 'auto', borderRadius: 2, marginLeft: 5, verticalAlign: 'middle', boxShadow: '0 1px 2px rgba(0,0,0,0.4)' },
     });
   };
+  // Avatar de jugador: la bandera del campeón que eligió (circular) o, si no
+  // eligió, sus iniciales. Reemplaza el círculo con la inicial del nombre.
+  function avatarInitials(name) { const p = String(name || '').trim().split(/\s+/); return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase(); }
+  window.MB_champAvatar = function (code, champName, nombre, size) {
+    const s = size || 30;
+    if (code) {
+      return React.createElement('span', { title: 'Campeón: ' + (champName || ''), style: { width: s, height: s, borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--border-2)', display: 'inline-flex', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.4)' } },
+        React.createElement('img', { src: 'https://flagcdn.com/h60/' + code + '.png', alt: '', style: { width: '100%', height: '100%', objectFit: 'cover' } }));
+    }
+    return React.createElement('span', { style: { width: s, height: s, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: s >= 40 ? 'var(--t-md)' : 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 } }, avatarInitials(nombre));
+  };
 
   // Partidos del "día foco": el del próximo partido por jugar (o el último si ya
   // terminó todo). Ordena: por jugar primero (apostables), terminados al final.

@@ -951,8 +951,12 @@ function PerfilWeb() {
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.3fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <Card style={{ textAlign: 'center', padding: '24px 18px' }}>
-          <div style={{ width: 88, height: 88, borderRadius: '50%', margin: '0 auto', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 30, color: 'var(--gold-light)' }}>{ini}</div>
-          <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
+          <div style={{ width: 88, height: 88, borderRadius: '50%', margin: '0 auto', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {(meRec && meRec.championCode)
+              ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Campeón: ' + (meRec.champion || '')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span style={{ fontWeight: 800, fontSize: 30, color: 'var(--gold-light)' }}>{ini}</span>}
+          </div>
+          <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)' }}>{dispName}</h2>
           <div style={{ color: 'var(--muted)', fontWeight: 600, fontSize: 'var(--t-sm)' }}>{authUser.email || ''}</div>
           <div style={{ color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', marginTop: 3 }}>{teamName}</div>
           {window.MB_openTeamPicker && (
