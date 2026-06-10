@@ -189,11 +189,9 @@ async function main() {
   if (!TOKEN) throw new Error('Falta FOOTBALL_DATA_TOKEN');
   console.log(`Agente MundialBet (football-data.org · ${COMP}) · ${new Date().toISOString()}`);
 
-  const matches = await fdMatches();
-  console.log(`football-data.org devolvió ${matches.length} partidos.`);
-
   if (DISCOVER) {
-    console.log('\n— MODO DESCUBRIMIENTO (no escribe nada) —');
+    const matches = await fdMatches();
+    console.log(`football-data.org devolvió ${matches.length} partidos.\n— MODO DESCUBRIMIENTO (no escribe nada) —`);
     let ok = 0, miss = 0;
     matches.forEach((m) => {
       const h = m.homeTeam && (m.homeTeam.name || ''); const a = m.awayTeam && (m.awayTeam.name || '');
@@ -206,11 +204,20 @@ async function main() {
 
   initFirebase();
 
+  // Estas NO dependen de football-data → corren SIEMPRE (aunque la API falle):
   const oddsN = await ensureOdds();
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
-
   const stkN = await recomputeStaked();
   if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
+
+  // Partidos (puede fallar por límite/caída de la API; NO debe tumbar lo de arriba):
+  let matches = [];
+  try {
+    matches = await fdMatches();
+    console.log(`football-data.org devolvió ${matches.length} partidos.`);
+  } catch (e) {
+    console.warn('football-data.org no disponible esta vez:', (e && e.message) || e);
+  }
 
   const LIVE = ['IN_PLAY', 'PAUSED', 'SUSPENDED'];
   let settled = 0, results = 0, lives = 0;
