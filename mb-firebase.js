@@ -34,7 +34,7 @@
       subscribeOdds(cb) { if (typeof cb === 'function') cb({}); return () => {}; },
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
-      notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB,
+      notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, watchMatch: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
@@ -300,6 +300,15 @@
       if (!token) return Promise.reject('sin-token');
       await db.collection('users').doc(u.uid).set({ fcmTokens: FV.arrayUnion(token), notifEnabled: true }, { merge: true });
       return token;
+    },
+    // Seguir / dejar de seguir un partido (avisos de ese partido: empieza pronto,
+    // apuestas cerradas, goles en vivo y resultado final). Guarda en watchMatches.
+    async watchMatch(matchId, on) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      if (!matchId) return Promise.reject('sin-partido');
+      await db.collection('users').doc(u.uid).set(
+        { watchMatches: on ? FV.arrayUnion(matchId) : FV.arrayRemove(matchId) }, { merge: true });
+      return on;
     },
     // Apuesta al ganador. pick: 'home' | 'draw' | 'away'. stake en puntos (mín 1.000).
     // Si ya había apuesta abierta en ese partido, la reemplaza (devuelve lo anterior).

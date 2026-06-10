@@ -135,6 +135,44 @@ async function notify(uid, title, body) {
   } catch (e) { console.warn('  notify:', e && e.message); }
 }
 
+// ── Avisa a quienes SIGUEN un partido (watchMatches array-contains matchId) ──
+async function notifyWatchers(matchId, title, body) {
+  try {
+    const snap = await db.collection('users').where('watchMatches', 'array-contains', matchId).get();
+    let n = 0;
+    for (const d of snap.docs) { await notify(d.id, title, body); n++; }
+    return n;
+  } catch (e) { console.warn('  notifyWatchers:', e && e.message); return 0; }
+}
+
+// ── Avisos por tiempo (NO dependen de football-data): "empieza pronto" y
+//    "apuestas cerradas". Usa los kickoff de nuestras fixtures. Anti-repetición
+//    con el mapa odds/{id}.notified. ──
+const SOON_MIN = 30;
+async function matchAlerts() {
+  const now = Date.now();
+  let sent = 0;
+  for (const o of OURS) {
+    const minToKo = (new Date(o.kickoff).getTime() - now) / 60000;
+    if (minToKo > 70 || minToKo < -200) continue; // solo partidos cercanos
+    const ref = db.collection('odds').doc(o.id);
+    const doc = await ref.get();
+    const nt = (doc.exists && doc.data().notified) || {};
+    if (!nt.soon && minToKo > 0 && minToKo <= SOON_MIN) {
+      const mins = Math.max(1, Math.round(minToKo));
+      const c = await notifyWatchers(o.id, '⏰ Empieza pronto', `${o.home} vs ${o.away} comienza en ~${mins} min. ¡Última oportunidad para apostar!`);
+      nt.soon = true; await ref.set({ notified: nt }, { merge: true });
+      if (c) { sent += c; console.log(`  AVISO empieza-pronto ${o.id} → ${c} seguidor(es)`); }
+    }
+    if (!nt.closed && minToKo <= 0) {
+      const c = await notifyWatchers(o.id, '🔒 Apuestas cerradas', `${o.home} vs ${o.away} ya comenzó. ¡A seguir el partido!`);
+      nt.closed = true; nt.soon = true; await ref.set({ notified: nt }, { merge: true });
+      if (c) { sent += c; console.log(`  AVISO cierre ${o.id} → ${c} seguidor(es)`); }
+    }
+  }
+  return sent;
+}
+
 // ── Liquida las apuestas abiertas de un partido terminado ──
 async function settle(our, ourResult) {
   const snap = await db.collection('bets').where('matchId', '==', our.id).where('status', '==', 'open').get();
@@ -209,6 +247,8 @@ async function main() {
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
   const stkN = await recomputeStaked();
   if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
+  const alertN = await matchAlerts();
+  if (alertN) console.log(`Avisos de partido (pronto/cierre) enviados: ${alertN}.`);
 
   // Partidos (puede fallar por límite/caída de la API; NO debe tumbar lo de arriba):
   let matches = [];
@@ -236,12 +276,21 @@ async function main() {
     const gaOur = mm.sameOrient ? ga : gh;
 
     if (isLive) {
+      const odoc = await db.collection('odds').doc(mm.our.id).get();
+      const prev = odoc.exists ? odoc.data() : {};
+      const scoreKey = ghOur + '-' + gaOur;
       // Marcador casi en vivo (se refresca en cada corrida del agente).
       await db.collection('odds').doc(mm.our.id).set({
         live: true, gh: ghOur, ga: gaOur, minute: (m.minute != null ? m.minute : null),
-        liveAt: admin.firestore.FieldValue.serverTimestamp(),
+        liveAt: admin.firestore.FieldValue.serverTimestamp(), notifiedScore: scoreKey,
       }, { merge: true });
       lives++;
+      // Avisa GOL a los seguidores cuando cambia el marcador (y hay al menos un gol).
+      if (prev.notifiedScore !== scoreKey && (ghOur + gaOur) > 0) {
+        const min = (m.minute != null) ? ` (${m.minute}')` : '';
+        const c = await notifyWatchers(mm.our.id, '⚽ ¡Gol!', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${min}`);
+        if (c) console.log(`  AVISO gol ${mm.our.id} (${scoreKey}) → ${c} seguidor(es)`);
+      }
       console.log(`  EN VIVO ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away})`);
       continue;
     }
@@ -252,12 +301,21 @@ async function main() {
     let ourResult = apiResult;
     if (!mm.sameOrient && apiResult !== 'draw') ourResult = apiResult === 'home' ? 'away' : 'home';
     const odoc = await db.collection('odds').doc(mm.our.id).get();
-    if (!(odoc.exists && odoc.data().finished)) {
+    const wasFinished = odoc.exists && odoc.data().finished;
+    if (!wasFinished) {
       await db.collection('odds').doc(mm.our.id).set({
         finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult,
         finishedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
       results++;
+    }
+    // Avisa el RESULTADO FINAL a los seguidores (una sola vez).
+    const nt = (odoc.exists && odoc.data().notified) || {};
+    if (!nt.final) {
+      const c = await notifyWatchers(mm.our.id, '🏁 Resultado final', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}`);
+      nt.final = true; nt.closed = true; nt.soon = true;
+      await db.collection('odds').doc(mm.our.id).set({ notified: nt }, { merge: true });
+      if (c) console.log(`  AVISO final ${mm.our.id} → ${c} seguidor(es)`);
     }
     const n = await settle(mm.our, ourResult);
     if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} → ${ourResult}): ${n} apuesta(s).`); }

@@ -672,7 +672,10 @@ function FixtureCardWeb({ m, onTeam }) {
     <Card style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Chip tone="blue">Grupo {m.group}</Chip>
-        <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {window.MB_WatchBell ? <window.MB_WatchBell matchId={m.id} compact /> : null}
+          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
+        </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <Team name={m.home} code={m.homeCode} />

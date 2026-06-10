@@ -170,7 +170,10 @@ function MobileFixtureCard({ m }) {
     <Card style={{ marginBottom: 12, padding: '12px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <Chip tone="blue">Grupo {m.group} · J{m.md}</Chip>
-        <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {window.MB_WatchBell ? <window.MB_WatchBell matchId={m.id} compact /> : null}
+          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
+        </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div onClick={() => openTeam(m.home)} className="mb-press" title={`Ver ${m.home}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, cursor: 'pointer' }}>

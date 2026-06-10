@@ -13,7 +13,7 @@
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
 
   // ── Store compartido: una sola suscripción a cuotas + mis apuestas + mi saldo ──
-  const store = { odds: {}, bets: {}, saldo: null, ready: false, listeners: new Set() };
+  const store = { odds: {}, bets: {}, saldo: null, watch: [], notif: false, ready: false, listeners: new Set() };
   function emit() { store.listeners.forEach((fn) => { try { fn(); } catch (e) {} }); }
   let started = false, unsubs = [];
   // (Re)crea las suscripciones a cuotas/apuestas/saldo. Las cuotas requieren
@@ -27,7 +27,9 @@
       const map = {}; (list || []).forEach((b) => { map[b.matchId] = b; }); store.bets = map; emit();
     }));
     if (fb.subscribeMe) unsubs.push(fb.subscribeMe((u) => {
-      store.saldo = (u && typeof u.saldo === 'number') ? u.saldo : (u ? SALDO_INICIAL : null); emit();
+      store.saldo = (u && typeof u.saldo === 'number') ? u.saldo : (u ? SALDO_INICIAL : null);
+      store.watch = (u && Array.isArray(u.watchMatches)) ? u.watchMatches : [];
+      store.notif = !!(u && u.notifEnabled); emit();
     }));
   }
   function start() {
@@ -35,7 +37,7 @@
     const fb = FB();
     // Reconecta en CADA cambio de sesión (login / logout / restauración al cargar).
     // Así las cuotas se cargan cuando Firebase ya restauró la sesión, no antes.
-    if (fb.onAuth) { fb.onAuth(function () { store.bets = {}; store.saldo = null; emit(); resubscribe(); }); }
+    if (fb.onAuth) { fb.onAuth(function () { store.bets = {}; store.saldo = null; store.watch = []; emit(); resubscribe(); }); }
     else { resubscribe(); }
   }
   // Si cambia el apodo, refrescamos también.
@@ -253,6 +255,41 @@
   const miniBtn = (bd, col) => ({ flex: 1, padding: '6px 4px', borderRadius: 'var(--r-md)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)', border: '1px solid ' + bd, background: 'transparent', color: col });
 
   window.MB_BetBox = BetBox;
+
+  // ── Campanita "seguir partido": avisos de ese partido (empieza pronto, apuestas
+  // cerradas, goles en vivo y resultado final). Guarda el partido en watchMatches. ──
+  function WatchBell({ matchId, compact }) {
+    const s = useBetStore();
+    const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
+    const [busy, setBusy] = useState(false);
+    if (!user || !matchId) return null;
+    const odds = s.odds[matchId] || null;
+    if (odds && odds.finished) return null; // no tiene sentido seguir un partido terminado
+    const following = (s.watch || []).indexOf(matchId) !== -1;
+    const toggle = () => {
+      if (busy) return;
+      setBusy(true);
+      const ensure = (!following && FB().notifPermission && FB().notifPermission() !== 'granted')
+        ? FB().enableNotifications().catch(() => {}) // si lo deniega, lo sigue igual (avisa al activar en Perfil)
+        : Promise.resolve();
+      ensure.then(() => FB().watchMatch(matchId, !following)).catch(() => {}).then(() => setBusy(false));
+    };
+    return (
+      <button onClick={toggle} disabled={busy} className="mb-press"
+        title={following ? 'Dejar de seguir este partido' : 'Avisarme de este partido (inicio, goles y resultado)'}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 'var(--r-pill)',
+          cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 9, lineHeight: 1, flexShrink: 0,
+          border: '1px solid ' + (following ? 'var(--gold)' : 'var(--border-2)'),
+          background: following ? 'var(--coin-bg)' : 'var(--surface-2)',
+          color: following ? 'var(--gold-light)' : 'var(--muted)', opacity: busy ? 0.6 : 1, whiteSpace: 'nowrap',
+        }}>
+        <span style={{ fontSize: 11 }}>{following ? '🔔' : '🔕'}</span>
+        {!compact && <span>{following ? 'Siguiendo' : 'Avisarme'}</span>}
+      </button>
+    );
+  }
+  window.MB_WatchBell = WatchBell;
 
   // Badge de saldo real para la barra superior (móvil y web). Lee el saldo
   // en vivo del store; se oculta si no hay sesión.
