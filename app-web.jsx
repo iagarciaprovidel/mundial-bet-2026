@@ -527,12 +527,12 @@ function Topbar({ tab, me, onFlagClick, onGroup, onNav }) {
 // ════════════════════════════════════════════════════════════
 function MetricW({ label, value, tone, icon }) {
   return (
-    <Card style={{ padding: '16px 18px', flex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-        <span style={{ fontSize: 14 }}>{icon}</span>
-        <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+    <Card style={{ padding: '9px 11px', flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+        <span style={{ fontSize: 11 }}>{icon}</span>
+        <span style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
       </div>
-      <div className="num" style={{ fontSize: 'var(--t-3xl)', color: tone }}>{value}</div>
+      <div className="num" style={{ fontSize: 'var(--t-xl)', color: tone, lineHeight: 1.1 }}>{value}</div>
     </Card>
   );
 }

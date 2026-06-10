@@ -76,12 +76,12 @@ function Onboarding({ onFinish }) {
 // ─────────────────────────────────────────────────────────
 function Metric({ label, value, tone, icon }) {
   return (
-    <Card style={{ padding: '14px 14px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-        <span style={{ fontSize: 13 }}>{icon}</span>
-        <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+    <Card style={{ padding: '9px 11px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+        <span style={{ fontSize: 11 }}>{icon}</span>
+        <span style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
       </div>
-      <div className="num" style={{ fontSize: 'var(--t-2xl)', color: tone }}>{value}</div>
+      <div className="num" style={{ fontSize: 'var(--t-xl)', color: tone, lineHeight: 1.1 }}>{value}</div>
     </Card>
   );
 }
