@@ -2,7 +2,7 @@ name: Agente MundialBet
 
 on:
   schedule:
-    - cron: '*/15 * * * *'   # cada 15 minutos (UTC). El script sólo gasta API si hay partido en vivo o cuotas pendientes.
+    - cron: '*/5 * * * *'    # cada 5 minutos (UTC). El script sólo gasta API si hay partido en vivo o cuotas pendientes (marcador casi en vivo).
   workflow_dispatch:          # permite ejecutarlo a mano desde la pestaña Actions
     inputs:
       mode:

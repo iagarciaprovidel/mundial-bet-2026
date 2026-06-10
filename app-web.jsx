@@ -571,7 +571,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
           <h2 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 2px' }}>
-            {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>
+            {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>{greetName && window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 18)}
           </h2>
           {authUser && (meRec && meRec.groupName
             ? <button onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers()} className="mb-press" title="Ver integrantes de tu equipo" style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 4px', cursor: 'pointer', fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>👥 {meRec.groupName}</button>
@@ -952,7 +952,7 @@ function PerfilWeb() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <Card style={{ textAlign: 'center', padding: '24px 18px' }}>
           <div style={{ width: 88, height: 88, borderRadius: '50%', margin: '0 auto', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 30, color: 'var(--gold-light)' }}>{ini}</div>
-          <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)' }}>{dispName}</h2>
+          <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
           <div style={{ color: 'var(--muted)', fontWeight: 600, fontSize: 'var(--t-sm)' }}>{authUser.email || ''}</div>
           <div style={{ color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', marginTop: 3 }}>{teamName}</div>
           {window.MB_openTeamPicker && (

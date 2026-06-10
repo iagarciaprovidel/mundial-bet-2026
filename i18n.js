@@ -322,6 +322,7 @@
     'El pronóstico del campeón está cerrado.': 'The champion pick is closed.',
     'Gratis · cierra al empezar el Mundial.': 'Free · closes when the World Cup starts.',
     'Si aciertas, ganas +': 'If you’re right, you get +', 'puntos al final.': 'points at the end.',
+    'EN VIVO': 'LIVE',
   };
 
   var DICT_PT = {
@@ -556,6 +557,7 @@
     'El pronóstico del campeón está cerrado.': 'O palpite do campeão está fechado.',
     'Gratis · cierra al empezar el Mundial.': 'Grátis · fecha quando a Copa começar.',
     'Si aciertas, ganas +': 'Se acertar, ganha +', 'puntos al final.': 'pontos no final.',
+    'EN VIVO': 'AO VIVO',
   };
 
   // ── Reglas para frases dinámicas (orden importa) ──────────

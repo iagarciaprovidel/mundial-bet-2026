@@ -191,7 +191,7 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* saludo */}
       <div>
         <h1 className="display" style={{ fontSize: 'var(--t-2xl)', margin: '4px 0 2px', color: 'var(--text)' }}>
-          {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>
+          {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 22 }}>{Mc[me.mascot].emoji}</span>{greetName && window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}
         </h1>
         {authUser && (meRec && meRec.groupName
           ? <button onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers()} className="mb-press" title="Ver integrantes de tu equipo" style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 3px', cursor: 'pointer', fontSize: 'var(--t-xs)', fontWeight: 800, color: 'var(--gold-light)' }}>👥 {meRec.groupName}</button>

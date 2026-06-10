@@ -188,25 +188,42 @@ async function main() {
   const oddsN = await ensureOdds();
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
 
-  let settled = 0, results = 0;
+  const LIVE = ['IN_PLAY', 'PAUSED', 'SUSPENDED'];
+  let settled = 0, results = 0, lives = 0;
   for (const m of matches) {
-    if (m.status !== 'FINISHED') continue;
+    const status = m.status || '';
+    const isFinished = status === 'FINISHED';
+    const isLive = LIVE.indexOf(status) !== -1;
+    if (!isFinished && !isLive) continue;
     const ft = m.score && m.score.fullTime;
-    if (!ft || ft.home == null || ft.away == null) continue;
     const mm = matchOur(m.homeTeam.name, m.awayTeam.name);
     if (!mm) continue;
-    const gh = ft.home, ga = ft.away;
-    let apiResult = gh > ga ? 'home' : (gh < ga ? 'away' : 'draw');
-    let ourResult = apiResult;
-    if (!mm.sameOrient && apiResult !== 'draw') ourResult = apiResult === 'home' ? 'away' : 'home';
+    const gh = (ft && ft.home != null) ? ft.home : 0;
+    const ga = (ft && ft.away != null) ? ft.away : 0;
     // Goles en NUESTRA orientación (local/visita como en la app).
     const ghOur = mm.sameOrient ? gh : ga;
     const gaOur = mm.sameOrient ? ga : gh;
-    // Guarda el marcador en el doc de odds (lo lee la app para mostrar el resultado).
+
+    if (isLive) {
+      // Marcador casi en vivo (se refresca en cada corrida del agente).
+      await db.collection('odds').doc(mm.our.id).set({
+        live: true, gh: ghOur, ga: gaOur, minute: (m.minute != null ? m.minute : null),
+        liveAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      lives++;
+      console.log(`  EN VIVO ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away})`);
+      continue;
+    }
+
+    // Terminado: guarda resultado final + liquida.
+    if (!ft || ft.home == null || ft.away == null) continue;
+    let apiResult = gh > ga ? 'home' : (gh < ga ? 'away' : 'draw');
+    let ourResult = apiResult;
+    if (!mm.sameOrient && apiResult !== 'draw') ourResult = apiResult === 'home' ? 'away' : 'home';
     const odoc = await db.collection('odds').doc(mm.our.id).get();
     if (!(odoc.exists && odoc.data().finished)) {
       await db.collection('odds').doc(mm.our.id).set({
-        finished: true, gh: ghOur, ga: gaOur, result: ourResult,
+        finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult,
         finishedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
       results++;
@@ -215,7 +232,7 @@ async function main() {
     if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} → ${ourResult}): ${n} apuesta(s).`); }
   }
 
-  console.log(`\nResumen: ${oddsN} cuota(s) generada(s), ${results} resultado(s) guardado(s), ${settled} apuesta(s) liquidada(s).`);
+  console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s).`);
 }
 
 main().catch((e) => { console.error('ERROR:', (e && e.message) || e); process.exit(1); });

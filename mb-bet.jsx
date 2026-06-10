@@ -104,6 +104,26 @@
       );
     }
 
+    // Partido EN VIVO (casi en vivo): muestra el marcador mientras se juega.
+    const live = odds && odds.live && !odds.finished;
+    if (live) {
+      const gh = (odds.gh != null) ? odds.gh : 0;
+      const ga = (odds.ga != null) ? odds.ga : 0;
+      return (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 11px', borderRadius: 'var(--r-md)', border: '1px solid rgba(220,80,80,0.5)', background: 'rgba(220,80,80,0.12)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9, color: '#ff6b6b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ff5252', animation: 'mb-pulse-live 1s var(--ease-out) infinite' }} />EN VIVO{odds.minute != null ? ' · ' + odds.minute + "'" : ''}
+            </span>
+            <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
+          </div>
+          {bet && bet.status === 'open' && (
+            <div style={{ marginTop: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}</div>
+          )}
+        </div>
+      );
+    }
+
     // Resultado ya liquidado (por si el marcador aún no llegó pero la apuesta sí)
     if (bet && bet.status && bet.status !== 'open') {
       const won = bet.status === 'won';
@@ -396,6 +416,15 @@
     );
   }
   window.MB_ChampionPick = ChampionPick;
+
+  // Banderita del campeón elegido por un jugador (para mostrar junto a su nombre).
+  window.MB_champFlag = function (code, name, h) {
+    if (!code) return null;
+    return React.createElement('img', {
+      src: 'https://flagcdn.com/h20/' + code + '.png', alt: '', title: 'Campeón: ' + (name || ''),
+      style: { height: h || 11, width: 'auto', borderRadius: 2, marginLeft: 5, verticalAlign: 'middle', boxShadow: '0 1px 2px rgba(0,0,0,0.4)' },
+    });
+  };
 
   // Partidos del "día foco": el del próximo partido por jugar (o el último si ya
   // terminó todo). Ordena: por jugar primero (apostables), terminados al final.
