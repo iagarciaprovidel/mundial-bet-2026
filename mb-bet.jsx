@@ -325,6 +325,78 @@
   }
   window.MB_NotifButton = NotifButton;
 
+  // ── Pronóstico del campeón del Mundial (gratis, cierra al primer partido) ──
+  const CHAMPION_BONUS = 30000;
+  function ChampionPick() {
+    const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
+    const [me, setMe] = useState(null);
+    const [open, setOpen] = useState(false);
+    const [busy, setBusy] = useState(false);
+    useEffect(() => {
+      if (!user || !FB().subscribeMe) { setMe(null); return undefined; }
+      const un = FB().subscribeMe(setMe);
+      return () => { if (typeof un === 'function') un(); };
+    }, [user]);
+    if (!user) return null;
+
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const firstKO = fx.length ? Math.min.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
+    const closed = Date.now() >= firstKO;
+    const pick = me && me.champion;
+    const pickCode = me && me.championCode;
+
+    const TEAMS = [];
+    const G = (window.MB_WC && window.MB_WC.GROUPS) || {};
+    Object.keys(G).forEach((k) => (G[k] || []).forEach((t) => TEAMS.push({ name: t[0], code: t[1] })));
+    TEAMS.sort((a, b) => a.name.localeCompare(b.name));
+
+    const choose = (t) => { setBusy(true); FB().setChampion(t.name, t.code).then(() => setOpen(false)).catch(() => {}).then(() => setBusy(false)); };
+
+    return (
+      <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' }}>
+        <h3 className="display" style={{ margin: '0 0 10px', fontSize: 'var(--t-lg)', color: 'var(--text)' }}>🏆 ¿Quién será el campeón?</h3>
+        {pick
+          ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {pickCode && <img src={`https://flagcdn.com/h40/${pickCode}.png`} alt="" style={{ height: 24, width: 'auto', borderRadius: 3, flexShrink: 0 }} />}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Tu pronóstico</div>
+                <div style={{ fontWeight: 800, fontSize: 'var(--t-md)', color: 'var(--gold-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pick}</div>
+              </div>
+              {!closed && <button onClick={() => setOpen(true)} className="mb-press" style={{ padding: '7px 13px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>Cambiar</button>}
+            </div>
+          )
+          : closed
+            ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '8px 0' }}>El pronóstico del campeón ya cerró.</div>
+            : <button onClick={() => setOpen(true)} className="mb-press" style={{ width: '100%', padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>🏆 Elegir mi campeón</button>}
+        <div style={{ marginTop: 8, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{closed ? 'El pronóstico del campeón está cerrado.' : 'Gratis · cierra al empezar el Mundial.'} Si aciertas, ganas +{fmt(CHAMPION_BONUS)} puntos al final.</div>
+
+        {open && ReactDOM.createPortal(
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 1150, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)', padding: 18, width: 'min(460px, 96vw)', maxHeight: '88vh', overflow: 'auto', boxShadow: 'var(--sh-4)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <span style={{ fontSize: 22 }}>🏆</span>
+                <h2 className="display" style={{ margin: 0, flex: 1, fontSize: 'var(--t-xl)' }}>Elige al campeón</h2>
+                <button onClick={() => setOpen(false)} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15 }}>✕</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: 8 }}>
+                {TEAMS.map((t) => {
+                  const active = t.name === pick;
+                  return (
+                    <button key={t.code} onClick={() => choose(t)} disabled={busy} className="mb-press" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '10px 6px', borderRadius: 'var(--r-md)', cursor: 'pointer', background: active ? 'var(--coin-bg)' : 'var(--surface-2)', border: active ? '1.5px solid var(--gold)' : '1px solid var(--border-2)' }}>
+                      <img src={`https://flagcdn.com/h40/${t.code}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3 }} />
+                      <span style={{ fontSize: 9, fontWeight: 700, color: active ? 'var(--gold-light)' : 'var(--muted)', textAlign: 'center', lineHeight: 1.1 }}>{t.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>, document.body)}
+      </div>
+    );
+  }
+  window.MB_ChampionPick = ChampionPick;
+
   // Partidos del "día foco": el del próximo partido por jugar (o el último si ya
   // terminó todo). Ordena: por jugar primero (apostables), terminados al final.
   // oddsMap (del store) sirve para saber cuáles ya terminaron (finished).

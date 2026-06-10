@@ -34,7 +34,7 @@
       subscribeOdds(cb) { if (typeof cb === 'function') cb({}); return () => {}; },
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
-      notifPermission() { return 'unsupported'; }, enableNotifications: noFB,
+      notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
@@ -276,6 +276,13 @@
       const u = auth.currentUser; if (!u) { cb(null); return function () {}; }
       return db.collection('users').doc(u.uid)
         .onSnapshot(function (d) { cb(d.exists ? Object.assign({ id: d.id }, d.data()) : null); }, function () { cb(null); });
+    },
+
+    // ── Pronóstico del campeón (gratis, se guarda en el doc del usuario) ──
+    async setChampion(name, code) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      await db.collection('users').doc(u.uid).set({ champion: name, championCode: code || null, championAt: FV.serverTimestamp() }, { merge: true });
+      return true;
     },
 
     // ── Notificaciones push (FCM) ──

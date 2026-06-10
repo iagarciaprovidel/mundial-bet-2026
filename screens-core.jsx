@@ -216,6 +216,9 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Cuenta regresiva al próximo partido */}
       {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
 
+      {/* Pronóstico del campeón (gratis) */}
+      {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick)}
+
       {/* partidos del día: apostables; los terminados aparecen al final con el marcador */}
       {(() => {
         const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };

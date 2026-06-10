@@ -316,6 +316,12 @@
     'Activar notificaciones': 'Enable notifications', 'Activando…': 'Enabling…',
     'Notificaciones activadas ✓': 'Notifications on ✓',
     'Están bloqueadas en el navegador; actívalas en los ajustes del sitio.': 'They’re blocked in the browser; enable them in the site settings.',
+    '🏆 ¿Quién será el campeón?': '🏆 Who will be the champion?', 'Tu pronóstico': 'Your pick',
+    '🏆 Elegir mi campeón': '🏆 Pick my champion', 'Elige al campeón': 'Pick the champion',
+    'El pronóstico del campeón ya cerró.': 'The champion pick is closed.',
+    'El pronóstico del campeón está cerrado.': 'The champion pick is closed.',
+    'Gratis · cierra al empezar el Mundial.': 'Free · closes when the World Cup starts.',
+    'Si aciertas, ganas +': 'If you’re right, you get +', 'puntos al final.': 'points at the end.',
   };
 
   var DICT_PT = {
@@ -544,6 +550,12 @@
     'Activar notificaciones': 'Ativar notificações', 'Activando…': 'Ativando…',
     'Notificaciones activadas ✓': 'Notificações ativadas ✓',
     'Están bloqueadas en el navegador; actívalas en los ajustes del sitio.': 'Estão bloqueadas no navegador; ative nas configurações do site.',
+    '🏆 ¿Quién será el campeón?': '🏆 Quem será o campeão?', 'Tu pronóstico': 'Seu palpite',
+    '🏆 Elegir mi campeón': '🏆 Escolher meu campeão', 'Elige al campeón': 'Escolha o campeão',
+    'El pronóstico del campeón ya cerró.': 'O palpite do campeão já fechou.',
+    'El pronóstico del campeón está cerrado.': 'O palpite do campeão está fechado.',
+    'Gratis · cierra al empezar el Mundial.': 'Grátis · fecha quando a Copa começar.',
+    'Si aciertas, ganas +': 'Se acertar, ganha +', 'puntos al final.': 'pontos no final.',
   };
 
   // ── Reglas para frases dinámicas (orden importa) ──────────
