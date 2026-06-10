@@ -302,6 +302,17 @@ function Root() {
     mq.addEventListener ? mq.addEventListener('change', on) : mq.addListener(on);
     return () => { mq.removeEventListener ? mq.removeEventListener('change', on) : mq.removeListener(on); };
   }, []);
+  // Los launchers (ayuda, ficha de equipo, etc.) pueden definirse un instante
+  // después que Root (orden de carga de los <script>). Reintentamos el render
+  // hasta que estén disponibles para que SIEMPRE queden montados.
+  const [, force] = React.useState(0);
+  React.useEffect(() => {
+    if (window.MB_HelpLauncher && window.MB_TeamMembersLauncher) return undefined;
+    const t = setInterval(() => {
+      if (window.MB_HelpLauncher && window.MB_TeamMembersLauncher) { force(function (x) { return x + 1; }); clearInterval(t); }
+    }, 80);
+    return function () { clearInterval(t); };
+  }, []);
   const Cmp = wide ? window.AppWeb : window.App;
   const AdminLauncher = window.MB_AdminLauncher;
   const TeamGate = window.MB_TeamGate;
