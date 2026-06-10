@@ -313,6 +313,9 @@
     '🔗 Enlace copiado. ¡Pégalo en WhatsApp para invitar!': '🔗 Link copied. Paste it in WhatsApp to invite!',
     'Falta 1 día para el Mundial 2026 🏆': '1 day to the 2026 World Cup 🏆',
     '¡El Mundial 2026 empieza hoy! 🔥': 'The 2026 World Cup starts today! 🔥',
+    'Activar notificaciones': 'Enable notifications', 'Activando…': 'Enabling…',
+    'Notificaciones activadas ✓': 'Notifications on ✓',
+    'Están bloqueadas en el navegador; actívalas en los ajustes del sitio.': 'They’re blocked in the browser; enable them in the site settings.',
   };
 
   var DICT_PT = {
@@ -538,6 +541,9 @@
     '🔗 Enlace copiado. ¡Pégalo en WhatsApp para invitar!': '🔗 Link copiado. Cole no WhatsApp para convidar!',
     'Falta 1 día para el Mundial 2026 🏆': 'Falta 1 dia para a Copa 2026 🏆',
     '¡El Mundial 2026 empieza hoy! 🔥': 'A Copa 2026 começa hoje! 🔥',
+    'Activar notificaciones': 'Ativar notificações', 'Activando…': 'Ativando…',
+    'Notificaciones activadas ✓': 'Notificações ativadas ✓',
+    'Están bloqueadas en el navegador; actívalas en los ajustes del sitio.': 'Estão bloqueadas no navegador; ative nas configurações do site.',
   };
 
   // ── Reglas para frases dinámicas (orden importa) ──────────

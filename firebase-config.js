@@ -3,8 +3,10 @@
    Proyecto: mundialbet-club
    NOTA: estos valores NO son secretos; es seguro tenerlos en el
    front. La seguridad real la dan las reglas de Firestore.
+   Se usa `self` (no `window`) para que también funcione dentro del
+   service worker de notificaciones (firebase-messaging-sw.js).
    ============================================================ */
-window.MB_FIREBASE_CONFIG = {
+self.MB_FIREBASE_CONFIG = {
   apiKey: "AIzaSyBGRFQvrO14CrTmDRI2bRHLS-UcaXxZa-Q",
   authDomain: "mundialbet-club.firebaseapp.com",
   projectId: "mundialbet-club",
@@ -14,9 +16,14 @@ window.MB_FIREBASE_CONFIG = {
   measurementId: "G-X8244TLKS3",
 };
 
+// Clave pública de Web Push (VAPID) para las notificaciones. Sácala en
+// Firebase Console → ⚙️ Configuración del proyecto → Cloud Messaging →
+// "Certificados push web" → Generar par de claves → copia la clave pública.
+self.MB_VAPID_KEY = "PEGAR_AQUI";
+
 // Correos con acceso de ADMIN (panel de grupos). Solo estos pueden crear/editar
 // grupos y ver el panel. Agrega o cambia los que necesites (en minúsculas).
-window.MB_ADMIN_EMAILS = [
+self.MB_ADMIN_EMAILS = [
   "ia.garcia.providel@gmail.com",
   "sgarciao@gmail.com",
 ];

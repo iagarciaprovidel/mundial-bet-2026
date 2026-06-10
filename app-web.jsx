@@ -959,6 +959,7 @@ function PerfilWeb() {
               {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
             </button>
           )}
+          {window.MB_NotifButton && <div style={{ marginTop: 10 }}>{React.createElement(window.MB_NotifButton)}</div>}
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
             <MetricW label="Posición" value={pos ? '#' + pos : '—'} tone="var(--info)" icon="📊" />
             <MetricW label="Saldo" value={fmt(saldo)} tone="var(--gold-light)" icon="🏆" />

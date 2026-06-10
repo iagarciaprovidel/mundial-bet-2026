@@ -192,6 +192,7 @@ function Perfil() {
             {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
           </button>
         )}
+        {window.MB_NotifButton && <div style={{ marginTop: 10, maxWidth: 280, marginLeft: 'auto', marginRight: 'auto' }}>{React.createElement(window.MB_NotifButton)}</div>}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>

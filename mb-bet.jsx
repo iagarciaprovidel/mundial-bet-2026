@@ -290,6 +290,41 @@
   }
   window.MB_NextMatchCountdown = NextMatchCountdown;
 
+  // ── Botón para activar las notificaciones push ──
+  const NERR = {
+    'no-soportado': 'Tu navegador no soporta notificaciones.',
+    'falta-vapid': 'Faltan configurar las notificaciones (clave VAPID).',
+    'permiso-denegado': 'Diste permiso denegado. Actívalo en los ajustes del sitio.',
+    'sin-token': 'No se pudo obtener el token de notificaciones.',
+    'no-auth': 'Inicia sesión primero.',
+  };
+  function NotifButton() {
+    const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
+    const [perm, setPerm] = useState(() => (FB().notifPermission ? FB().notifPermission() : 'unsupported'));
+    const [busy, setBusy] = useState(false);
+    const [msg, setMsg] = useState('');
+    if (!user || perm === 'unsupported') return null;
+    if (perm === 'granted') {
+      return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '9px 12px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(46,160,67,0.45)', background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>🔔 Notificaciones activadas ✓</div>;
+    }
+    const enable = () => {
+      setBusy(true); setMsg('');
+      FB().enableNotifications()
+        .then(() => { setPerm('granted'); })
+        .catch((e) => { const c = (e && e.message) || e; setMsg(NERR[c] || ('No se pudo: ' + c)); setPerm(FB().notifPermission ? FB().notifPermission() : 'default'); })
+        .then(() => setBusy(false));
+    };
+    return (
+      <div>
+        <button onClick={enable} disabled={busy || perm === 'denied'} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px', borderRadius: 'var(--r-pill)', cursor: perm === 'denied' ? 'not-allowed' : 'pointer', border: '1px solid rgba(74,144,226,0.5)', background: 'rgba(74,144,226,0.12)', color: 'var(--info)', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', opacity: perm === 'denied' ? 0.6 : 1 }}>
+          🔔 {busy ? 'Activando…' : 'Activar notificaciones'}
+        </button>
+        {(msg || perm === 'denied') && <div style={{ marginTop: 6, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{perm === 'denied' ? 'Están bloqueadas en el navegador; actívalas en los ajustes del sitio.' : msg}</div>}
+      </div>
+    );
+  }
+  window.MB_NotifButton = NotifButton;
+
   // Partidos del "día foco": el del próximo partido por jugar (o el último si ya
   // terminó todo). Ordena: por jugar primero (apostables), terminados al final.
   // oddsMap (del store) sirve para saber cuáles ya terminaron (finished).

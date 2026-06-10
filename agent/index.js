@@ -122,24 +122,43 @@ async function ensureOdds() {
   return n;
 }
 
+// ── Envía una notificación push a un usuario (si tiene tokens) ──
+async function notify(uid, title, body) {
+  try {
+    const us = await db.collection('users').doc(uid).get();
+    const tokens = (us.exists && us.data().fcmTokens) || [];
+    if (!tokens.length) return;
+    const res = await admin.messaging().sendEachForMulticast({ tokens: tokens, notification: { title: title, body: body } });
+    const bad = [];
+    res.responses.forEach((r, i) => { if (!r.success && r.error && /not-registered|invalid-argument|invalid-registration/i.test(r.error.code || r.error.message || '')) bad.push(tokens[i]); });
+    if (bad.length) await db.collection('users').doc(uid).set({ fcmTokens: admin.firestore.FieldValue.arrayRemove.apply(null, bad) }, { merge: true });
+  } catch (e) { console.warn('  notify:', e && e.message); }
+}
+
 // ── Liquida las apuestas abiertas de un partido terminado ──
 async function settle(our, ourResult) {
   const snap = await db.collection('bets').where('matchId', '==', our.id).where('status', '==', 'open').get();
   if (snap.empty) return 0;
   let n = 0;
   for (const doc of snap.docs) {
+    const bet0 = doc.data();
+    const won = bet0.pick === ourResult;
+    const payout = won ? Math.round((bet0.stake || 0) * (bet0.odd || 0)) : 0;
     await db.runTransaction(async (tx) => {
       const bs = await tx.get(doc.ref);
       if (!bs.exists || bs.data().status !== 'open') return;
       const bet = bs.data();
-      const won = bet.pick === ourResult;
-      const payout = won ? Math.round((bet.stake || 0) * (bet.odd || 0)) : 0;
+      const w = bet.pick === ourResult;
+      const pay = w ? Math.round((bet.stake || 0) * (bet.odd || 0)) : 0;
       const userRef = db.collection('users').doc(bet.uid);
       const us = await tx.get(userRef);
       const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
-      tx.set(userRef, { prevSaldo: saldo, saldo: saldo + payout }, { merge: true });
-      tx.set(doc.ref, { status: won ? 'won' : 'lost', result: ourResult, payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      tx.set(userRef, { prevSaldo: saldo, saldo: saldo + pay }, { merge: true });
+      tx.set(doc.ref, { status: w ? 'won' : 'lost', result: ourResult, payout: pay, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     });
+    // Notifica el resultado al apostador.
+    await notify(bet0.uid, won ? '¡Ganaste! 🎉' : 'Apuesta perdida 😕',
+      our.home + ' vs ' + our.away + ': ' + (won ? '+' + payout : '−' + (bet0.stake || 0)) + ' puntos');
     n++;
   }
   return n;

@@ -34,6 +34,7 @@
       subscribeOdds(cb) { if (typeof cb === 'function') cb({}); return () => {}; },
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
+      notifPermission() { return 'unsupported'; }, enableNotifications: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
@@ -275,6 +276,23 @@
       const u = auth.currentUser; if (!u) { cb(null); return function () {}; }
       return db.collection('users').doc(u.uid)
         .onSnapshot(function (d) { cb(d.exists ? Object.assign({ id: d.id }, d.data()) : null); }, function () { cb(null); });
+    },
+
+    // ── Notificaciones push (FCM) ──
+    notifPermission() { return (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported'; },
+    async enableNotifications() {
+      if (typeof Notification === 'undefined' || typeof firebase.messaging !== 'function') return Promise.reject('no-soportado');
+      const vapid = self.MB_VAPID_KEY;
+      if (!vapid || vapid === 'PEGAR_AQUI') return Promise.reject('falta-vapid');
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return Promise.reject('permiso-denegado');
+      // Sub-scope propio para no reemplazar al service worker principal (PWA).
+      const reg = await navigator.serviceWorker.register('firebase-messaging-sw.js', { scope: './fcm-push/' });
+      const token = await firebase.messaging().getToken({ vapidKey: vapid, serviceWorkerRegistration: reg });
+      if (!token) return Promise.reject('sin-token');
+      await db.collection('users').doc(u.uid).set({ fcmTokens: FV.arrayUnion(token), notifEnabled: true }, { merge: true });
+      return token;
     },
     // Apuesta al ganador. pick: 'home' | 'draw' | 'away'. stake en puntos (mín 1.000).
     // Si ya había apuesta abierta en ese partido, la reemplaza (devuelve lo anterior).
