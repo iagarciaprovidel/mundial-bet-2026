@@ -225,8 +225,11 @@ function Dashboard({ user, onNav, onPredict }) {
         const list = day.list.length ? day.list : fallback;
         if (!list.length) return null;
         return (
-          <div>
-            <SectionHead title={day.today ? 'Partidos de hoy' : 'Próximos partidos'} action="Ver todos" onAction={() => onNav('partidos')} />
+          <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 14px', boxShadow: 'var(--sh-1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+              <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{day.today ? 'Partidos de hoy' : 'Próximos partidos'} <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {list.length}</span></h3>
+              <button onClick={() => onNav('partidos')} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.55)', background: 'var(--coin-bg)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' }}>Ver todos →</button>
+            </div>
             <div>
               {window.MobileFixtureCard
                 ? list.map(m => React.createElement(window.MobileFixtureCard, { key: m.id, m: m }))
