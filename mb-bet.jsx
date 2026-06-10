@@ -245,6 +245,51 @@
   }
   window.MB_SaldoBadge = SaldoBadge;
 
+  // ── Cuenta regresiva en vivo al próximo partido ──
+  function NextMatchCountdown() {
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const [now, setNow] = useState(Date.now());
+    useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+    const next = fx.filter((m) => new Date(m.kickoff).getTime() > now).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))[0];
+    if (!next) return null;
+    const diff = Math.max(0, new Date(next.kickoff).getTime() - now);
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const mi = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    const p2 = (n) => String(n).padStart(2, '0');
+    const fecha = new Date(next.kickoff).toLocaleString('es-CL', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const Box = (props) => (
+      <div style={{ flex: 1, background: 'rgba(0,0,0,0.30)', border: '1px solid rgba(212,175,55,0.35)', borderRadius: 'var(--r-md)', padding: '8px 4px', textAlign: 'center' }}>
+        <div className="num" style={{ fontSize: 'var(--t-2xl)', fontWeight: 800, color: 'var(--gold-light)', lineHeight: 1 }}>{props.v}</div>
+        <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>{props.l}</div>
+      </div>
+    );
+    return (
+      <div style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.16), rgba(13,20,15,0.92))', border: '1px solid rgba(212,175,55,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontSize: 9, color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>⏱ Empieza en</span>
+          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'flex-end', minWidth: 0 }}>
+            <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{next.home}</span>
+            <img src={`https://flagcdn.com/h40/${next.homeCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
+          </div>
+          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', fontWeight: 700, flexShrink: 0 }}>vs</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+            <img src={`https://flagcdn.com/h40/${next.awayCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
+            <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{next.away}</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Box v={d} l="días" /><Box v={p2(h)} l="hrs" /><Box v={p2(mi)} l="min" /><Box v={p2(s)} l="seg" />
+        </div>
+      </div>
+    );
+  }
+  window.MB_NextMatchCountdown = NextMatchCountdown;
+
   // Partidos del "día foco": el del próximo partido por jugar (o el último si ya
   // terminó todo). Ordena: por jugar primero (apostables), terminados al final.
   // oddsMap (del store) sirve para saber cuáles ya terminaron (finished).

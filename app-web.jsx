@@ -589,6 +589,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
         ) : (
           window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
         )}
+        {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
         {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
         {(() => {
           const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };

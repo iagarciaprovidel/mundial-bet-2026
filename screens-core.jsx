@@ -212,6 +212,9 @@ function Dashboard({ user, onNav, onPredict }) {
         window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
       )}
 
+      {/* Cuenta regresiva al próximo partido */}
+      {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
+
       {/* Equipos de apostadores (creados por los usuarios) */}
       {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
 

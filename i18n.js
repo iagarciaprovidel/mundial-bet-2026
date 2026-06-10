@@ -305,6 +305,7 @@
     'Sí, puedes llegar a 0. En la segunda fase del torneo habrá una recarga de puntos para todos.': 'Yes, you can reach 0. In the tournament’s second phase there will be a point top-up for everyone.',
     'Jugadores': 'Players', 'Ver ranking': 'View ranking', 'Cerrado': 'Closed',
     'integrante': 'member', 'integrantes': 'members', 'jugadores': 'players', 'jugador': 'player',
+    '⏱ Empieza en': '⏱ Starts in', 'hrs': 'hrs', 'seg': 'sec',
   };
 
   var DICT_PT = {
@@ -522,6 +523,7 @@
     'Sí, puedes llegar a 0. En la segunda fase del torneo habrá una recarga de puntos para todos.': 'Sim, você pode chegar a 0. Na segunda fase do torneio haverá uma recarga de pontos para todos.',
     'Jugadores': 'Jogadores', 'Ver ranking': 'Ver ranking', 'Cerrado': 'Fechado',
     'integrante': 'integrante', 'integrantes': 'integrantes', 'jugadores': 'jogadores', 'jugador': 'jogador',
+    '⏱ Empieza en': '⏱ Começa em', 'hrs': 'hrs', 'seg': 'seg',
   };
 
   // ── Reglas para frases dinámicas (orden importa) ──────────
