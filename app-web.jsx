@@ -607,10 +607,10 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             </div>
           );
         })()}
-        {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
         <Card title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 16px' }}>
           {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 6 }) : null}
         </Card>
