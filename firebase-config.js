@@ -19,7 +19,7 @@ self.MB_FIREBASE_CONFIG = {
 // Clave pública de Web Push (VAPID) para las notificaciones. Sácala en
 // Firebase Console → ⚙️ Configuración del proyecto → Cloud Messaging →
 // "Certificados push web" → Generar par de claves → copia la clave pública.
-self.MB_VAPID_KEY = "PEGAR_AQUI";
+self.MB_VAPID_KEY = "BEMengRL7fgeicmCg3wYtBKehaLWMiUIkMF1URIgL2_vXzQRJP5KVIdPlcQnJm1ZMzr-RRDV1SMV7MEB-6tXTDQ";
 
 // Correos con acceso de ADMIN (panel de grupos). Solo estos pueden crear/editar
 // grupos y ver el panel. Agrega o cambia los que necesites (en minúsculas).
