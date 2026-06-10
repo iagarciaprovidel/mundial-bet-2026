@@ -580,18 +580,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             {_msNext <= 0 ? <>¡El Mundial 2026 ya comenzó! ⚡</> : daysLeft === 0 ? <>¡El Mundial 2026 empieza hoy! 🔥</> : daysLeft === 1 ? <>Falta 1 día para el Mundial 2026 🏆</> : <>Faltan {daysLeft} días para el Mundial 2026 🏆</>}
           </p>
         </div>
-        {authUser ? (
-          <div style={{ display: 'flex', gap: 12 }}>
-            <MetricW label="Mis monedas" value={fmtN(myPts)} tone="var(--gold-light)" icon="⚽" />
-            <MetricW label="Posición" value={myPos ? '#' + myPos : '—'} tone="var(--info)" icon="📊" />
-            <MetricW label="Apuestas" value={myBets.length} tone="var(--text)" icon="🎟️" />
-            <MetricW label="Aciertos" value={mySettled.length ? myAcc + '%' : '—'} tone="var(--success)" icon="🎯" />
-          </div>
-        ) : (
-          window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
-        )}
         {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
-        {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick)}
         {(() => {
           const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };
           if (!day.list.length) return null;
@@ -610,6 +599,17 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {authUser ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <MetricW label="Mis monedas" value={fmtN(myPts)} tone="var(--gold-light)" icon="⚽" />
+            <MetricW label="Posición" value={myPos ? '#' + myPos : '—'} tone="var(--info)" icon="📊" />
+            <MetricW label="Apuestas" value={myBets.length} tone="var(--text)" icon="🎟️" />
+            <MetricW label="Aciertos" value={mySettled.length ? myAcc + '%' : '—'} tone="var(--success)" icon="🎯" />
+          </div>
+        ) : (
+          window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
+        )}
+        {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick)}
         {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
         <Card title="Jugadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 16px' }}>
           {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 6 }) : null}
