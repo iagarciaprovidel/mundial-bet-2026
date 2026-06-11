@@ -27,6 +27,7 @@ const FD_BASE = 'https://api.football-data.org/v4';
 const ODDS_WINDOW_H = parseInt(process.env.ODDS_WINDOW_H || '120', 10);
 const ODDS_MARGIN = parseFloat(process.env.ODDS_MARGIN || '1.06'); // overround (~6%)
 const DISCOVER = process.argv.includes('discover');
+const DIAG = process.argv.includes('diag');
 const SALDO_INICIAL = 90000;
 
 // ── Nuestros partidos (generados desde wc2026.js) ──
@@ -237,6 +238,22 @@ async function main() {
       if (mm) { ok++; } else { miss++; console.log(`  SIN MAPEAR: ${h || '?'} vs ${a || '?'} (${(m.utcDate || '').slice(0, 10)} · ${m.status})`); }
     });
     console.log(`\nMapeados: ${ok} · sin mapear: ${miss}. Si hay "SIN MAPEAR", pásamelos y ajusto ALIASES.`);
+    return;
+  }
+
+  if (DIAG) {
+    const matches = await fdMatches();
+    console.log(`football-data.org devolvió ${matches.length} partidos. — MODO DIAG (no escribe) —`);
+    const byStatus = {};
+    matches.forEach((m) => { byStatus[m.status] = (byStatus[m.status] || 0) + 1; });
+    console.log('Estados:', JSON.stringify(byStatus));
+    const sorted = matches.slice().sort((a, b) => (a.utcDate || '').localeCompare(b.utcDate || ''));
+    sorted.slice(0, 12).forEach((m) => {
+      const h = m.homeTeam && (m.homeTeam.name || '?'); const a = m.awayTeam && (m.awayTeam.name || '?');
+      const ft = m.score && m.score.fullTime; const sc = ft ? `${ft.home}-${ft.away}` : '—';
+      const mm = matchOur(h, a);
+      console.log(`  ${(m.utcDate || '').slice(0, 16)} · ${m.status} · ${h} ${sc} ${a} · ${mm ? 'mapeado→' + mm.our.id : 'SIN MAPEAR'}`);
+    });
     return;
   }
 
