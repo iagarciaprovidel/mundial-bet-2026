@@ -100,7 +100,7 @@
         {/* Equipos */}
         <div style={card}>
           <div style={head}>
-            <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)' }}>Mejores equipos</h3>
+            <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>Mejores equipos</h3>
             <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>top 20</span>
           </div>
           {teams.length === 0 ? note('Aún no hay equipos.') : teams.map((t, i) => {
@@ -122,7 +122,7 @@
         {/* Jugadores */}
         <div style={card}>
           <div style={head}>
-            <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)' }}>Mejores jugadores</h3>
+            <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>Mejores jugadores</h3>
             <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>top 20</span>
           </div>
           {players.length === 0 ? note('Aún no hay jugadores.') : players.map((u, i) => {

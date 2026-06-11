@@ -45,7 +45,7 @@ function GroupCard({ groupId, color }) {
         display: 'flex', alignItems: 'center', gap: 10, borderBottom: expanded ? '1px solid var(--border)' : 'none',
       }}>
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-        <h3 style={{ flex: 1, textAlign: 'left', margin: 0, fontFamily: 'var(--font-display)', fontSize: 'var(--t-lg)', fontWeight: 700, color: 'var(--text)' }}>Grupo {groupId}</h3>
+        <h3 className="display" style={{ flex: 1, textAlign: 'left', margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>Grupo {groupId}</h3>
         <span style={{ fontSize: 'var(--t-sm)', color: 'var(--muted-2)', transform: expanded ? 'rotate(0)' : 'rotate(-90deg)', transition: 'transform var(--dur-base) var(--ease-out)' }}>▼</span>
       </button>
       {expanded && (

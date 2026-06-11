@@ -310,7 +310,7 @@ function Quiniela() {
 
       {/* ABIERTO */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)' }}>{open.title}</h3>
+        <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{open.title}</h3>
       </div>
       <div style={{ marginBottom: 12 }}>
         <Chip tone={revealed ? 'neutral' : 'green'} live={false}>
@@ -339,7 +339,7 @@ function Quiniela() {
       {/* BLOQUEADO ejemplo */}
       <SectionHead title="Partido bloqueado" />
       <div style={{ marginBottom: 10 }}>
-        <h3 className="display" style={{ margin: '0 0 8px', fontSize: 'var(--t-lg)' }}>{locked.title}</h3>
+        <h3 className="display" style={{ margin: '0 0 8px', fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{locked.title}</h3>
         <Chip tone="neutral">Bloqueado · Resultado {locked.result}</Chip>
       </div>
       <div style={{ marginTop: 10 }}>
