@@ -238,6 +238,7 @@ window.addEventListener('appinstalled', function () {
 <script src="data.js"></script>
 <script src="players.js"></script>
 <script src="wc2026.js"></script>
+<script src="figuritas-2026.js"></script>
 <!-- Llena el splash con las banderas de las 48 selecciones (clickeables -> ficha) -->
 <script>
 (function () {
@@ -292,6 +293,7 @@ window.addEventListener('appinstalled', function () {
 <script type="text/babel" src="mb-groups-home.jsx"></script>
 <script type="text/babel" src="mb-ranking.jsx"></script>
 <script type="text/babel" src="mb-help.jsx"></script>
+<script type="text/babel" src="mb-figuritas.jsx"></script>
 
 <!-- Bootstrap responsive: escritorio (>=1024px) -> AppWeb, móvil -> App -->
 <script type="text/babel">
@@ -319,6 +321,7 @@ function Root() {
   const TeamGate = window.MB_TeamGate;
   const HelpLauncher = window.MB_HelpLauncher;
   const TeamMembers = window.MB_TeamMembersLauncher;
+  const Figuritas = window.MB_FiguritasLauncher;
   return (
     <React.Fragment>
       <Cmp />
@@ -326,6 +329,7 @@ function Root() {
       {TeamGate ? <TeamGate /> : null}
       {HelpLauncher ? <HelpLauncher /> : null}
       {TeamMembers ? <TeamMembers /> : null}
+      {Figuritas ? <Figuritas /> : null}
     </React.Fragment>
   );
 }

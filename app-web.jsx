@@ -980,6 +980,24 @@ function PerfilWeb() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {window.MB_openFiguritas && (() => {
+          const r = window.MB_figuritasResumen ? window.MB_figuritasResumen() : { tengo: 0, total: 0, pct: 0 };
+          return (
+            <Card hover onClick={() => window.MB_openFiguritas()} style={{ padding: '16px', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 30 }}>🎴</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>Mi álbum de figuritas</h3>
+                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Colecciona el Mundial · {r.tengo}/{r.total} · {r.pct}%</div>
+                </div>
+                <span style={{ color: 'var(--gold-light)', fontSize: 18 }}>→</span>
+              </div>
+              <div style={{ marginTop: 10, height: 8, borderRadius: 4, background: 'var(--surface-2)', overflow: 'hidden' }}>
+                <div style={{ width: r.pct + '%', height: '100%', background: 'linear-gradient(90deg,#E6C04A,#C99B1F)' }} />
+              </div>
+            </Card>
+          );
+        })()}
         <Card title="Mi historial de apuestas" style={{ padding: '14px 16px' }}>
           {bets.length === 0
             ? <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)', padding: '20px 8px' }}>Aún no has hecho apuestas.<br /><span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Ve a <strong style={{ color: 'var(--gold-light)' }}>Partidos</strong> y apuesta al ganador.</span></div>
