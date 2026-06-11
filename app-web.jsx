@@ -949,6 +949,8 @@ function PerfilWeb() {
   const wonN = settled.filter(b => b.status === 'won').length;
   const aciertos = settled.length ? Math.round((wonN / settled.length) * 100) : 0;
   const PICK = (b) => (b.pick === 'home' ? b.home : b.pick === 'away' ? b.away : 'Empate');
+  const FX = (window.MB_WC && window.MB_WC.FIXTURES) || [];
+  const koOf = (id) => { const f = FX.find(x => x.id === id); return f ? new Date(f.kickoff).getTime() : 0; };
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.3fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
@@ -1005,7 +1007,15 @@ function PerfilWeb() {
               const open = b.status === 'open';
               const won = b.status === 'won';
               const delta = won ? Math.round((b.stake || 0) * (b.odd || 0)) : (b.status === 'lost' ? -(b.stake || 0) : 0);
-              const badge = open ? { txt: 'Abierta', col: 'var(--info)', bg: 'rgba(74,144,226,0.12)' } : won ? { txt: '✓ Ganaste', col: 'var(--success)', bg: 'var(--success-bg)' } : { txt: '✕ Perdiste', col: '#e98b8b', bg: 'rgba(220,80,80,0.10)' };
+              const od = (store && store.odds) ? store.odds[b.matchId] : null;
+              const started = (od && (od.live || od.finished)) || (koOf(b.matchId) && koOf(b.matchId) <= Date.now());
+              const badge = open
+                ? (od && od.live && !od.finished
+                    ? { txt: '🔴 En vivo', col: '#ff6b6b', bg: 'rgba(220,80,80,0.12)' }
+                    : started
+                      ? { txt: '🔒 Cerrada', col: 'var(--muted)', bg: 'var(--surface-2)' }
+                      : { txt: 'Abierta', col: 'var(--info)', bg: 'rgba(74,144,226,0.12)' })
+                : won ? { txt: '✓ Ganaste', col: 'var(--success)', bg: 'var(--success-bg)' } : { txt: '✕ Perdiste', col: '#e98b8b', bg: 'rgba(220,80,80,0.10)' };
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < bets.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
