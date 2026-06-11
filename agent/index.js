@@ -254,6 +254,12 @@ async function main() {
       const mm = matchOur(h, a);
       console.log(`  ${(m.utcDate || '').slice(0, 16)} · ${m.status} · ${h} ${sc} ${a} · ${mm ? 'mapeado→' + mm.our.id : 'SIN MAPEAR'}`);
     });
+    // Volcado CRUDO del/los partido(s) FINISHED (y los que tengan algún gol) para ver dónde está el marcador.
+    const interesting = matches.filter((m) => m.status === 'FINISHED' || m.status === 'IN_PLAY' || m.status === 'PAUSED');
+    console.log(`\n— CRUDO (${interesting.length} FINISHED/IN_PLAY) —`);
+    interesting.slice(0, 3).forEach((m) => {
+      console.log('RAW ' + JSON.stringify({ id: m.id, status: m.status, minute: m.minute, score: m.score, lastUpdated: m.lastUpdated }));
+    });
     return;
   }
 
