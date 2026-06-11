@@ -29,6 +29,15 @@ service cloud.firestore {
         request.auth.token.email.lower() in
         get(/databases/$(database)/documents/groups/$(gid)).data.adminEmails;
     }
+    // Álbum de figuritas compartido: ¿soy miembro / dueño de ESE equipo?
+    function albumMember(gid) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.groupId == gid;
+    }
+    function albumOwner(gid) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/groups/$(gid)).data.ownerUid == request.auth.uid;
+    }
     match /users/{uid} {
       allow read:   if signedIn();
       allow create: if signedIn() && request.auth.uid == uid;
@@ -66,6 +75,18 @@ service cloud.firestore {
     match /predictions/{pid} {
       allow read:  if signedIn();
       allow write: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+    // Álbum de figuritas COMPARTIDO por equipo (co-op). Aparte de las apuestas.
+    // Miembros leen; editan la colección solo si NO está bloqueado.
+    // Solo el dueño del equipo puede poner/quitar el candado (campo locked).
+    match /figuritasAlbums/{gid} {
+      allow read:   if albumMember(gid);
+      allow create: if albumOwner(gid)
+                     || (albumMember(gid) && request.resource.data.get('locked', false) == false);
+      allow update: if albumOwner(gid)
+                     || (albumMember(gid)
+                         && resource.data.get('locked', false) == false
+                         && request.resource.data.get('locked', false) == false);
     }
   }
 }
