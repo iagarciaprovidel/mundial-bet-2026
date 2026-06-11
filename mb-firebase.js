@@ -35,6 +35,8 @@
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, watchMatch: noFB,
+      subscribeTeamAlbum(gid, cb) { if (typeof cb === 'function') cb(null); return () => {}; },
+      teamOwnerUid() { return Promise.resolve(null); }, albumMark: noFB, setAlbumLock: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
@@ -309,6 +311,45 @@
       await db.collection('users').doc(u.uid).set(
         { watchMatches: on ? FV.arrayUnion(matchId) : FV.arrayRemove(matchId) }, { merge: true });
       return on;
+    },
+
+    // ── Álbum de figuritas COMPARTIDO por equipo (figuritasAlbums/{groupId}) ──
+    // Colección co-op: { col: { [n]: count }, locked: bool }. Separado de apuestas.
+    subscribeTeamAlbum(groupId, cb) {
+      if (!groupId || typeof cb !== 'function') { if (cb) cb(null); return () => {}; }
+      return db.collection('figuritasAlbums').doc(groupId).onSnapshot(
+        function (s) { cb(s.exists ? s.data() : { col: {}, locked: false }); },
+        function () { cb({ col: {}, locked: false }); }
+      );
+    },
+    // ownerUid del equipo (para saber quién puede poner/quitar el candado).
+    async teamOwnerUid(groupId) {
+      if (!groupId) return null;
+      try { const g = await db.collection('groups').doc(groupId).get(); return g.exists ? (g.data().ownerUid || null) : null; } catch (e) { return null; }
+    },
+    // Marca (+1) o quita (−1) una figurita del álbum del equipo. Atómico (transacción).
+    // delta: +1 (tap) | −1 (mantener). Falla si está bloqueado.
+    async albumMark(groupId, n, delta) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      if (!groupId) return Promise.reject('sin-equipo');
+      const ref = db.collection('figuritasAlbums').doc(groupId);
+      return db.runTransaction(async function (tx) {
+        const s = await tx.get(ref);
+        const d = s.exists ? s.data() : null;
+        if (d && d.locked) throw 'bloqueado';
+        const col = Object.assign({}, (d && d.col) || {});
+        const next = Math.max(0, (col[n] || 0) + (delta || 0));
+        if (next === 0) delete col[n]; else col[n] = next;
+        tx.set(ref, { col: col, groupId: groupId, actualizado: FV.serverTimestamp() }, { merge: true });
+      });
+    },
+    // Bloquea/abre el álbum del equipo (solo el dueño, según las reglas de Firestore).
+    async setAlbumLock(groupId, locked) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      if (!groupId) return Promise.reject('sin-equipo');
+      await db.collection('figuritasAlbums').doc(groupId).set(
+        { locked: !!locked, lockedBy: u.uid, lockedAt: FV.serverTimestamp() }, { merge: true });
+      return !!locked;
     },
     // Apuesta al ganador. pick: 'home' | 'draw' | 'away'. stake en puntos (mín 1.000).
     // Si ya había apuesta abierta en ese partido, la reemplaza (devuelve lo anterior).

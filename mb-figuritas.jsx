@@ -62,14 +62,58 @@
     );
   });
 
+  const FB = () => window.MBFirebase || {};
+
   function Album({ onClose }) {
-    const [col, setCol] = useState(loadCol);
+    const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
+    const [pcol, setPcol] = useState(loadCol);        // álbum personal (localStorage)
+    const [me, setMe] = useState(null);               // mi usuario (groupId/groupName)
+    const [team, setTeam] = useState(null);           // álbum del equipo { col, locked }
+    const [ownerUid, setOwnerUid] = useState(null);   // dueño del equipo
+    const [source, setSource] = useState('personal'); // 'personal' | 'team'
     const [tab, setTab] = useState('todas');
     const [q, setQ] = useState('');
     const [collapsed, setCollapsed] = useState({});
+    const [toast, setToast] = useState('');
 
-    const tap = useCallback((n) => setCol((c) => { const nc = Object.assign({}, c); nc[n] = (nc[n] || 0) + 1; saveCol(nc); return nc; }), []);
-    const hold = useCallback((n) => setCol((c) => { const nc = Object.assign({}, c); const v = (nc[n] || 0) - 1; if (v <= 0) delete nc[n]; else nc[n] = v; saveCol(nc); return nc; }), []);
+    // Mi usuario (para saber si tengo equipo).
+    useEffect(() => {
+      if (!user || !FB().subscribeMe) { setMe(null); return undefined; }
+      const un = FB().subscribeMe(setMe);
+      return () => { if (typeof un === 'function') un(); };
+    }, [user]);
+    const groupId = me && me.groupId;
+    const groupName = me && me.groupName;
+
+    // Álbum del equipo + dueño (solo cuando hay equipo).
+    useEffect(() => {
+      if (!groupId || !FB().subscribeTeamAlbum) { setTeam(null); return undefined; }
+      const un = FB().subscribeTeamAlbum(groupId, setTeam);
+      if (FB().teamOwnerUid) FB().teamOwnerUid(groupId).then(setOwnerUid).catch(() => {});
+      return () => { if (typeof un === 'function') un(); };
+    }, [groupId]);
+    useEffect(() => { if (!groupId && source === 'team') setSource('personal'); }, [groupId, source]);
+
+    const isOwner = !!(user && ownerUid && user.uid === ownerUid);
+    const isTeam = source === 'team' && !!groupId;
+    const locked = isTeam && !!(team && team.locked);
+    const canEdit = isTeam ? (!locked || isOwner) : true;
+    const col = isTeam ? ((team && team.col) || {}) : pcol;
+
+    const flash = (m) => { setToast(m); setTimeout(() => setToast(''), 1600); };
+    const tap = useCallback((n) => {
+      if (source === 'team') {
+        if (locked && !isOwner) { flash('🔒 Álbum bloqueado'); return; }
+        FB().albumMark(groupId, n, 1).catch((e) => flash(e === 'bloqueado' ? '🔒 Álbum bloqueado' : 'No se pudo'));
+      } else { setPcol((c) => { const nc = Object.assign({}, c); nc[n] = (nc[n] || 0) + 1; saveCol(nc); return nc; }); }
+    }, [source, groupId, locked, isOwner]);
+    const hold = useCallback((n) => {
+      if (source === 'team') {
+        if (locked && !isOwner) { flash('🔒 Álbum bloqueado'); return; }
+        FB().albumMark(groupId, n, -1).catch((e) => flash(e === 'bloqueado' ? '🔒 Álbum bloqueado' : 'No se pudo'));
+      } else { setPcol((c) => { const nc = Object.assign({}, c); const v = (nc[n] || 0) - 1; if (v <= 0) delete nc[n]; else nc[n] = v; saveCol(nc); return nc; }); }
+    }, [source, groupId, locked, isOwner]);
+    const toggleLock = () => { if (isOwner && groupId) FB().setAlbumLock(groupId, !locked).catch(() => {}); };
 
     const tengo = useMemo(() => Object.keys(col).filter((k) => col[k] >= 1).length, [col]);
     const repetidas = useMemo(() => Object.keys(col).reduce((s, k) => s + Math.max(0, col[k] - 1), 0), [col]);
@@ -93,10 +137,32 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <button onClick={onClose} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 17, flexShrink: 0 }}>←</button>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>🎴 Mi álbum 2026</h2>
-              <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Tocar = la tengo · tocar otra vez = repetida · mantener = quitar</div>
+              <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎴 {isTeam ? ('Álbum de ' + (groupName || 'equipo')) : 'Mi álbum 2026'}</h2>
+              <div style={{ fontSize: 'var(--t-3xs)', color: canEdit ? 'var(--muted-2)' : 'var(--gold-light)' }}>{canEdit ? 'Tocar = la tengo · tocar otra vez = repetida · mantener = quitar' : '🔒 Bloqueado por el dueño · solo lectura'}</div>
             </div>
+            {isTeam && (
+              <button onClick={toggleLock} disabled={!isOwner} className="mb-press" title={isOwner ? (locked ? 'Abrir álbum (permitir editar)' : 'Bloquear álbum (solo lectura)') : (locked ? 'Bloqueado por el dueño' : 'Álbum abierto')}
+                style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, fontSize: 15, cursor: isOwner ? 'pointer' : 'default', border: '1px solid ' + (locked ? 'var(--gold)' : 'var(--border-2)'), background: locked ? 'var(--coin-bg)' : 'var(--surface-2)', color: locked ? 'var(--gold-light)' : 'var(--muted)', opacity: isOwner ? 1 : 0.7 }}>{locked ? '🔒' : '🔓'}</button>
+            )}
           </div>
+
+          {/* Selector: mi álbum / álbum del equipo (solo si tengo equipo) */}
+          {groupId && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              {[['personal', '🙋 Mi álbum'], ['team', '👥 ' + (groupName || 'Equipo')]].map((o) => {
+                const active = source === o[0];
+                return (
+                  <button key={o[0]} onClick={() => setSource(o[0])} className="mb-press" style={{
+                    flex: 1, padding: '7px 6px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+                    fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    border: active ? '1px solid var(--gold)' : '1px solid var(--border-2)',
+                    background: active ? 'var(--coin-bg)' : 'transparent', color: active ? 'var(--gold-light)' : 'var(--muted)',
+                  }}>{o[1]}</button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Progreso */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'var(--surface-2)', overflow: 'hidden' }}>
@@ -154,6 +220,10 @@
             );
           })}
         </div>
+
+        {toast && (
+          <div style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: 'var(--surface-1)', border: '1px solid var(--border-2)', color: 'var(--text)', padding: '9px 16px', borderRadius: 'var(--r-pill)', fontSize: 'var(--t-2xs)', fontWeight: 700, boxShadow: 'var(--sh-3)', zIndex: 5 }}>{toast}</div>
+        )}
       </div>
     );
     return ReactDOM.createPortal(modal, document.body);
