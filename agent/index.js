@@ -260,6 +260,29 @@ async function main() {
     interesting.slice(0, 3).forEach((m) => {
       console.log('RAW ' + JSON.stringify({ id: m.id, status: m.status, minute: m.minute, score: m.score, lastUpdated: m.lastUpdated }));
     });
+    // Prueba fuentes ALTERNATIVAS de marcador (gratis, sin clave) desde el runner.
+    for (const src of [
+      ['ESPN', 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611'],
+      ['TheSportsDB', 'https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=2026-06-11&s=Soccer'],
+    ]) {
+      try {
+        const res = await fetch(src[1], { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        const j = await res.json().catch(() => ({}));
+        if (src[0] === 'ESPN') {
+          const evs = j.events || [];
+          console.log(`\n${src[0]} status=${res.status} eventos=${evs.length}`);
+          evs.slice(0, 6).forEach((e) => {
+            const c = e.competitions && e.competitions[0];
+            const cs = ((c && c.competitors) || []).map((x) => `${x.team && x.team.displayName}=${x.score}`).join(' vs ');
+            console.log(`  ESPN ${e.status && e.status.type && e.status.type.name} | ${cs}`);
+          });
+        } else {
+          const evs = (j.events || []).filter((e) => /World Cup/i.test(e.strLeague || ''));
+          console.log(`\n${src[0]} status=${res.status} eventosWC=${evs.length}`);
+          evs.slice(0, 6).forEach((e) => console.log(`  TSDB ${e.strStatus} | ${e.strHomeTeam} ${e.intHomeScore}-${e.intAwayScore} ${e.strAwayTeam}`));
+        }
+      } catch (e) { console.log(`\n${src[0]} ERR ${e && e.message}`); }
+    }
     return;
   }
 
