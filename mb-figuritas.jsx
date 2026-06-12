@@ -94,7 +94,8 @@
 
     const isTeam = source === 'team' && !!groupId;
     const locked = isTeam && !!(team && team.locked);
-    const canEdit = isTeam ? !locked : true; // bloqueado = nadie edita (cualquiera puede quitar el candado)
+    const isLocker = locked && !!(team && user && team.lockedBy === user.uid); // yo puse el candado
+    const canEdit = isTeam ? !locked : true; // bloqueado = nadie edita; solo quien lo puso lo quita
     const col = isTeam ? ((team && team.col) || {}) : pcol;
 
     const flash = (m) => { setToast(m); setTimeout(() => setToast(''), 1600); };
@@ -110,7 +111,11 @@
         FB().albumMark(groupId, n, -1).catch((e) => flash(e === 'bloqueado' ? '🔒 Bloqueado' : 'No se pudo'));
       } else { setPcol((c) => { const nc = Object.assign({}, c); const v = (nc[n] || 0) - 1; if (v <= 0) delete nc[n]; else nc[n] = v; saveCol(nc); return nc; }); }
     }, [source, groupId, locked]);
-    const toggleLock = () => { if (groupId) FB().setAlbumLock(groupId, !locked).catch(() => {}); };
+    const toggleLock = () => {
+      if (!groupId) return;
+      if (locked && !isLocker) { flash('🔒 Solo quien lo bloqueó puede quitarlo'); return; }
+      FB().setAlbumLock(groupId, !locked).catch(() => {});
+    };
 
     const tengo = useMemo(() => Object.keys(col).filter((k) => col[k] >= 1).length, [col]);
     const repetidas = useMemo(() => Object.keys(col).reduce((s, k) => s + Math.max(0, col[k] - 1), 0), [col]);
@@ -135,11 +140,11 @@
             <button onClick={onBack} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 17, flexShrink: 0 }}>←</button>
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎴 {isTeam ? ('Álbum de ' + (groupName || 'equipo')) : 'Mi álbum 2026'}</h2>
-              <div style={{ fontSize: 'var(--t-3xs)', color: canEdit ? 'var(--muted-2)' : 'var(--gold-light)' }}>{canEdit ? 'Tocar = la tengo · tocar otra vez = repetida · mantener = quitar' : '🔒 Bloqueado · toca el candado para editar'}</div>
+              <div style={{ fontSize: 'var(--t-3xs)', color: canEdit ? 'var(--muted-2)' : 'var(--gold-light)' }}>{canEdit ? 'Tocar = la tengo · tocar otra vez = repetida · mantener = quitar' : (isLocker ? '🔒 Bloqueado por ti · toca para quitarlo' : '🔒 Bloqueado · solo quien lo puso puede quitarlo')}</div>
             </div>
             {isTeam && (
-              <button onClick={toggleLock} className="mb-press" title={locked ? 'Quitar candado (permitir editar a todos)' : 'Poner candado (solo lectura)'}
-                style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, fontSize: 15, cursor: 'pointer', border: '1px solid ' + (locked ? 'var(--gold)' : 'var(--border-2)'), background: locked ? 'var(--coin-bg)' : 'var(--surface-2)', color: locked ? 'var(--gold-light)' : 'var(--muted)' }}>{locked ? '🔒' : '🔓'}</button>
+              <button onClick={toggleLock} disabled={locked && !isLocker} className="mb-press" title={locked ? (isLocker ? 'Quitar tu candado' : 'Bloqueado por otra persona') : 'Poner candado (solo lectura)'}
+                style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, fontSize: 15, cursor: (locked && !isLocker) ? 'default' : 'pointer', border: '1px solid ' + (locked ? 'var(--gold)' : 'var(--border-2)'), background: locked ? 'var(--coin-bg)' : 'var(--surface-2)', color: locked ? 'var(--gold-light)' : 'var(--muted)', opacity: (locked && !isLocker) ? 0.7 : 1 }}>{locked ? '🔒' : '🔓'}</button>
             )}
           </div>
 
