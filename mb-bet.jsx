@@ -68,7 +68,9 @@
       FX.forEach(function (f) {
         if (f.group !== letter) return;
         const o = odds[f.id];
-        if (!o || !o.finished || o.gh == null || o.ga == null) return;
+        if (!o || o.gh == null || o.ga == null) return;
+        const isLive = !!o.live && !o.finished;
+        if (!o.finished && !isLive) return; // cuenta terminados y EN VIVO (provisional)
         const H = stat[f.home], A = stat[f.away];
         if (!H || !A) return;
         const gh = o.gh, ga = o.ga;
@@ -76,6 +78,7 @@
         if (gh > ga) { H.g++; A.p++; H.pts += 3; }
         else if (gh < ga) { A.g++; H.p++; A.pts += 3; }
         else { H.e++; A.e++; H.pts += 1; A.pts += 1; }
+        if (isLive) { H.live = true; A.live = true; }
       });
       const rows = Object.keys(stat).map(function (k) { const r = stat[k]; r.dg = r.gf - r.gc; return r; });
       rows.sort(function (a, b) { return (b.pts - a.pts) || (b.dg - a.dg) || (b.gf - a.gf) || String(a.name).localeCompare(b.name); });

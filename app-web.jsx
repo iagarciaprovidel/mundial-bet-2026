@@ -314,7 +314,7 @@ function TeamModal({ team, onClose }) {
                   <span style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', fontWeight: 700, color: r.pos <= 2 ? 'var(--success)' : 'var(--muted-2)' }}>{r.pos}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                     <img src={`https://flagcdn.com/h20/${r.code || ''}.png`} alt="" style={{ height: 13, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 'var(--t-2xs)', fontWeight: isMe ? 800 : 600, color: isMe ? 'var(--gold-light)' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</span>
+                    <span style={{ fontSize: 'var(--t-2xs)', fontWeight: isMe ? 800 : 600, color: isMe ? 'var(--gold-light)' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}{r.live && <span title="En vivo" style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#ff5252', marginLeft: 4, verticalAlign: 'middle', animation: 'mb-pulse-live 1s var(--ease-out) infinite' }} />}</span>
                   </span>
                   <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.j}</span>
                   <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.g}</span>
@@ -763,7 +763,7 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
           <span style={{ width: 14, color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{r.pos}</span>
           <img src={`https://flagcdn.com/h24/${r.code || ''}.png`} alt="" style={{ height: 15, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 'var(--t-sm)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</span>
+            <span style={{ display: 'block', fontSize: 'var(--t-sm)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}{r.live && <span title="En vivo (provisional)" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#ff5252', marginLeft: 5, verticalAlign: 'middle', animation: 'mb-pulse-live 1s var(--ease-out) infinite' }} />}</span>
             {r.coach && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--muted-2)', minWidth: 0 }}>
                 <span>🎽</span>

@@ -20,7 +20,7 @@ function StandingRow({ team }) {
       <div style={{ fontWeight: 700, color: 'var(--muted-2)', textAlign: 'center', fontSize: 'var(--t-2xs)' }}>{team.pos}</div>
       <img src={`https://flagcdn.com/h24/${team.code || ''}.png`} alt="" style={{ height: 15, width: 'auto', borderRadius: 2 }} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{team.name}</div>
+        <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{team.name}{team.live && <span title="En vivo" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#ff5252', marginLeft: 5, verticalAlign: 'middle', animation: 'mb-pulse-live 1s var(--ease-out) infinite' }} />}</div>
         {team.coach && (
           <div style={{ fontSize: 9, color: 'var(--muted-2)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
             <span>🎽</span>
