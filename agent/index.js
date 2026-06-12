@@ -41,10 +41,11 @@ const ALIASES = {
   'gb-sct': ['scotland'], us: ['usa', 'united states'], py: ['paraguay'], au: ['australia'],
   tr: ['turkey', 'turkiye'], de: ['germany'], cw: ['curacao'], ci: ['ivory coast', 'cote d ivoire', 'cote divoire'],
   ec: ['ecuador'], nl: ['netherlands', 'holland'], jp: ['japan'], se: ['sweden'], tn: ['tunisia'],
-  be: ['belgium'], eg: ['egypt'], ir: ['iran'], nz: ['new zealand'], es: ['spain'],
+  be: ['belgium'], eg: ['egypt'], ir: ['iran', 'ir iran'], nz: ['new zealand'], es: ['spain'],
   cv: ['cape verde', 'cape verde islands', 'cabo verde'], sa: ['saudi arabia'], uy: ['uruguay'],
   fr: ['france'], sn: ['senegal'], iq: ['iraq'], no: ['norway'], ar: ['argentina'], dz: ['algeria'],
   at: ['austria'], jo: ['jordan'], pt: ['portugal'], cd: ['dr congo', 'congo dr', 'congo', 'democratic republic of congo'],
+  // (ir 'ir iran' y otras variantes que usa ESPN se añaden abajo)
   uz: ['uzbekistan'], co: ['colombia'], 'gb-eng': ['england'], hr: ['croatia'], gh: ['ghana'], pa: ['panama'],
 };
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -91,6 +92,48 @@ async function fdMatches() {
   }
   const json = await res.json().catch(() => ({}));
   return Array.isArray(json.matches) ? json.matches : [];
+}
+
+// ── Marcadores desde ESPN (gratis, sin clave; SÍ trae goles en vivo y finales) ──
+// football-data.org gratis NO entrega goles del Mundial; ESPN sí. Devuelve los
+// partidos con el MISMO formato que football-data para reusar el bucle de abajo.
+const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+function espnToFd(e) {
+  const c = e.competitions && e.competitions[0]; if (!c) return null;
+  const comp = c.competitors || [];
+  const home = comp.find((x) => x.homeAway === 'home') || comp[0];
+  const away = comp.find((x) => x.homeAway === 'away') || comp[1];
+  if (!home || !away) return null;
+  const st = (e.status && e.status.type) || {};
+  const state = st.state; // 'pre' | 'in' | 'post'
+  const status = (state === 'post' && st.completed) ? 'FINISHED' : (state === 'in' ? 'IN_PLAY' : 'TIMED');
+  const num = (v) => (v == null || v === '') ? null : parseInt(v, 10);
+  // Goleadores (si ESPN los incluye en el scoreboard): lado home/away + nombre + minuto.
+  const hid = home.team && home.team.id, aid = away.team && away.team.id;
+  const goals = ((c.details || []).filter((x) => x.scoringPlay)).map((x) => {
+    const tid = x.team && x.team.id;
+    const side = (tid && tid === hid) ? 'home' : (tid && tid === aid) ? 'away' : null;
+    const ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
+    const txt = (x.type && x.type.text) || '';
+    return { side: side, name: ath ? (ath.displayName || ath.shortName || '') : '', minute: (x.clock && x.clock.displayValue) || '', og: /own/i.test(txt), pen: /penal/i.test(txt) };
+  }).filter((g) => g.side && g.name);
+  return {
+    status: status,
+    minute: (e.status && (e.status.displayClock || e.status.period)) || null,
+    score: { fullTime: { home: num(home.score), away: num(away.score) } },
+    homeTeam: { name: (home.team && (home.team.displayName || home.team.name)) || '' },
+    awayTeam: { name: (away.team && (away.team.displayName || away.team.name)) || '' },
+    goals: goals,
+  };
+}
+async function espnMatches() {
+  const d = new Date();
+  const ymd = (off) => new Date(d.getTime() + off * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+  const url = `${ESPN_URL}?dates=${ymd(-1)}-${ymd(1)}`; // ventana de ayer→mañana (UTC)
+  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+  if (!res.ok) throw new Error('ESPN respondió ' + res.status);
+  const j = await res.json().catch(() => ({}));
+  return (j.events || []).map(espnToFd).filter(Boolean);
 }
 
 let db = null;
@@ -296,13 +339,13 @@ async function main() {
   const alertN = await matchAlerts();
   if (alertN) console.log(`Avisos de partido (pronto/cierre) enviados: ${alertN}.`);
 
-  // Partidos (puede fallar por límite/caída de la API; NO debe tumbar lo de arriba):
+  // Marcadores desde ESPN (puede fallar/caer; NO debe tumbar lo de arriba):
   let matches = [];
   try {
-    matches = await fdMatches();
-    console.log(`football-data.org devolvió ${matches.length} partidos.`);
+    matches = await espnMatches();
+    console.log(`ESPN devolvió ${matches.length} partidos.`);
   } catch (e) {
-    console.warn('football-data.org no disponible esta vez:', (e && e.message) || e);
+    console.warn('ESPN no disponible esta vez:', (e && e.message) || e);
   }
 
   const LIVE = ['IN_PLAY', 'PAUSED', 'SUSPENDED'];
@@ -314,12 +357,18 @@ async function main() {
     if (!isFinished && !isLive) continue;
     const ft = m.score && m.score.fullTime;
     const mm = matchOur(m.homeTeam.name, m.awayTeam.name);
-    if (!mm) continue;
+    if (!mm) { console.log(`  SIN MAPEAR (ESPN): ${m.homeTeam.name} vs ${m.awayTeam.name} [${status}]`); continue; }
     const gh = (ft && ft.home != null) ? ft.home : 0;
     const ga = (ft && ft.away != null) ? ft.away : 0;
     // Goles en NUESTRA orientación (local/visita como en la app).
     const ghOur = mm.sameOrient ? gh : ga;
     const gaOur = mm.sameOrient ? ga : gh;
+    // Goleadores en nuestra orientación: code = bandera del equipo que marcó.
+    const scorers = (m.goals || []).map((g) => {
+      const ourSide = mm.sameOrient ? g.side : (g.side === 'home' ? 'away' : 'home');
+      return { code: ourSide === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, og: !!g.og, pen: !!g.pen };
+    });
+    if (scorers.length) console.log(`  Goles ${mm.our.id}: ` + scorers.map((s) => `${s.code} ${s.name} ${s.minute}`).join(', '));
 
     if (isLive) {
       const odoc = await db.collection('odds').doc(mm.our.id).get();
@@ -328,7 +377,7 @@ async function main() {
       // Marcador casi en vivo (se refresca en cada corrida del agente).
       await db.collection('odds').doc(mm.our.id).set({
         live: true, gh: ghOur, ga: gaOur, minute: (m.minute != null ? m.minute : null),
-        liveAt: admin.firestore.FieldValue.serverTimestamp(), notifiedScore: scoreKey,
+        scorers: scorers, liveAt: admin.firestore.FieldValue.serverTimestamp(), notifiedScore: scoreKey,
       }, { merge: true });
       lives++;
       // Avisa GOL a los seguidores cuando cambia el marcador (y hay al menos un gol).
@@ -350,7 +399,7 @@ async function main() {
     const wasFinished = odoc.exists && odoc.data().finished;
     if (!wasFinished) {
       await db.collection('odds').doc(mm.our.id).set({
-        finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult,
+        finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: scorers,
         finishedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
       results++;
