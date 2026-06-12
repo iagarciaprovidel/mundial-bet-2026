@@ -74,6 +74,7 @@
     const [q, setQ] = useState('');
     const [collapsed, setCollapsed] = useState({});
     const [toast, setToast] = useState('');
+    const [trading, setTrading] = useState(false); // pantalla de intercambio QR
 
     // Mi usuario (para saber si tengo equipo).
     useEffect(() => {
@@ -132,6 +133,18 @@
     }).filter((x) => x.items.length), [tab, query, col]);
 
     const forceOpen = tab !== 'todas' || !!query;
+
+    // Pantalla de intercambio QR (solo álbum personal).
+    const apodo = (me && me.nombre) || (user && user.displayName) || 'Amigo';
+    if (trading && window.MB_FigTrade) {
+      return React.createElement(window.MB_FigTrade, {
+        col: pcol,
+        apodo: apodo,
+        onApply: (nc) => { setPcol(nc); saveCol(nc); },
+        onClose: () => setTrading(false),
+      });
+    }
+
     const modal = (
       <div style={{ position: 'relative', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: 'var(--sh-1)', display: 'flex', flexDirection: 'column', animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
         {/* Cabecera */}
@@ -172,6 +185,15 @@
             </div>
             <span className="num" style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: 'var(--gold-light)', whiteSpace: 'nowrap' }}>{tengo}/{TOTAL} · {pct}%</span>
           </div>
+
+          {/* Intercambiar (solo en mi álbum personal) */}
+          {!isTeam && window.MB_FigTrade && (
+            <button onClick={() => setTrading(true)} className="mb-press" style={{
+              width: '100%', marginTop: 10, padding: '9px', borderRadius: 'var(--r-pill)', cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)',
+              border: '1px solid var(--gold)', background: 'var(--coin-bg)', color: 'var(--gold-light)',
+            }}>🔄 Intercambiar figuritas</button>
+          )}
         </div>
 
         {/* Tabs + buscador */}
