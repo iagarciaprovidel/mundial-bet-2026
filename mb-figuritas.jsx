@@ -132,10 +132,18 @@
     const syncToTeam = () => {
       const ns = Object.keys(pcol).filter((k) => (pcol[k] || 0) >= 1 && (teamCol[k] || 0) < 1).map(Number);
       if (!ns.length) { flash('El equipo ya tiene todo lo tuyo'); return; }
-      FB().albumAddMany(groupId, ns)
-        .then((added) => flash('⬆️ Envié ' + added + ' al equipo'))
-        .catch((e) => flash(e === 'bloqueado' ? '🔒 Álbum del equipo bloqueado' : 'No se pudo enviar'));
+      const addMany = FB().albumAddMany;
+      const done = (n) => flash('⬆️ Envié ' + n + ' al equipo');
+      const fail = (e) => flash(e === 'bloqueado' ? '🔒 Álbum del equipo bloqueado' : 'No se pudo enviar');
+      if (typeof addMany === 'function') {
+        addMany(groupId, ns).then(done).catch(fail);
+      } else { // fallback: marcar una por una
+        Promise.all(ns.map((n) => FB().albumMark(groupId, n, 1))).then(() => done(ns.length)).catch(fail);
+      }
     };
+    // Cuántas figuritas hay disponibles para traer / enviar (para los botones).
+    const traerN = Object.keys(teamCol).filter((k) => (teamCol[k] || 0) >= 1 && (pcol[k] || 0) < 1).length;
+    const enviarN = Object.keys(pcol).filter((k) => (pcol[k] || 0) >= 1 && (teamCol[k] || 0) < 1).length;
 
     const tengo = useMemo(() => Object.keys(col).filter((k) => col[k] >= 1).length, [col]);
     const repetidas = useMemo(() => Object.keys(col).reduce((s, k) => s + Math.max(0, col[k] - 1), 0), [col]);
@@ -219,14 +227,16 @@
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginBottom: 5, textAlign: 'center' }}>Sincronizar con 👥 {groupName || 'mi equipo'}</div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={syncFromTeam} className="mb-press" title="Traer al álbum personal lo que tiene el equipo" style={{
-                  flex: 1, padding: '8px 6px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)',
-                  fontWeight: 800, fontSize: 'var(--t-3xs)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)',
-                }}>⬇️ Traer del equipo</button>
-                <button onClick={syncToTeam} className="mb-press" title="Enviar al equipo lo que tienes tú" style={{
-                  flex: 1, padding: '8px 6px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)',
-                  fontWeight: 800, fontSize: 'var(--t-3xs)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)',
-                }}>⬆️ Enviar al equipo</button>
+                <button onClick={syncFromTeam} disabled={!traerN} className="mb-press" title="Traer al álbum personal lo que tiene el equipo" style={{
+                  flex: 1, padding: '8px 6px', borderRadius: 'var(--r-pill)', cursor: traerN ? 'pointer' : 'default', fontFamily: 'var(--font-body)',
+                  fontWeight: 800, fontSize: 'var(--t-3xs)', border: '1px solid ' + (traerN ? 'var(--gold)' : 'var(--border-2)'),
+                  background: traerN ? 'var(--coin-bg)' : 'var(--surface-2)', color: traerN ? 'var(--gold-light)' : 'var(--muted-2)', opacity: traerN ? 1 : 0.6,
+                }}>⬇️ Traer del equipo{traerN ? ' (' + traerN + ')' : ''}</button>
+                <button onClick={syncToTeam} disabled={!enviarN} className="mb-press" title="Enviar al equipo lo que tienes tú" style={{
+                  flex: 1, padding: '8px 6px', borderRadius: 'var(--r-pill)', cursor: enviarN ? 'pointer' : 'default', fontFamily: 'var(--font-body)',
+                  fontWeight: 800, fontSize: 'var(--t-3xs)', border: '1px solid ' + (enviarN ? 'var(--gold)' : 'var(--border-2)'),
+                  background: enviarN ? 'var(--coin-bg)' : 'var(--surface-2)', color: enviarN ? 'var(--gold-light)' : 'var(--muted-2)', opacity: enviarN ? 1 : 0.6,
+                }}>⬆️ Enviar al equipo{enviarN ? ' (' + enviarN + ')' : ''}</button>
               </div>
             </div>
           )}
@@ -282,7 +292,7 @@
         </div>
 
         {toast && (
-          <div style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: 'var(--surface-1)', border: '1px solid var(--border-2)', color: 'var(--text)', padding: '9px 16px', borderRadius: 'var(--r-pill)', fontSize: 'var(--t-2xs)', fontWeight: 700, boxShadow: 'var(--sh-3)', zIndex: 5 }}>{toast}</div>
+          <div style={{ position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: 'var(--surface-1)', border: '1px solid var(--gold)', color: 'var(--text)', padding: '11px 18px', borderRadius: 'var(--r-pill)', fontSize: 'var(--t-2xs)', fontWeight: 800, boxShadow: 'var(--sh-3)', zIndex: 9999, whiteSpace: 'nowrap', maxWidth: '90vw', overflow: 'hidden', textOverflow: 'ellipsis' }}>{toast}</div>
         )}
       </div>
     );
