@@ -72,7 +72,9 @@
     const [source, setSource] = useState('personal'); // 'personal' | 'team'
     const [tab, setTab] = useState('todas');
     const [q, setQ] = useState('');
-    const [collapsed, setCollapsed] = useState({});
+    const [openMap, setOpenMap] = useState({}); // secciones abiertas (por defecto: todas cerradas)
+    const [allOpen, setAllOpen] = useState(false); // "Expandir todo"
+    const [showSearch, setShowSearch] = useState(false); // buscador detrás de la lupa
     const [toast, setToast] = useState('');
     const [trading, setTrading] = useState(false); // pantalla de intercambio QR
 
@@ -213,36 +215,34 @@
             <span className="num" style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: 'var(--gold-light)', whiteSpace: 'nowrap' }}>{tengo}/{TOTAL} · {pct}%</span>
           </div>
 
-          {/* Intercambiar (solo en mi álbum personal) */}
-          {!isTeam && window.MB_FigTrade && (
-            <button onClick={() => setTrading(true)} className="mb-press" style={{
-              width: '100%', marginTop: 10, padding: '9px', borderRadius: 'var(--r-pill)', cursor: 'pointer',
-              fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)',
-              border: '1px solid var(--gold)', background: 'var(--coin-bg)', color: 'var(--gold-light)',
-            }}>🔄 Intercambiar figuritas</button>
-          )}
-
-          {/* Sincronizar con el equipo (solo en mi álbum y si tengo equipo) */}
-          {!isTeam && groupId && (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginBottom: 5, textAlign: 'center' }}>Sincronizar con 👥 {groupName || 'mi equipo'}</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={syncFromTeam} disabled={!traerN} className="mb-press" title="Traer al álbum personal lo que tiene el equipo" style={{
-                  flex: 1, padding: '8px 6px', borderRadius: 'var(--r-pill)', cursor: traerN ? 'pointer' : 'default', fontFamily: 'var(--font-body)',
-                  fontWeight: 800, fontSize: 'var(--t-3xs)', border: '1px solid ' + (traerN ? 'var(--gold)' : 'var(--border-2)'),
-                  background: traerN ? 'var(--coin-bg)' : 'var(--surface-2)', color: traerN ? 'var(--gold-light)' : 'var(--muted-2)', opacity: traerN ? 1 : 0.6,
-                }}>⬇️ Traer del equipo{traerN ? ' (' + traerN + ')' : ''}</button>
-                <button onClick={syncToTeam} disabled={!enviarN} className="mb-press" title="Enviar al equipo lo que tienes tú" style={{
-                  flex: 1, padding: '8px 6px', borderRadius: 'var(--r-pill)', cursor: enviarN ? 'pointer' : 'default', fontFamily: 'var(--font-body)',
-                  fontWeight: 800, fontSize: 'var(--t-3xs)', border: '1px solid ' + (enviarN ? 'var(--gold)' : 'var(--border-2)'),
-                  background: enviarN ? 'var(--coin-bg)' : 'var(--surface-2)', color: enviarN ? 'var(--gold-light)' : 'var(--muted-2)', opacity: enviarN ? 1 : 0.6,
-                }}>⬆️ Enviar al equipo{enviarN ? ' (' + enviarN + ')' : ''}</button>
+          {/* Barra de acciones compacta: intercambiar (QR) + traer/enviar del equipo.
+              Siempre clicables: si no hay nada que mover, dan un aviso (no quedan "muertos"). */}
+          {!isTeam && (window.MB_FigTrade || groupId) && (() => {
+            const act = (active) => ({
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              padding: '8px 4px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+              fontWeight: 800, fontSize: 'var(--t-3xs)', whiteSpace: 'nowrap',
+              border: '1px solid ' + (active ? 'var(--gold)' : 'var(--border-2)'),
+              background: active ? 'var(--coin-bg)' : 'var(--surface-2)', color: active ? 'var(--gold-light)' : 'var(--muted)',
+            });
+            const badge = { minWidth: 16, height: 16, padding: '0 4px', borderRadius: 8, background: 'var(--info)', color: '#fff', fontSize: 9.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' };
+            return (
+              <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                {window.MB_FigTrade && (
+                  <button onClick={() => setTrading(true)} className="mb-press" title="Intercambiar por QR" style={act(true)}>🔄 <span>Cambiar</span></button>
+                )}
+                {groupId && (
+                  <button onClick={syncFromTeam} className="mb-press" title="Traer a mi álbum lo que tiene el equipo" style={act(!!traerN)}>⬇️ <span>Traer</span>{traerN ? <span className="num" style={badge}>{traerN}</span> : null}</button>
+                )}
+                {groupId && (
+                  <button onClick={syncToTeam} className="mb-press" title="Enviar al equipo lo que tengo yo" style={act(!!enviarN)}>⬆️ <span>Enviar</span>{enviarN ? <span className="num" style={badge}>{enviarN}</span> : null}</button>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
-        {/* Tabs + buscador */}
+        {/* Tabs + controles (expandir todo / lupa) + buscador (oculto por defecto) */}
         <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 8, borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', gap: 6 }}>
             {TABS.map((t) => {
@@ -258,10 +258,24 @@
               );
             })}
           </div>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar jugador o número…" style={{
-            width: '100%', padding: '9px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)',
-            background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-sm)', outline: 'none',
-          }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={() => { setAllOpen((v) => !v); setOpenMap({}); }} disabled={forceOpen} className="mb-press" title="Abrir o cerrar todas las secciones" style={{
+              flex: 1, padding: '6px 8px', borderRadius: 'var(--r-pill)', cursor: forceOpen ? 'default' : 'pointer', fontFamily: 'var(--font-body)',
+              fontWeight: 800, fontSize: 'var(--t-3xs)', whiteSpace: 'nowrap', opacity: forceOpen ? 0.5 : 1,
+              border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)',
+            }}>{(allOpen && !forceOpen) ? '▴ Contraer todo' : '▾ Expandir todo'}</button>
+            <button onClick={() => { setShowSearch((v) => { if (v) setQ(''); return !v; }); }} className="mb-press" title="Buscar jugador o número" style={{
+              width: 38, height: 32, flexShrink: 0, borderRadius: 'var(--r-pill)', cursor: 'pointer', fontSize: 15,
+              border: '1px solid ' + (showSearch ? 'var(--gold)' : 'var(--border-2)'),
+              background: showSearch ? 'var(--coin-bg)' : 'var(--surface-2)', color: showSearch ? 'var(--gold-light)' : 'var(--muted)',
+            }}>🔍</button>
+          </div>
+          {showSearch && (
+            <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="Buscar jugador o número…" style={{
+              width: '100%', padding: '9px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)',
+              background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-sm)', outline: 'none',
+            }} />
+          )}
         </div>
 
         {/* Lista de secciones */}
@@ -270,11 +284,18 @@
             <div style={{ textAlign: 'center', color: 'var(--muted-2)', padding: 40, fontSize: 'var(--t-sm)' }}>No hay figuritas en este filtro.</div>
           )}
           {visibleSections.map(({ sec, items }) => {
-            const open = forceOpen || !collapsed[sec.key];
+            const open = forceOpen || allOpen || !!openMap[sec.key];
             const have = sec.items.reduce((s, it) => s + (col[it.n] >= 1 ? 1 : 0), 0);
+            const toggleSec = () => {
+              if (forceOpen) return;
+              if (allOpen) { // pasar de "todo abierto" a manual, cerrando solo ésta
+                const m = {}; SECTIONS.forEach((s) => { m[s.key] = true; }); m[sec.key] = false;
+                setAllOpen(false); setOpenMap(m);
+              } else { setOpenMap((c) => Object.assign({}, c, { [sec.key]: !c[sec.key] })); }
+            };
             return (
               <div key={sec.key} style={{ marginBottom: 14 }}>
-                <button onClick={() => !forceOpen && setCollapsed((c) => Object.assign({}, c, { [sec.key]: !c[sec.key] }))} className="mb-press"
+                <button onClick={toggleSec} className="mb-press"
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 4px', background: 'none', border: 'none', cursor: forceOpen ? 'default' : 'pointer' }}>
                   {sec.flag && <img src={'https://flagcdn.com/h20/' + sec.flag + '.png'} alt="" style={{ height: 14, width: 'auto', borderRadius: 2 }} />}
                   <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-sm)', color: 'var(--text)', textAlign: 'left', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sec.title}</h3>
