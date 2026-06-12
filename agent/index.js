@@ -326,12 +326,6 @@ async function main() {
         }
       } catch (e) { console.log(`\n${src[0]} ERR ${e && e.message}`); }
     }
-    // Lee el doc de odds m01 (México–Sudáfrica) tal cual está en Firestore.
-    try {
-      initFirebase();
-      const od = await db.collection('odds').doc('m01').get();
-      console.log('\nodds/m01 =', od.exists ? JSON.stringify(od.data()) : 'NO EXISTE');
-    } catch (e) { console.log('odds read ERR', e && e.message); }
     return;
   }
 

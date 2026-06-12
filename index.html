@@ -341,13 +341,26 @@ requestAnimationFrame(function () { setTimeout(window.__mbHideSplash, 500); });
 <!-- Banner de instalación en móvil (PWA + APK secundario) -->
 <script src="install-banner.js"></script>
 
-<!-- Service Worker (PWA / instalable) -->
+<!-- Service Worker (PWA / instalable) con AUTO-ACTUALIZACIÓN -->
 <script>
 if ('serviceWorker' in navigator) {
+  // Si ya había una versión controlando la página y entra una nueva, recarga
+  // automáticamente para tomar el código nuevo (no en la 1ª instalación).
+  var __hadController = !!navigator.serviceWorker.controller;
+  var __reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (__reloading || !__hadController) return;
+    __reloading = true;
+    window.location.reload();
+  });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch((err) =>
-      console.warn('SW registro falló:', err)
-    );
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // Revisa si hay versión nueva: al cargar, al volver a la pestaña y cada 60s.
+      const check = () => reg.update().catch(() => {});
+      check();
+      setInterval(check, 60000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    }).catch((err) => console.warn('SW registro falló:', err));
   });
 }
 </script>
