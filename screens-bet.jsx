@@ -202,6 +202,50 @@ function MobileFixtureCard({ m }) {
   );
 }
 
+// Mini-guía "¿Cómo funciona?" para apostadores primerizos. Plegable y recuerda
+// si el usuario la cerró (mb_bet_howto_collapsed), pero queda siempre disponible.
+function BetHowTo() {
+  const KEY = 'mb_bet_howto_collapsed';
+  const [open, setOpen] = useStateB(() => { try { return localStorage.getItem(KEY) !== '1'; } catch (e) { return true; } });
+  const toggle = () => setOpen((o) => { const n = !o; try { localStorage.setItem(KEY, n ? '0' : '1'); } catch (e) {} return n; });
+  const steps = [
+    { ic: '🎯', t: 'Elegí quién gana', d: 'Tocá el equipo —o Empate— que crees que ganará. La cuota (ej. x2.40) es cuánto multiplica tu apuesta.' },
+    { ic: '💰', t: 'Elegí cuánto apostar', d: 'Apostás puntos virtuales (mínimo 1.000). Arrancás con 90.000 gratis.' },
+    { ic: '🏆', t: 'Si aciertas, ganás', d: 'Tu apuesta × la cuota vuelve a tu saldo. Si fallás, perdés lo apostado.' },
+  ];
+  return (
+    <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', marginBottom: 16, overflow: 'hidden' }}>
+      <button onClick={toggle} className="mb-press" style={{
+        width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', cursor: 'pointer',
+        background: 'none', border: 'none', color: 'var(--text)', textAlign: 'left',
+      }}>
+        <span style={{ fontSize: 16 }}>💡</span>
+        <span className="display" style={{ flex: 1, fontSize: 'var(--t-md)', color: 'var(--gold-light)' }}>¿Cómo funciona apostar?</span>
+        <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', fontWeight: 700 }}>{open ? 'Ocultar' : 'Ver'}</span>
+        <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', transform: open ? 'rotate(0)' : 'rotate(-90deg)', transition: 'transform var(--dur-base)' }}>▾</span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 14px 14px', animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {steps.map((s, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <span style={{ width: 26, height: 26, flexShrink: 0, borderRadius: '50%', background: 'var(--coin-bg)', border: '1px solid var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>{s.ic}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}><span className="num" style={{ color: 'var(--gold-light)' }}>{i + 1}.</span> {s.t}</div>
+                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.4, marginTop: 1 }}>{s.d}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 11, padding: '8px 11px', borderRadius: 'var(--r-md)', background: 'var(--info-bg)', border: '1px solid rgba(74,144,226,0.3)', fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.4 }}>
+            🔒 Son <strong style={{ color: 'var(--text)' }}>puntos virtuales</strong>, no dinero real. Apostás por diversión y para competir en el ranking con tus amigos.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Partidos() {
   const [tab, setTab] = useStateB('J1');
   const fx = (window.MB.WC_FIXTURES) || [];
@@ -209,6 +253,7 @@ function Partidos() {
   const mdMap = { J1: 1, J2: 2, J3: 3 };
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+      <BetHowTo />
       <div style={{ marginBottom: 16 }}>
         <SegTabs accent="var(--info)" value={tab} onChange={setTab}
           options={[{ v: 'J1', label: 'Jor. 1' }, { v: 'J2', label: 'Jor. 2' }, { v: 'J3', label: 'Jor. 3' }, { v: 'KO', label: 'Elim.' }]} />
@@ -349,4 +394,4 @@ function Quiniela() {
   );
 }
 
-Object.assign(window, { Partidos, Quiniela, MobileFixtureCard });
+Object.assign(window, { Partidos, Quiniela, MobileFixtureCard, BetHowTo });

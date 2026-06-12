@@ -711,6 +711,7 @@ function PartidosWeb({ onTeam }) {
   fx.forEach(m => { if (byMd[m.md]) byMd[m.md].push(m); });
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+      {window.BetHowTo ? <window.BetHowTo /> : null}
       {[1, 2, 3].map(md => (
         <div key={md} style={{ marginBottom: 26 }}>
           <SectionHead title={`Fase de grupos · Jornada ${md}`} />
