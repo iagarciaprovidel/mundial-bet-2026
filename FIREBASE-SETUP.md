@@ -34,10 +34,6 @@ service cloud.firestore {
       return signedIn() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.groupId == gid;
     }
-    function albumOwner(gid) {
-      return signedIn() &&
-        get(/databases/$(database)/documents/groups/$(gid)).data.ownerUid == request.auth.uid;
-    }
     match /users/{uid} {
       allow read:   if signedIn();
       allow create: if signedIn() && request.auth.uid == uid;
@@ -77,16 +73,15 @@ service cloud.firestore {
       allow write: if signedIn() && request.resource.data.uid == request.auth.uid;
     }
     // Álbum de figuritas COMPARTIDO por equipo (co-op). Aparte de las apuestas.
-    // Miembros leen; editan la colección solo si NO está bloqueado.
-    // Solo el dueño del equipo puede poner/quitar el candado (campo locked).
+    // Cualquier integrante lee, edita (si NO está bloqueado) y pone/quita el candado.
+    // No se puede editar la colección mientras está bloqueado; para editar se quita
+    // el candado (por eso se permite cuando el resultado queda desbloqueado).
     match /figuritasAlbums/{gid} {
       allow read:   if albumMember(gid);
-      allow create: if albumOwner(gid)
-                     || (albumMember(gid) && request.resource.data.get('locked', false) == false);
-      allow update: if albumOwner(gid)
-                     || (albumMember(gid)
-                         && resource.data.get('locked', false) == false
-                         && request.resource.data.get('locked', false) == false);
+      allow create: if albumMember(gid);
+      allow update: if albumMember(gid)
+                     && (resource.data.get('locked', false) == false
+                         || request.resource.data.get('locked', false) == false);
     }
   }
 }
