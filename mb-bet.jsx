@@ -66,6 +66,23 @@
 
   const PICK_LABEL = (m, k) => (k === 'home' ? m.home : k === 'away' ? m.away : 'Empate');
 
+  // Lista de goleadores (bandera + nombre + minuto). odds.scorers viene del agente (ESPN).
+  const scorersEl = (list) => {
+    if (!list || !list.length) return null;
+    return (
+      <div style={{ marginTop: 7, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {list.map((g, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-2xs)' }}>
+            <span style={{ fontSize: 10, flexShrink: 0 }}>⚽</span>
+            {g.code && <img src={'https://flagcdn.com/h20/' + g.code + '.png'} alt="" style={{ height: 11, width: 'auto', borderRadius: 1, flexShrink: 0 }} />}
+            <span style={{ color: 'var(--text)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}{g.og ? ' (e.c.)' : ''}{g.pen ? ' (pen)' : ''}</span>
+            <span className="num" style={{ color: 'var(--muted-2)', marginLeft: 'auto', flexShrink: 0 }}>{g.minute}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // ── Caja de apuesta (1·X·2) ──
   function BetBox({ m, compact }) {
     const s = useBetStore();
@@ -96,6 +113,7 @@
             <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>🏁 Final</span>
             <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
           </div>
+          {scorersEl(odds.scorers)}
           {settledBet && (
             <div style={{ marginTop: 6, padding: '7px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (won ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: won ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: won ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}</span>
@@ -119,6 +137,7 @@
             </span>
             <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
           </div>
+          {scorersEl(odds.scorers)}
           {bet && bet.status === 'open' && (
             <div style={{ marginTop: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}</div>
           )}

@@ -403,7 +403,6 @@ async function main() {
       wasFinished ? {} : { finishedAt: admin.firestore.FieldValue.serverTimestamp() }
     ), { merge: true });
     if (!wasFinished) results++;
-    { const ob = await db.collection('bets').where('matchId', '==', mm.our.id).where('status', '==', 'open').get(); console.log(`  DIAG ${mm.our.id} wasFinished=${wasFinished} result=${ourResult} apuestasAbiertas=${ob.size}`); }
     // Avisa el RESULTADO FINAL a los seguidores (una sola vez).
     const nt = (odoc.exists && odoc.data().notified) || {};
     if (!nt.final) {
