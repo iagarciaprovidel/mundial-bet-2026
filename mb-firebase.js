@@ -36,7 +36,7 @@
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, watchMatch: noFB,
       subscribeTeamAlbum(gid, cb) { if (typeof cb === 'function') cb(null); return () => {}; },
-      teamOwnerUid() { return Promise.resolve(null); }, albumMark: noFB, setAlbumLock: noFB,
+      teamOwnerUid() { return Promise.resolve(null); }, albumMark: noFB, albumAddMany: noFB, setAlbumLock: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
@@ -341,6 +341,25 @@
         const next = Math.max(0, (col[n] || 0) + (delta || 0));
         if (next === 0) delete col[n]; else col[n] = next;
         tx.set(ref, { col: col, groupId: groupId, actualizado: FV.serverTimestamp() }, { merge: true });
+      });
+    },
+    // Marca como presentes (count>=1) varias figuritas en el álbum del equipo, de una
+    // sola vez (sincronizar "Mi álbum" → equipo). No baja contadores ni toca repetidas.
+    // Respeta el candado. Devuelve cuántas se agregaron nuevas.
+    async albumAddMany(groupId, ns) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      if (!groupId) return Promise.reject('sin-equipo');
+      if (!ns || !ns.length) return 0;
+      const ref = db.collection('figuritasAlbums').doc(groupId);
+      return db.runTransaction(async function (tx) {
+        const s = await tx.get(ref);
+        const d = s.exists ? s.data() : null;
+        if (d && d.locked) throw 'bloqueado';
+        const col = Object.assign({}, (d && d.col) || {});
+        let added = 0;
+        ns.forEach(function (n) { if ((col[n] || 0) < 1) { col[n] = 1; added++; } });
+        tx.set(ref, { col: col, groupId: groupId, actualizado: FV.serverTimestamp() }, { merge: true });
+        return added;
       });
     },
     // Bloquea/abre el álbum del equipo (solo el dueño, según las reglas de Firestore).

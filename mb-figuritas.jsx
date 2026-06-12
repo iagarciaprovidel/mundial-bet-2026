@@ -118,6 +118,25 @@
       FB().setAlbumLock(groupId, !locked).catch(() => {});
     };
 
+    // —— Sincronizar Mi álbum ⇄ álbum del equipo (manual, no destructivo) ——
+    const teamCol = (team && team.col) || {};
+    // ⬇️ Traer: marca en Mi álbum (=1) lo que el equipo tiene y a mí me falta. Conserva mis repetidas.
+    const syncFromTeam = () => {
+      const nc = Object.assign({}, pcol); let added = 0;
+      Object.keys(teamCol).forEach((k) => { if ((teamCol[k] || 0) >= 1 && (nc[k] || 0) < 1) { nc[k] = 1; added++; } });
+      if (!added) { flash('Mi álbum ya tiene todo lo del equipo'); return; }
+      setPcol(nc); saveCol(nc);
+      flash('⬇️ Agregué ' + added + ' a Mi álbum');
+    };
+    // ⬆️ Enviar: marca en el equipo lo que yo tengo y al equipo le falta.
+    const syncToTeam = () => {
+      const ns = Object.keys(pcol).filter((k) => (pcol[k] || 0) >= 1 && (teamCol[k] || 0) < 1).map(Number);
+      if (!ns.length) { flash('El equipo ya tiene todo lo tuyo'); return; }
+      FB().albumAddMany(groupId, ns)
+        .then((added) => flash('⬆️ Envié ' + added + ' al equipo'))
+        .catch((e) => flash(e === 'bloqueado' ? '🔒 Álbum del equipo bloqueado' : 'No se pudo enviar'));
+    };
+
     const tengo = useMemo(() => Object.keys(col).filter((k) => col[k] >= 1).length, [col]);
     const repetidas = useMemo(() => Object.keys(col).reduce((s, k) => s + Math.max(0, col[k] - 1), 0), [col]);
     const pct = TOTAL ? Math.round((tengo / TOTAL) * 100) : 0;
@@ -193,6 +212,23 @@
               fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)',
               border: '1px solid var(--gold)', background: 'var(--coin-bg)', color: 'var(--gold-light)',
             }}>🔄 Intercambiar figuritas</button>
+          )}
+
+          {/* Sincronizar con el equipo (solo en mi álbum y si tengo equipo) */}
+          {!isTeam && groupId && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginBottom: 5, textAlign: 'center' }}>Sincronizar con 👥 {groupName || 'mi equipo'}</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={syncFromTeam} className="mb-press" title="Traer al álbum personal lo que tiene el equipo" style={{
+                  flex: 1, padding: '8px 6px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+                  fontWeight: 800, fontSize: 'var(--t-3xs)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)',
+                }}>⬇️ Traer del equipo</button>
+                <button onClick={syncToTeam} className="mb-press" title="Enviar al equipo lo que tienes tú" style={{
+                  flex: 1, padding: '8px 6px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+                  fontWeight: 800, fontSize: 'var(--t-3xs)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)',
+                }}>⬆️ Enviar al equipo</button>
+              </div>
+            </div>
           )}
         </div>
 
