@@ -64,7 +64,7 @@
 
   const FB = () => window.MBFirebase || {};
 
-  function Album({ onClose }) {
+  function Album({ onBack }) {
     const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
     const [pcol, setPcol] = useState(loadCol);        // álbum personal (localStorage)
     const [me, setMe] = useState(null);               // mi usuario (groupId/groupName)
@@ -131,11 +131,11 @@
 
     const forceOpen = tab !== 'todas' || !!query;
     const modal = (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 1300, background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'relative', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: 'var(--sh-1)', display: 'flex', flexDirection: 'column', animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
         {/* Cabecera */}
         <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--border)', background: 'var(--surface-1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <button onClick={onClose} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 17, flexShrink: 0 }}>←</button>
+            <button onClick={onBack} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontSize: 17, flexShrink: 0 }}>←</button>
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎴 {isTeam ? ('Álbum de ' + (groupName || 'equipo')) : 'Mi álbum 2026'}</h2>
               <div style={{ fontSize: 'var(--t-3xs)', color: canEdit ? 'var(--muted-2)' : 'var(--gold-light)' }}>{canEdit ? 'Tocar = la tengo · tocar otra vez = repetida · mantener = quitar' : '🔒 Bloqueado por el dueño · solo lectura'}</div>
@@ -195,7 +195,7 @@
         </div>
 
         {/* Lista de secciones */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '8px 12px 28px' }}>
+        <div style={{ padding: '8px 12px 20px' }}>
           {visibleSections.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--muted-2)', padding: 40, fontSize: 'var(--t-sm)' }}>No hay figuritas en este filtro.</div>
           )}
@@ -226,24 +226,17 @@
         )}
       </div>
     );
-    return ReactDOM.createPortal(modal, document.body);
+    return modal;
   }
 
-  function FiguritasLauncher() {
-    const [open, setOpen] = useState(false);
-    useEffect(() => {
-      const on = () => setOpen(true);
-      window.addEventListener('mb-open-figuritas', on);
-      return () => window.removeEventListener('mb-open-figuritas', on);
-    }, []);
-    return open ? <Album onClose={() => setOpen(false)} /> : null;
-  }
-
+  // Pantalla del álbum (se enruta DENTRO del shell, conservando fondo + menú).
+  window.MB_FiguritasScreen = Album;
   // Resumen para la tarjeta del Perfil (lee localStorage en vivo).
   window.MB_figuritasResumen = function () {
     const c = loadCol(); const tengo = Object.keys(c).filter((k) => c[k] >= 1).length;
     return { tengo: tengo, total: TOTAL, pct: TOTAL ? Math.round((tengo / TOTAL) * 100) : 0 };
   };
-  window.MB_openFiguritas = function () { try { window.dispatchEvent(new Event('mb-open-figuritas')); } catch (e) {} };
-  window.MB_FiguritasLauncher = FiguritasLauncher;
+  // Navega a la pantalla del álbum (la tarjeta del Perfil llama a esto).
+  window.MB_openFiguritas = function () { if (window.__mbNav) window.__mbNav('figuritas'); };
+  window.MB_FiguritasLauncher = function () { return null; }; // ya no es overlay
 })();

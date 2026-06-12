@@ -1083,6 +1083,7 @@ function AppWeb() {
   }, []);
 
   const goTab = (id) => { setTab(id); if (mainRef.current) mainRef.current.scrollTop = 0; };
+  window.__mbNav = goTab; // puente para navegar desde tarjetas (p. ej. Figuritas)
 
   if (closeScreen) {
     return (
@@ -1104,6 +1105,7 @@ function AppWeb() {
     liga:     <LigaWeb />,
     perfil:   <PerfilWeb me={me} />,
     feed:     <FeedWeb onNav={goTab} />,
+    figuritas: window.MB_FiguritasScreen ? React.createElement(window.MB_FiguritasScreen, { onBack: () => goTab('perfil') }) : null,
   };
   const centered = {
     quiniela: <Quiniela />,

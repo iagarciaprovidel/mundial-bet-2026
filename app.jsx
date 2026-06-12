@@ -182,6 +182,7 @@ function App() {
       setTimeout(() => setLoading(null), 600);
     }
   };
+  window.__mbNav = goTab; // puente para navegar desde tarjetas (p. ej. Figuritas)
 
   const finishOnboarding = (mascot) => {
     try { localStorage.setItem('mb_intro_done', '1'); } catch (e) {} // no volver a mostrarla
@@ -218,6 +219,7 @@ function App() {
     perfil: <Perfil user={me} />,
     feed: <Feed />,
     admin: <Admin onCloseTournament={() => setCloseScreen(true)} />,
+    figuritas: window.MB_FiguritasScreen ? <div style={{ padding: '4px 12px 16px' }}>{React.createElement(window.MB_FiguritasScreen, { onBack: () => goTab('perfil') })}</div> : null,
   };
 
   return (
@@ -227,7 +229,7 @@ function App() {
         <MobileFlagTicker onSelect={setTeam} />
         <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
           {/* título de sección para tabs no-inicio */}
-          {tab !== 'inicio' && (
+          {tab !== 'inicio' && tab !== 'figuritas' && (
             <div style={{ padding: '4px 16px 10px' }}>
               <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)', textTransform: 'capitalize' }}>
                 {tab === 'feed' ? 'Feed social' : tab === 'admin' ? 'Panel Admin' : NAV.find(n => n.id === tab)?.label}
