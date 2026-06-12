@@ -397,13 +397,13 @@ async function main() {
     if (!mm.sameOrient && apiResult !== 'draw') ourResult = apiResult === 'home' ? 'away' : 'home';
     const odoc = await db.collection('odds').doc(mm.our.id).get();
     const wasFinished = odoc.exists && odoc.data().finished;
-    if (!wasFinished) {
-      await db.collection('odds').doc(mm.our.id).set({
-        finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: scorers,
-        finishedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true });
-      results++;
-    }
+    // Siempre refresca resultado + goleadores (aunque ya estuviera marcado finished).
+    await db.collection('odds').doc(mm.our.id).set(Object.assign(
+      { finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: scorers },
+      wasFinished ? {} : { finishedAt: admin.firestore.FieldValue.serverTimestamp() }
+    ), { merge: true });
+    if (!wasFinished) results++;
+    { const ob = await db.collection('bets').where('matchId', '==', mm.our.id).where('status', '==', 'open').get(); console.log(`  DIAG ${mm.our.id} wasFinished=${wasFinished} result=${ourResult} apuestasAbiertas=${ob.size}`); }
     // Avisa el RESULTADO FINAL a los seguidores (una sola vez).
     const nt = (odoc.exists && odoc.data().notified) || {};
     if (!nt.final) {
