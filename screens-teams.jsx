@@ -37,7 +37,8 @@ function StandingRow({ team }) {
 
 function GroupCard({ groupId, color }) {
   const [expanded, setExpanded] = React.useState(true);
-  const standings = Dt.GROUP_STANDINGS[groupId] || [];
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const standings = (window.MB_standings ? window.MB_standings(store ? store.odds : {})[groupId] : Dt.GROUP_STANDINGS[groupId]) || [];
   return (
     <Card style={{ padding: 0 }}>
       <button onClick={() => setExpanded(!expanded)} style={{

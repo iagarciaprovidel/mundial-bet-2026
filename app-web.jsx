@@ -242,9 +242,11 @@ function PlayerRow({ p, starter }) {
   );
 }
 function TeamModal({ team, onClose }) {
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   if (!team) return null;
   const code = teamCode(team);
-  const standings = (window.MB.GROUP_STANDINGS && window.MB.GROUP_STANDINGS[team.group]) || [];
+  const standings = (window.MB_standings ? window.MB_standings(store ? store.odds : {})[team.group]
+                     : (window.MB.GROUP_STANDINGS && window.MB.GROUP_STANDINGS[team.group])) || [];
   const fmtKO = (iso) => new Date(iso).toLocaleString('es-CL', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const teamFixtures = ((window.MB.WC_FIXTURES) || [])
     .filter(m => m.home === team.name || m.away === team.name)
@@ -809,7 +811,8 @@ function RefereesPanel() {
 }
 
 function EquiposWeb({ highlight, onTeam }) {
-  const gs = Dw.GROUP_STANDINGS;
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const gs = window.MB_standings ? window.MB_standings(store ? store.odds : {}) : Dw.GROUP_STANDINGS;
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>

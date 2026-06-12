@@ -55,6 +55,36 @@
   }
   window.MB_useBetStore = useBetStore;
 
+  // Tabla de posiciones por grupo, calculada desde los partidos TERMINADOS (odds).
+  // Devuelve { A: [filas...], B: [...] } con j/g/e/p/gf/gc/dg/pts y posición ordenada.
+  window.MB_standings = function (odds) {
+    odds = odds || {};
+    const GS = (window.MB && window.MB.GROUP_STANDINGS) || {};
+    const FX = (window.MB && window.MB.WC_FIXTURES) || (window.MB_WC && window.MB_WC.FIXTURES) || [];
+    const out = {};
+    Object.keys(GS).forEach(function (letter) {
+      const stat = {};
+      GS[letter].forEach(function (t) { stat[t.name] = Object.assign({}, t, { j: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0 }); });
+      FX.forEach(function (f) {
+        if (f.group !== letter) return;
+        const o = odds[f.id];
+        if (!o || !o.finished || o.gh == null || o.ga == null) return;
+        const H = stat[f.home], A = stat[f.away];
+        if (!H || !A) return;
+        const gh = o.gh, ga = o.ga;
+        H.j++; A.j++; H.gf += gh; H.gc += ga; A.gf += ga; A.gc += gh;
+        if (gh > ga) { H.g++; A.p++; H.pts += 3; }
+        else if (gh < ga) { A.g++; H.p++; A.pts += 3; }
+        else { H.e++; A.e++; H.pts += 1; A.pts += 1; }
+      });
+      const rows = Object.keys(stat).map(function (k) { const r = stat[k]; r.dg = r.gf - r.gc; return r; });
+      rows.sort(function (a, b) { return (b.pts - a.pts) || (b.dg - a.dg) || (b.gf - a.gf) || String(a.name).localeCompare(b.name); });
+      rows.forEach(function (r, i) { r.pos = i + 1; });
+      out[letter] = rows;
+    });
+    return out;
+  };
+
   const ERRORS = {
     'min-1000': 'La apuesta mínima es 1.000.',
     'cerrado': 'El partido ya comenzó.',
