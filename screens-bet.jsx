@@ -166,16 +166,17 @@ function MobileFixtureCard({ m }) {
   const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
   const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
   const openTeam = (name) => { if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
+  const r = window.MB.refForMatch && window.MB.refForMatch(m);
   return (
-    <Card style={{ marginBottom: 12, padding: '12px 14px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+    <Card style={{ marginBottom: 10, padding: '11px 13px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <Chip tone="blue">Grupo {m.group} · J{m.md}</Chip>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {window.MB_WatchBell ? <window.MB_WatchBell matchId={m.id} compact /> : null}
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
         <div onClick={() => openTeam(m.home)} className="mb-press" title={`Ver ${m.home}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, cursor: 'pointer' }}>
           <img src={`https://flagcdn.com/h40/${m.homeCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
           <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
@@ -186,17 +187,13 @@ function MobileFixtureCard({ m }) {
           <img src={`https://flagcdn.com/h40/${m.awayCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
         </div>
       </div>
-      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 600 }}>🏟️ {m.stadium}</div>
-      {(() => {
-        const r = window.MB.refForMatch && window.MB.refForMatch(m);
-        return r ? (
-          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, minWidth: 0 }}>
-            <span>🧑‍⚖️</span>
-            <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 9, width: 'auto', borderRadius: 1 }} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
-          </div>
-        ) : null;
-      })()}
+      {/* Estadio + árbitro en una sola línea (compacto) */}
+      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🏟️ {m.stadium}</span>
+        {r && <span style={{ opacity: 0.5 }}>·</span>}
+        {r && <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 9, width: 'auto', borderRadius: 1, flexShrink: 0 }} />}
+        {r && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.name}</span>}
+      </div>
       {window.MB_BetBox ? <window.MB_BetBox m={m} /> : null}
     </Card>
   );

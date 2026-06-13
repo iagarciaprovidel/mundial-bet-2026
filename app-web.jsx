@@ -672,16 +672,17 @@ function FixtureCardWeb({ m, onTeam }) {
   const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
   const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
   const openTeam = (name) => { const t = teamByName(name); if (t && onTeam) onTeam(t); };
+  const ref = window.MB.refForMatch && window.MB.refForMatch(m);
   const Team = ({ name, code }) => (
     <div onClick={() => openTeam(name)} className={onTeam ? 'mb-press' : ''}
       title={onTeam ? `Ver ficha de ${name}` : undefined}
-      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', cursor: onTeam ? 'pointer' : 'default' }}>
-      <img src={`https://flagcdn.com/h40/${code}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 30, width: 'auto', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, textAlign: 'center', cursor: onTeam ? 'pointer' : 'default' }}>
+      <img src={`https://flagcdn.com/h40/${code}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 28, width: 'auto', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
       <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', lineHeight: 1.1 }}>{name}</span>
     </div>
   );
   return (
-    <Card style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <Card style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Chip tone="blue">Grupo {m.group}</Chip>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -694,8 +695,12 @@ function FixtureCardWeb({ m, onTeam }) {
         <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)', fontWeight: 700 }}>vs</span>
         <Team name={m.away} code={m.awayCode} />
       </div>
-      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center' }}>📍 {m.stadium}</div>
-      <RefLineWeb m={m} />
+      {/* Estadio + árbitro en una sola línea (compacto) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>📍 {m.stadium}</span>
+        {ref && <span style={{ opacity: 0.5 }}>·</span>}
+        {ref && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>🧑‍⚖️ <img src={`https://flagcdn.com/h20/${ref.code}.png`} alt="" title={ref.country} style={{ height: 9, width: 'auto', borderRadius: 1 }} /> {ref.name}</span>}
+      </div>
       {window.MB_BetBox ? <window.MB_BetBox m={m} /> : null}
     </Card>
   );
