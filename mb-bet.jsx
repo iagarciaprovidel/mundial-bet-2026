@@ -187,21 +187,25 @@
       );
     }
 
-    // Partido EN VIVO (casi en vivo): muestra el marcador mientras se juega.
-    const live = odds && odds.live && !odds.finished;
+    // Partido EN VIVO: el agente lo marcó live, o ya pasó el kickoff por reloj
+    // (ventana de ~2.5h) y aún no está terminado. Así aparece apenas empieza.
+    const _ko = new Date(m.kickoff).getTime();
+    const clockLive = Date.now() >= _ko + BET_GRACE_MS && Date.now() < _ko + MATCH_MS; // tras cerrar apuestas
+    const live = (odds && odds.live) || clockLive;
     if (live) {
-      const gh = (odds.gh != null) ? odds.gh : 0;
-      const ga = (odds.ga != null) ? odds.ga : 0;
+      const gh = (odds && odds.gh != null) ? odds.gh : 0;
+      const ga = (odds && odds.ga != null) ? odds.ga : 0;
+      const minute = odds && odds.minute;
       return (
         <div style={{ marginTop: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 11px', borderRadius: 'var(--r-md)', border: '1px solid rgba(220,80,80,0.5)', background: 'rgba(220,80,80,0.12)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9, color: '#ff6b6b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ff5252', animation: 'mb-pulse-live 1s var(--ease-out) infinite' }} />EN VIVO{odds.minute != null ? ' · ' + odds.minute + "'" : ''}
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ff5252', animation: 'mb-pulse-live 1s var(--ease-out) infinite' }} />EN VIVO{minute != null ? ' · ' + (typeof minute === 'number' ? minute + "'" : String(minute)) : ''}
             </span>
             <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
           </div>
-          {scorersEl(odds.scorers)}
-          {cardsEl(odds.cards)}
+          {scorersEl(odds && odds.scorers)}
+          {cardsEl(odds && odds.cards)}
           {bet && bet.status === 'open' && (
             <div style={{ marginTop: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}</div>
           )}
@@ -391,8 +395,8 @@
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
     const [now, setNow] = useState(Date.now());
     useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
-    // Si hay un partido jugándose, manda el bloque "EN VIVO ahora": no mostramos la cuenta regresiva.
-    const anyLive = fx.some((m) => { const o = bs.odds[m.id]; return o && o.live && !o.finished; });
+    // Si hay un partido en curso (live o por reloj), manda el bloque "EN VIVO": ocultamos la cuenta regresiva.
+    const anyLive = (window.MB_liveMatches ? window.MB_liveMatches(bs.odds) : []).length > 0;
     if (anyLive) return null;
     const next = fx.filter((m) => new Date(m.kickoff).getTime() > now).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))[0];
     if (!next) return null;
@@ -434,13 +438,26 @@
   }
   window.MB_NextMatchCountdown = NextMatchCountdown;
 
+  // Partidos EN CURSO: o el agente ya lo marcó live, o por RELOJ ya pasó el
+  // kickoff y está dentro de la ventana de un partido (~2.5h) sin estar terminado.
+  // Así el bloque "EN VIVO" aparece apenas empieza, sin esperar al agente/ESPN.
+  const MATCH_MS = 150 * 60 * 1000;
+  window.MB_liveMatches = function (oddsMap) {
+    oddsMap = oddsMap || {};
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const now = Date.now();
+    return fx.map((m) => ({ m: m, o: oddsMap[m.id] || {} })).filter(function (x) {
+      if (x.o.finished) return false;
+      if (x.o.live) return true;
+      const ko = new Date(x.m.kickoff).getTime();
+      return now >= ko + BET_GRACE_MS && now < ko + MATCH_MS; // tras cerrar apuestas (no durante la gracia)
+    });
+  };
+
   // ── Partidos EN VIVO ahora (para el Inicio, debajo de la cuenta regresiva) ──
-  // Lee del store los partidos con odds.live && !finished y los muestra con
-  // marcador y minuto. Si no hay ninguno en vivo, no renderiza nada.
   function LiveNow() {
     const s = useBetStore();
-    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
-    const live = fx.map((m) => ({ m: m, o: s.odds[m.id] })).filter((x) => x.o && x.o.live && !x.o.finished);
+    const live = window.MB_liveMatches ? window.MB_liveMatches(s.odds) : [];
     if (!live.length) return null;
     const go = () => { if (window.__mbNav) window.__mbNav('partidos'); };
     const openTeam = (e, name) => { if (e) e.stopPropagation(); if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
