@@ -202,10 +202,11 @@ function Card({ children, style = {}, glow, onClick, hover, title, action, onAct
 function SectionHead({ title, action, onAction }) {
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '4px 0 10px' }}>
-      <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{title}</h3>
+      {/* Sombra + peso para que el título se lea bien sobre la imagen de fondo */}
+      <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-xl)', fontWeight: 800, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.85), 0 0 1px rgba(0,0,0,0.9)', letterSpacing: '0.01em' }}>{title}</h3>
       {action && <button onClick={onAction} style={{
-        background: 'none', border: 'none', color: 'var(--info)', fontFamily: 'var(--font-body)',
-        fontWeight: 700, fontSize: 'var(--t-2xs)', cursor: 'pointer', padding: 0,
+        background: 'none', border: 'none', color: 'var(--gold-light)', fontFamily: 'var(--font-body)',
+        fontWeight: 800, fontSize: 'var(--t-2xs)', cursor: 'pointer', padding: 0, textShadow: '0 1px 3px rgba(0,0,0,0.8)',
       }}>{action}</button>}
     </div>
   );
