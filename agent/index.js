@@ -221,8 +221,9 @@ async function notify(uid, title, body) {
   try {
     const us = await db.collection('users').doc(uid).get();
     const tokens = (us.exists && us.data().fcmTokens) || [];
-    if (!tokens.length) return;
+    if (!tokens.length) { console.log(`  notify ${String(uid).slice(0, 6)}…: SIN tokens (no activó notificaciones)`); return; }
     const res = await admin.messaging().sendEachForMulticast({ tokens: tokens, notification: { title: title, body: body } });
+    console.log(`  notify ${String(uid).slice(0, 6)}…: ${res.successCount}/${tokens.length} enviada(s) — "${title}"`);
     const bad = [];
     res.responses.forEach((r, i) => { if (!r.success && r.error && /not-registered|invalid-argument|invalid-registration/i.test(r.error.code || r.error.message || '')) bad.push(tokens[i]); });
     if (bad.length) await db.collection('users').doc(uid).set({ fcmTokens: admin.firestore.FieldValue.arrayRemove.apply(null, bad) }, { merge: true });
@@ -237,6 +238,20 @@ async function notifyWatchers(matchId, title, body) {
     for (const d of snap.docs) { await notify(d.id, title, body); n++; }
     return n;
   } catch (e) { console.warn('  notifyWatchers:', e && e.message); return 0; }
+}
+
+// ── Avisa a quienes APOSTARON (apuesta abierta) en un partido, sigan o no el
+//    partido con la campanita. Así el apostador recibe avisos sin tener que
+//    seguir cada partido a mano. ──
+async function notifyOpenBettors(matchId, title, body) {
+  try {
+    const snap = await db.collection('bets').where('matchId', '==', matchId).where('status', '==', 'open').get();
+    const uids = new Set();
+    snap.forEach((d) => { const b = d.data(); if (b.uid) uids.add(b.uid); });
+    let n = 0;
+    for (const uid of uids) { await notify(uid, title, body); n++; }
+    return n;
+  } catch (e) { console.warn('  notifyOpenBettors:', e && e.message); return 0; }
 }
 
 // ── Avisos por tiempo (NO dependen de football-data): "empieza pronto" y
@@ -257,6 +272,13 @@ async function matchAlerts() {
       const c = await notifyWatchers(o.id, '⏰ Empieza pronto', `${o.home} vs ${o.away} comienza en ~${mins} min. ¡Última oportunidad para apostar!`);
       nt.soon = true; await ref.set({ notified: nt }, { merge: true });
       if (c) { sent += c; console.log(`  AVISO empieza-pronto ${o.id} → ${c} seguidor(es)`); }
+    }
+    // Aviso a los que APOSTARON en este partido (aunque no lo sigan con la campanita).
+    if (!nt.betSoon && minToKo > 0 && minToKo <= SOON_MIN) {
+      const mins = Math.max(1, Math.round(minToKo));
+      const c = await notifyOpenBettors(o.id, '⏰ Tu apuesta empieza pronto', `${o.home} vs ${o.away} arranca en ~${mins} min. Aún podés cambiarla o cancelarla.`);
+      nt.betSoon = true; await ref.set({ notified: nt }, { merge: true });
+      if (c) { sent += c; console.log(`  AVISO apuesta-pronto ${o.id} → ${c} apostador(es)`); }
     }
     if (!nt.closed && minToKo <= 0) {
       const c = await notifyWatchers(o.id, '🔒 Apuestas cerradas', `${o.home} vs ${o.away} ya comenzó. ¡A seguir el partido!`);

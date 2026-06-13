@@ -301,6 +301,19 @@
       const token = await firebase.messaging().getToken({ vapidKey: vapid, serviceWorkerRegistration: reg });
       if (!token) return Promise.reject('sin-token');
       await db.collection('users').doc(u.uid).set({ fcmTokens: FV.arrayUnion(token), notifEnabled: true }, { merge: true });
+      // Mostrar las notificaciones también cuando la app está en PRIMER PLANO
+      // (FCM no las muestra solo; hay que dibujarlas a mano). Una sola vez.
+      try {
+        if (!window.__mbFcmFg) {
+          window.__mbFcmFg = true;
+          firebase.messaging().onMessage(function (payload) {
+            const n = (payload && payload.notification) || {};
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              try { reg.showNotification(n.title || 'MundialBet Club', { body: n.body || '', icon: 'icon-192.png', badge: 'icon-192.png' }); } catch (e) {}
+            }
+          });
+        }
+      } catch (e) {}
       return token;
     },
     // Seguir / dejar de seguir un partido (avisos de ese partido: empieza pronto,
