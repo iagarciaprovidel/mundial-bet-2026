@@ -458,9 +458,12 @@
     }, [user]);
     if (!user) return null;
 
+    // El pronóstico del campeón se puede elegir/cambiar hasta que TERMINA la fase
+    // de grupos (no al primer partido): así quien se suma tarde igual participa y
+    // el cierre es la misma fecha para todos. WC_FIXTURES son los partidos de grupos.
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
-    const firstKO = fx.length ? Math.min.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
-    const closed = Date.now() >= firstKO;
+    const lastGroupKO = fx.length ? Math.max.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
+    const closed = Date.now() >= (lastGroupKO + 2 * 60 * 60 * 1000); // ~fin del último partido de grupos
     const pick = me && me.champion;
     const pickCode = me && me.championCode;
 
@@ -488,7 +491,7 @@
           : closed
             ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '8px 0' }}>El pronóstico del campeón ya cerró.</div>
             : <button onClick={() => setOpen(true)} className="mb-press" style={{ width: '100%', padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>🏆 Elegir mi campeón</button>}
-        <div style={{ marginTop: 8, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{closed ? 'El pronóstico del campeón está cerrado.' : 'Gratis · cierra al empezar el Mundial.'} Si aciertas, ganas +{fmt(CHAMPION_BONUS)} puntos al final.</div>
+        <div style={{ marginTop: 8, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{closed ? 'El pronóstico del campeón está cerrado.' : 'Gratis · podés elegir o cambiar hasta que termine la fase de grupos.'} Si aciertas, ganas +{fmt(CHAMPION_BONUS)} puntos al final.</div>
 
         {open && ReactDOM.createPortal(
           <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 1150, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
