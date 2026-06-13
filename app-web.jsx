@@ -598,7 +598,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
                 <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{day.today ? 'Partidos de hoy' : 'Próximos partidos'} <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {day.list.length}</span></h3>
                 <button onClick={() => onNav('partidos')} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.55)', background: 'var(--coin-bg)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' }}>Ver todos →</button>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {day.list.map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
               </div>
             </div>
@@ -673,16 +673,10 @@ function FixtureCardWeb({ m, onTeam }) {
   const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
   const openTeam = (name) => { const t = teamByName(name); if (t && onTeam) onTeam(t); };
   const ref = window.MB.refForMatch && window.MB.refForMatch(m);
-  const Team = ({ name, code }) => (
-    <div onClick={() => openTeam(name)} className={onTeam ? 'mb-press' : ''}
-      title={onTeam ? `Ver ficha de ${name}` : undefined}
-      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, textAlign: 'center', cursor: onTeam ? 'pointer' : 'default' }}>
-      <img src={`https://flagcdn.com/h40/${code}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 28, width: 'auto', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
-      <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', lineHeight: 1.1 }}>{name}</span>
-    </div>
-  );
+  const flag = (code) => <img src={`https://flagcdn.com/h40/${code}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />;
+  const nm = (name) => <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>;
   return (
-    <Card style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <Card style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '12px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Chip tone="blue">Grupo {m.group}</Chip>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -690,10 +684,15 @@ function FixtureCardWeb({ m, onTeam }) {
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Team name={m.home} code={m.homeCode} />
-        <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)', fontWeight: 700 }}>vs</span>
-        <Team name={m.away} code={m.awayCode} />
+      {/* Equipos en una sola línea horizontal (compacto) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div onClick={() => openTeam(m.home)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ${m.home}` : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 7, justifyContent: 'flex-end', cursor: onTeam ? 'pointer' : 'default' }}>
+          {nm(m.home)}{flag(m.homeCode)}
+        </div>
+        <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', fontWeight: 700, flexShrink: 0 }}>vs</span>
+        <div onClick={() => openTeam(m.away)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ${m.away}` : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 7, cursor: onTeam ? 'pointer' : 'default' }}>
+          {flag(m.awayCode)}{nm(m.away)}
+        </div>
       </div>
       {/* Estadio + árbitro en una sola línea (compacto) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>

@@ -274,8 +274,8 @@
     const maxSaldo = (typeof saldo === 'number' ? saldo : SALDO_INICIAL) + ((bet && bet.status === 'open') ? (bet.stake || 0) : 0);
 
     return (
-      <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+      <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
           <span style={{ fontSize: 9, color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Apuesta al ganador</span>
           {typeof saldo === 'number' && <span className="num" style={{ fontSize: 9, color: 'var(--muted)' }}>Saldo: <span style={{ color: 'var(--gold-light)' }}>{fmt(saldo)}</span></span>}
         </div>
@@ -285,7 +285,7 @@
             const has = p.odd != null;
             return (
               <button key={p.k} disabled={!has || busy} onClick={() => { setSel(active ? null : p.k); setErr(''); setOk(''); }} className="mb-press" style={{
-                flex: 1, minWidth: 0, padding: '8px 4px', cursor: has ? 'pointer' : 'default', borderRadius: 'var(--r-md)',
+                flex: 1, minWidth: 0, padding: '6px 4px', cursor: has ? 'pointer' : 'default', borderRadius: 'var(--r-md)',
                 background: active ? 'var(--coin-bg)' : 'var(--surface-2)', border: active ? '1.5px solid var(--gold)' : '1px solid var(--border-2)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, opacity: has ? 1 : 0.4,
               }}>
