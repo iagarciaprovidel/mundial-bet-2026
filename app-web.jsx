@@ -580,7 +580,11 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             ? <button onClick={() => window.MB_openTeamMembers && window.MB_openTeamMembers()} className="mb-press" title="Ver integrantes de tu equipo" style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 4px', cursor: 'pointer', fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>👥 {meRec.groupName}</button>
             : <div style={{ margin: '0 0 4px', fontSize: 'var(--t-sm)', fontWeight: 700, color: 'var(--muted-2)' }}>{meRec && meRec.noGroup ? '🙋 Juegas individual' : 'Sin equipo'}</div>)}
           <p style={{ margin: 0, color: 'var(--gold-light)', fontSize: 'var(--t-md)', fontWeight: 600 }}>
-            {_msNext <= 0 ? <>¡El Mundial 2026 ya comenzó! ⚡</> : daysLeft === 0 ? <>¡El Mundial 2026 empieza hoy! 🔥</> : daysLeft === 1 ? <>Falta 1 día para el Mundial 2026 🏆</> : <>Faltan {daysLeft} días para el Mundial 2026 🏆</>}
+            {(() => {
+              const vibe = window.MB_homeVibe ? window.MB_homeVibe(store ? store.odds : {}) : null;
+              if (vibe) return vibe;
+              return _msNext <= 0 ? '¡El Mundial 2026 ya comenzó! ⚡' : daysLeft === 0 ? '¡El Mundial 2026 empieza hoy! 🔥' : daysLeft === 1 ? 'Falta 1 día para el Mundial 2026 🏆' : 'Faltan ' + daysLeft + ' días para el Mundial 2026 🏆';
+            })()}
           </p>
         </div>
         {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}

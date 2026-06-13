@@ -363,10 +363,14 @@ async function main() {
     // Goles en NUESTRA orientación (local/visita como en la app).
     const ghOur = mm.sameOrient ? gh : ga;
     const gaOur = mm.sameOrient ? ga : gh;
-    // Goleadores en nuestra orientación: code = bandera del equipo que marcó.
+    // Goleadores en nuestra orientación: code = bandera del equipo del JUGADOR.
+    // En autogol, ESPN atribuye el gol al equipo beneficiado, pero el jugador es
+    // del equipo CONTRARIO → mostramos la bandera de su selección, no la rival.
     const scorers = (m.goals || []).map((g) => {
-      const ourSide = mm.sameOrient ? g.side : (g.side === 'home' ? 'away' : 'home');
-      return { code: ourSide === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, og: !!g.og, pen: !!g.pen };
+      const og = !!g.og;
+      const goalSide = mm.sameOrient ? g.side : (g.side === 'home' ? 'away' : 'home'); // a quién le cuenta el gol
+      const playerSide = og ? (goalSide === 'home' ? 'away' : 'home') : goalSide;       // de qué equipo es el jugador
+      return { code: playerSide === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, og: og, pen: !!g.pen };
     });
     if (scorers.length) console.log(`  Goles ${mm.our.id}: ` + scorers.map((s) => `${s.code} ${s.name} ${s.minute}`).join(', '));
 

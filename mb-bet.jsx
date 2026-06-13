@@ -365,11 +365,15 @@
   }
   window.MB_SaldoBadge = SaldoBadge;
 
-  // ── Cuenta regresiva en vivo al próximo partido ──
+  // ── Cuenta regresiva al próximo partido (se oculta si hay alguno EN VIVO) ──
   function NextMatchCountdown() {
+    const s = useBetStore();
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
     const [now, setNow] = useState(Date.now());
     useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+    // Si hay un partido jugándose, manda el bloque "EN VIVO ahora": no mostramos la cuenta regresiva.
+    const anyLive = fx.some((m) => { const o = s.odds[m.id]; return o && o.live && !o.finished; });
+    if (anyLive) return null;
     const next = fx.filter((m) => new Date(m.kickoff).getTime() > now).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))[0];
     if (!next) return null;
     const diff = Math.max(0, new Date(next.kickoff).getTime() - now);
@@ -454,6 +458,50 @@
     );
   }
   window.MB_LiveNow = LiveNow;
+
+  // ── Frase mundialera para el saludo del Inicio ──────────────────────────────
+  // Devuelve una frase con onda según haya un partido EN VIVO o el próximo que
+  // viene. Si no hay nada cerca, devuelve null (el Inicio usa su texto por defecto).
+  // Estable por partido (no parpadea entre renders) gracias al hash del id.
+  window.MB_homeVibe = function (oddsMap) {
+    oddsMap = oddsMap || {};
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    if (!fx.length) return null;
+    const now = Date.now();
+    const hash = (s) => { let h = 0; s = String(s || ''); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
+    const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
+    const live = fx.find((m) => { const o = oddsMap[m.id]; return o && o.live && !o.finished; });
+    if (live) {
+      const o = oddsMap[live.id] || {};
+      const sc = (o.gh != null ? o.gh : 0) + '–' + (o.ga != null ? o.ga : 0);
+      const P = [
+        '🔥 ¡' + live.home + ' vs ' + live.away + ' EN VIVO! A morderse las uñas',
+        '📣 Rueda la pelota: ' + live.home + ' ' + sc + ' ' + live.away,
+        '🍿 Pausá todo, se juega ' + live.home + ' vs ' + live.away,
+        '⚽ ' + live.home + ' vs ' + live.away + ' en cancha… ¿quién la rompe?',
+        '😱 ' + live.home + ' ' + sc + ' ' + live.away + ' ¡y todavía falta!',
+      ];
+      return pick(P, hash(live.id) + (o.gh || 0) * 7 + (o.ga || 0) * 13);
+    }
+    const next = fx.filter((m) => new Date(m.kickoff).getTime() > now).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))[0];
+    if (next) {
+      const hrs = (new Date(next.kickoff).getTime() - now) / 3600000;
+      const soon = hrs <= 14;
+      const Psoon = [
+        '🍿 Hoy juega ' + next.home + ' vs ' + next.away + ', prepará los nervios',
+        '⏳ Se viene ' + next.home + ' vs ' + next.away + '… ¿ya hiciste tu apuesta?',
+        '🎯 ' + next.home + ' vs ' + next.away + ' a la vuelta de la esquina',
+        '👀 Ojo que se acerca ' + next.home + ' vs ' + next.away,
+      ];
+      const Pfar = [
+        '⚽ Lo próximo en el radar: ' + next.home + ' vs ' + next.away,
+        '🔮 Calentando motores para ' + next.home + ' vs ' + next.away,
+        '🧠 Andá pensando tu apuesta para ' + next.home + ' vs ' + next.away,
+      ];
+      return pick(soon ? Psoon : Pfar, hash(next.id));
+    }
+    return null;
+  };
 
   // ── Botón para activar las notificaciones push ──
   const NERR = {
