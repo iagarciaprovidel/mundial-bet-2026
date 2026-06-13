@@ -410,6 +410,46 @@
   }
   window.MB_NextMatchCountdown = NextMatchCountdown;
 
+  // ── Partidos EN VIVO ahora (para el Inicio, debajo de la cuenta regresiva) ──
+  // Lee del store los partidos con odds.live && !finished y los muestra con
+  // marcador y minuto. Si no hay ninguno en vivo, no renderiza nada.
+  function LiveNow() {
+    const s = useBetStore();
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const live = fx.map((m) => ({ m: m, o: s.odds[m.id] })).filter((x) => x.o && x.o.live && !x.o.finished);
+    if (!live.length) return null;
+    const go = () => { if (window.__mbNav) window.__mbNav('partidos'); };
+    const minTxt = (o) => o.minute == null ? 'EN VIVO' : (typeof o.minute === 'number' ? o.minute + "'" : String(o.minute));
+    return (
+      <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(220,80,80,0.5)', borderRadius: 'var(--r-lg)', padding: '13px 16px', boxShadow: 'var(--sh-1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 11 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5252', animation: 'mb-pulse-live 1s var(--ease-out) infinite', flexShrink: 0 }} />
+          <span style={{ fontSize: 9, color: '#ff6b6b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>En vivo ahora</span>
+          <span className="num" style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginLeft: 'auto' }}>{live.length}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {live.map(({ m, o }) => (
+            <div key={m.id} onClick={go} className="mb-press" title="Ver el partido" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.10)', border: '1px solid rgba(220,80,80,0.28)', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
+                <img src={'https://flagcdn.com/h40/' + m.homeCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
+              </div>
+              <div style={{ textAlign: 'center', flexShrink: 0, minWidth: 52 }}>
+                <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{o.gh != null ? o.gh : 0} <span style={{ color: 'var(--muted-2)' }}>-</span> {o.ga != null ? o.ga : 0}</div>
+                <div style={{ fontSize: 8.5, color: '#ff6b6b', fontWeight: 800, marginTop: 2, whiteSpace: 'nowrap' }}>🔴 {minTxt(o)}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                <img src={'https://flagcdn.com/h40/' + m.awayCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.away}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  window.MB_LiveNow = LiveNow;
+
   // ── Botón para activar las notificaciones push ──
   const NERR = {
     'no-soportado': 'Tu navegador no soporta notificaciones.',

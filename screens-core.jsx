@@ -217,6 +217,9 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Cuenta regresiva al próximo partido */}
       {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
 
+      {/* Partidos EN VIVO ahora (solo aparece si hay alguno jugándose) */}
+      {window.MB_LiveNow && React.createElement(window.MB_LiveNow)}
+
       {/* Pronóstico del campeón (gratis) */}
       {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick)}
 

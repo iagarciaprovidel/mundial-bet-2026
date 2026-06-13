@@ -584,6 +584,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
           </p>
         </div>
         {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
+        {window.MB_LiveNow && React.createElement(window.MB_LiveNow)}
         {(() => {
           const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };
           if (!day.list.length) return null;
