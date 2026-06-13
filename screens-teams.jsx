@@ -88,10 +88,8 @@ function TeamsScreen() {
   const groups = Object.keys(Dt.GROUP_STANDINGS || {});
   return (
     <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 16, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div>
-        <h2 className="display" style={{ margin: '0 0 4px', fontSize: 'var(--t-2xl)', color: 'var(--text)' }}>Equipos y Grupos</h2>
-        <p style={{ margin: 0, fontSize: 'var(--t-sm)', color: 'var(--muted)' }}>Los 12 grupos del Mundial 2026 · 48 selecciones con su DT</p>
-      </div>
+      {/* El título "Equipos" ya lo pone el shell (app.jsx); aquí solo el subtítulo. */}
+      <p style={{ margin: '-4px 0 0', fontSize: 'var(--t-sm)', color: 'var(--muted)' }}>Los 12 grupos del Mundial 2026 · 48 selecciones con su DT</p>
       {groups.map((g, i) => <GroupCard key={g} groupId={g} color={GROUP_COLORS[i % GROUP_COLORS.length]} />)}
       <RefereesMobile />
     </div>

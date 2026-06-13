@@ -133,12 +133,42 @@ function espnToFd(e) {
     awayTeam: { name: (away.team && (away.team.displayName || away.team.name)) || '' },
     goals: goals,
     cards: cards,
+    espnId: e.id, espnHomeId: hid, espnAwayId: aid, // para pedir tarjetas al endpoint summary
   };
+}
+
+// Tarjetas (amarillas/rojas/expulsiones) desde el endpoint summary de ESPN, que es
+// más completo que el scoreboard (este último a veces solo trae goles). Best-effort:
+// si falla, devuelve [] y no rompe nada. Devuelve [{ homeAway, name, minute, red }].
+async function espnCardsFromSummary(eventId, homeId, awayId) {
+  if (!eventId) return [];
+  try {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${eventId}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(12000) });
+    if (!res.ok) return [];
+    const j = await res.json().catch(() => null);
+    const kev = (j && j.keyEvents) || [];
+    const out = [];
+    kev.forEach((x) => {
+      const t = (x.type && x.type.text) || '';
+      const isRed = x.redCard === true || /red|roja|second yellow|segunda amarilla|expuls/i.test(t);
+      const isYellow = x.yellowCard === true || /yellow|amarilla/i.test(t);
+      if (!isRed && !isYellow) return;
+      const tid = x.team && x.team.id;
+      const homeAway = (tid && String(tid) === String(homeId)) ? 'home' : (tid && String(tid) === String(awayId)) ? 'away' : null;
+      const ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
+      const name = ath ? (ath.displayName || ath.shortName || '') : '';
+      const minute = (x.clock && x.clock.displayValue) || (x.time && x.time.displayValue) || '';
+      if (!homeAway || !name) return;
+      out.push({ homeAway: homeAway, name: name, minute: minute, red: !!isRed });
+    });
+    return out;
+  } catch (e) { return []; }
 }
 async function espnMatches() {
   const d = new Date();
   const ymd = (off) => new Date(d.getTime() + off * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
-  const url = `${ESPN_URL}?dates=${ymd(-1)}-${ymd(1)}`; // ventana de ayer→mañana (UTC)
+  const url = `${ESPN_URL}?dates=${ymd(-2)}-${ymd(1)}`; // ventana anteayer→mañana (UTC); -2 para rellenar tarjetas de partidos recién terminados
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
   if (!res.ok) throw new Error('ESPN respondió ' + res.status);
   const j = await res.json().catch(() => ({}));
@@ -382,13 +412,29 @@ async function main() {
       return { code: playerSide === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, og: og, pen: !!g.pen };
     });
     // Tarjetas en nuestra orientación: code = bandera del equipo del jugador.
-    const cards = (m.cards || []).map((g) => {
+    let cards = (m.cards || []).map((g) => {
       const side = mm.sameOrient ? g.side : (g.side === 'home' ? 'away' : 'home');
       return { code: side === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, red: !!g.red };
     });
+    // Si el scoreboard no trajo tarjetas, las pedimos al endpoint summary (más completo).
+    // Para partidos terminados solo si todavía no las teníamos guardadas (evita re-pedir).
+    if (!cards.length && (isLive || isFinished)) {
+      let need = isLive;
+      if (isFinished) {
+        const ex = await db.collection('odds').doc(mm.our.id).get();
+        need = !(ex.exists && Array.isArray(ex.data().cards) && ex.data().cards.length);
+      }
+      if (need) {
+        const sc = await espnCardsFromSummary(m.espnId, m.espnHomeId, m.espnAwayId);
+        if (sc.length) cards = sc.map((g) => {
+          const side = mm.sameOrient ? g.homeAway : (g.homeAway === 'home' ? 'away' : 'home');
+          return { code: side === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, red: !!g.red };
+        });
+      }
+    }
     if (scorers.length) console.log(`  Goles ${mm.our.id}: ` + scorers.map((s) => `${s.code} ${s.name} ${s.minute}`).join(', '));
     if (cards.length) console.log(`  Tarjetas ${mm.our.id}: ` + cards.map((c) => `${c.red ? '🟥' : '🟨'} ${c.code} ${c.name} ${c.minute}`).join(', '));
-    else console.log(`  (sin tarjetas en el feed de ESPN para ${mm.our.id})`);
+    else console.log(`  (sin tarjetas para ${mm.our.id})`);
 
     if (isLive) {
       const odoc = await db.collection('odds').doc(mm.our.id).get();
