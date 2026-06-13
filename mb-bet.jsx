@@ -387,12 +387,12 @@
 
   // ── Cuenta regresiva al próximo partido (se oculta si hay alguno EN VIVO) ──
   function NextMatchCountdown() {
-    const s = useBetStore();
+    const bs = useBetStore();
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
     const [now, setNow] = useState(Date.now());
     useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
     // Si hay un partido jugándose, manda el bloque "EN VIVO ahora": no mostramos la cuenta regresiva.
-    const anyLive = fx.some((m) => { const o = s.odds[m.id]; return o && o.live && !o.finished; });
+    const anyLive = fx.some((m) => { const o = bs.odds[m.id]; return o && o.live && !o.finished; });
     if (anyLive) return null;
     const next = fx.filter((m) => new Date(m.kickoff).getTime() > now).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))[0];
     if (!next) return null;
