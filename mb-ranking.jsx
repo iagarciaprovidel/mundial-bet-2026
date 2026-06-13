@@ -16,7 +16,9 @@
   // Ranking por PATRIMONIO (disponible + en juego). Ver window.MB_worth en mb-bet.jsx.
   function saldoOf(u) { return window.MB_worth ? window.MB_worth(u) : ((u && typeof u.saldo === 'number') ? u.saldo : SALDO_INICIAL); }
   function fmt(n) { return Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.'); }
-  // Flecha ↑/↓ comparando saldo actual con el guardado por el agente (prevSaldo).
+  // Flecha ▲/▼: verde si el patrimonio está por ENCIMA del inicio (90.000) → va
+  // ganando; roja si por debajo → va perdiendo. (Antes comparaba el disponible y
+  // daba falsos ▼ al apostar, aunque el patrimonio subiera.)
   function Arrow({ cur, prev }) {
     if (typeof prev !== 'number' || prev === cur) return null;
     const up = cur > prev;
@@ -59,9 +61,12 @@
                 {window.MB_champAvatar ? window.MB_champAvatar(u.championCode, u.champion, u.nombre, 30) : <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
-                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}{(() => { const st = isMe ? myStaked : (u.staked || 0); return st > 0 ? ' · 🎟️ ' + fmt(st) : ''; })()}</div>
+                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
                 </div>
-                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={window.MB_avail ? window.MB_avail(u) : saldoOf(u)} prev={u.prevSaldo} /></span>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={SALDO_INICIAL} /></div>
+                  {(() => { const st = isMe ? myStaked : (u.staked || 0); return st > 0 ? <div className="num" style={{ fontSize: 9, color: 'var(--info)', fontWeight: 700 }}>{fmt(st)} apostado</div> : null; })()}
+                </div>
               </div>
             );
           })}
@@ -136,7 +141,10 @@
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
                   <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
                 </div>
-                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={window.MB_avail ? window.MB_avail(u) : saldoOf(u)} prev={u.prevSaldo} /></span>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={SALDO_INICIAL} /></div>
+                  {(u.staked || 0) > 0 ? <div className="num" style={{ fontSize: 9, color: 'var(--info)', fontWeight: 700 }}>{fmt(u.staked)} apostado</div> : null}
+                </div>
               </div>
             );
           })}
