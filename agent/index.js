@@ -387,6 +387,8 @@ async function main() {
       return { code: side === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, red: !!g.red };
     });
     if (scorers.length) console.log(`  Goles ${mm.our.id}: ` + scorers.map((s) => `${s.code} ${s.name} ${s.minute}`).join(', '));
+    if (cards.length) console.log(`  Tarjetas ${mm.our.id}: ` + cards.map((c) => `${c.red ? '🟥' : '🟨'} ${c.code} ${c.name} ${c.minute}`).join(', '));
+    else console.log(`  (sin tarjetas en el feed de ESPN para ${mm.our.id})`);
 
     if (isLive) {
       const odoc = await db.collection('odds').doc(mm.our.id).get();
