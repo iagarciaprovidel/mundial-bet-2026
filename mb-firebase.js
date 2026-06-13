@@ -377,7 +377,8 @@
       stake = Math.floor(Number(stake) || 0);
       if (['home', 'draw', 'away'].indexOf(pick) === -1) return Promise.reject('pick-invalido');
       if (stake < 1000) return Promise.reject('min-1000');
-      if (new Date(match.kickoff).getTime() <= Date.now()) return Promise.reject('cerrado');
+      // Margen de 5 min tras el kickoff para cambiar/cancelar (igual que la UI, mb-bet.jsx).
+      if (new Date(match.kickoff).getTime() + 5 * 60 * 1000 <= Date.now()) return Promise.reject('cerrado');
       const oddsSnap = await db.collection('odds').doc(match.id).get();
       const odds = oddsSnap.exists ? oddsSnap.data() : null;
       if (!odds || !odds[pick]) return Promise.reject('sin-cuota');

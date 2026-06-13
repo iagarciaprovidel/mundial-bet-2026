@@ -10,6 +10,7 @@
   const FB = () => window.MBFirebase || {};
   const MIN_BET = 1000;
   const SALDO_INICIAL = 90000;
+  const BET_GRACE_MS = 5 * 60 * 1000; // margen: se puede cambiar/cancelar hasta 5 min después del kickoff
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
 
   // ── Puntaje del jugador para rankings ──────────────────────────────────────
@@ -133,7 +134,7 @@
     const odds = s.odds[m.id] || null;
     const bet = s.bets[m.id] || null;
     const saldo = s.saldo;
-    const closed = new Date(m.kickoff).getTime() <= Date.now();
+    const closed = new Date(m.kickoff).getTime() + BET_GRACE_MS <= Date.now();
 
     const [sel, setSel] = useState(null);
     const [stake, setStake] = useState(MIN_BET);
