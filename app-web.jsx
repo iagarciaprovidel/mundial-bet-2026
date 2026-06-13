@@ -604,16 +604,20 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {authUser ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <MetricW label="Mis monedas" value={fmtN(myPts)} tone="var(--gold-light)" icon="⚽" />
-            <MetricW label="Posición" value={myPos ? '#' + myPos : '—'} tone="var(--info)" icon="📊" />
-            <MetricW label="Apuestas" value={myBets.length} tone="var(--text)" icon="🎟️" />
-            <MetricW label="Aciertos" value={mySettled.length ? myAcc + '%' : '—'} tone="var(--success)" icon="🎯" />
+          <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'stretch' }}>
+              {[['⚽', 'Monedas', fmtN(myPts), 'var(--gold-light)'], ['📊', 'Posición', myPos ? '#' + myPos : '—', 'var(--info)'], ['🎟️', 'Apuestas', String(myBets.length), 'var(--text)'], ['🎯', 'Aciertos', mySettled.length ? myAcc + '%' : '—', 'var(--success)']].map((mtr, i) => (
+                <div key={mtr[1]} style={{ flex: 1, textAlign: 'center', padding: '12px 4px', borderLeft: i ? '1px solid var(--border)' : 'none' }}>
+                  <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: mtr[3], lineHeight: 1.1 }}>{mtr[2]}</div>
+                  <div style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em', marginTop: 3, whiteSpace: 'nowrap' }}>{mtr[0]} {mtr[1]}</div>
+                </div>
+              ))}
+            </div>
+            {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { compact: true })}
           </div>
         ) : (
           window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
         )}
-        {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick)}
         {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
         <Card title="Apostadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 16px' }}>
           {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 6 }) : null}

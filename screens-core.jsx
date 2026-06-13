@@ -202,13 +202,18 @@ function Dashboard({ user, onNav, onPredict }) {
         </p>
       </div>
 
-      {/* métricas 2x2 (reales) */}
+      {/* Métricas (fila compacta) + pronóstico del campeón, en una sola tarjeta */}
       {authUser ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <Metric label="Mis monedas" value={fmtN(myPts)} tone="var(--gold-light)" icon="⚽" />
-          <Metric label="Posición" value={myPos ? '#' + myPos : '—'} tone="var(--usa-light)" icon="📊" />
-          <Metric label="Apuestas" value={String(myBets.length)} tone="var(--text)" icon="🎟️" />
-          <Metric label="Aciertos" value={mySettled.length ? myAcc + '%' : '—'} tone="var(--success)" icon="🎯" />
+        <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'stretch' }}>
+            {[['⚽', 'Monedas', fmtN(myPts), 'var(--gold-light)'], ['📊', 'Posición', myPos ? '#' + myPos : '—', 'var(--usa-light)'], ['🎟️', 'Apuestas', String(myBets.length), 'var(--text)'], ['🎯', 'Aciertos', mySettled.length ? myAcc + '%' : '—', 'var(--success)']].map((mtr, i) => (
+              <div key={mtr[1]} style={{ flex: 1, textAlign: 'center', padding: '11px 4px', borderLeft: i ? '1px solid var(--border)' : 'none' }}>
+                <div className="num" style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: mtr[3], lineHeight: 1.1 }}>{mtr[2]}</div>
+                <div style={{ fontSize: 8.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em', marginTop: 3, whiteSpace: 'nowrap' }}>{mtr[0]} {mtr[1]}</div>
+              </div>
+            ))}
+          </div>
+          {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { compact: true })}
         </div>
       ) : (
         window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
@@ -219,9 +224,6 @@ function Dashboard({ user, onNav, onPredict }) {
 
       {/* Partidos EN VIVO ahora (solo aparece si hay alguno jugándose) */}
       {window.MB_LiveNow && React.createElement(window.MB_LiveNow)}
-
-      {/* Pronóstico del campeón (gratis) */}
-      {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick)}
 
       {/* partidos del día: apostables; los terminados aparecen al final con el marcador */}
       {(() => {
