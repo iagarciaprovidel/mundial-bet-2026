@@ -147,17 +147,28 @@ async function espnCardsFromSummary(eventId, homeId, awayId) {
     const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(12000) });
     if (!res.ok) return [];
     const j = await res.json().catch(() => null);
-    const kev = (j && j.keyEvents) || [];
+    // Las tarjetas pueden venir en keyEvents (resumen) o en commentary (jugada a jugada).
+    const kev = (j && (j.keyEvents || (j.commentary) || [])) || [];
+    // Id de equipo desde {id} o desde {$ref: ".../teams/83?..."}.
+    const teamId = (tm) => {
+      if (!tm) return null;
+      if (tm.id != null) return String(tm.id);
+      const ref = tm.$ref || tm.href || '';
+      const mt = String(ref).match(/teams\/(\d+)/);
+      return mt ? mt[1] : null;
+    };
     const out = [];
     kev.forEach((x) => {
-      const t = (x.type && x.type.text) || '';
-      const isRed = x.redCard === true || /red|roja|second yellow|segunda amarilla|expuls/i.test(t);
-      const isYellow = x.yellowCard === true || /yellow|amarilla/i.test(t);
+      const t = (x.type && x.type.text) || x.text || '';
+      const isRed = x.redCard === true || /red card|tarjeta roja|second yellow|segunda amarilla|sent off|expuls/i.test(t);
+      const isYellow = x.yellowCard === true || /yellow card|tarjeta amarilla/i.test(t);
       if (!isRed && !isYellow) return;
-      const tid = x.team && x.team.id;
-      const homeAway = (tid && String(tid) === String(homeId)) ? 'home' : (tid && String(tid) === String(awayId)) ? 'away' : null;
-      const ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
-      const name = ath ? (ath.displayName || ath.shortName || '') : '';
+      const tid = teamId(x.team);
+      const homeAway = (tid && tid === String(homeId)) ? 'home' : (tid && tid === String(awayId)) ? 'away' : null;
+      // Jugador: athletesInvolved[0] o participants[0].athlete (según el endpoint).
+      let ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
+      if (!ath && x.participants && x.participants[0]) ath = x.participants[0].athlete || x.participants[0];
+      const name = ath ? (ath.displayName || ath.shortName || ath.fullName || '') : '';
       const minute = (x.clock && x.clock.displayValue) || (x.time && x.time.displayValue) || '';
       if (!homeAway || !name) return;
       out.push({ homeAway: homeAway, name: name, minute: minute, red: !!isRed });
@@ -426,6 +437,7 @@ async function main() {
       }
       if (need) {
         const sc = await espnCardsFromSummary(m.espnId, m.espnHomeId, m.espnAwayId);
+        console.log(`  summary ${mm.our.id} (event ${m.espnId}): ${sc.length} tarjeta(s)`);
         if (sc.length) cards = sc.map((g) => {
           const side = mm.sameOrient ? g.homeAway : (g.homeAway === 'home' ? 'away' : 'home');
           return { code: side === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, red: !!g.red };
