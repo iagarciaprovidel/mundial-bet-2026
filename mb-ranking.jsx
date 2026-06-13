@@ -13,7 +13,8 @@
     return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase();
   }
   const SALDO_INICIAL = 90000;
-  function saldoOf(u) { return (u && typeof u.saldo === 'number') ? u.saldo : SALDO_INICIAL; }
+  // Ranking por PATRIMONIO (disponible + en juego). Ver window.MB_worth en mb-bet.jsx.
+  function saldoOf(u) { return window.MB_worth ? window.MB_worth(u) : ((u && typeof u.saldo === 'number') ? u.saldo : SALDO_INICIAL); }
   function fmt(n) { return Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.'); }
   // Flecha ↑/↓ comparando saldo actual con el guardado por el agente (prevSaldo).
   function Arrow({ cur, prev }) {
@@ -60,7 +61,7 @@
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
                   <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}{(() => { const st = isMe ? myStaked : (u.staked || 0); return st > 0 ? ' · 🎟️ ' + fmt(st) : ''; })()}</div>
                 </div>
-                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={u.prevSaldo} /></span>
+                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={window.MB_avail ? window.MB_avail(u) : saldoOf(u)} prev={u.prevSaldo} /></span>
               </div>
             );
           })}
@@ -135,7 +136,7 @@
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
                   <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
                 </div>
-                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={u.prevSaldo} /></span>
+                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={window.MB_avail ? window.MB_avail(u) : saldoOf(u)} prev={u.prevSaldo} /></span>
               </div>
             );
           })}
@@ -233,6 +234,7 @@
     { q: '¿Qué es la cuota?', a: 'Es el número que multiplica tu apuesta si aciertas. Mientras más difícil el resultado, más alta la cuota y más se paga.' },
     { q: '¿Puedo cambiar o cancelar una apuesta?', a: 'Sí, mientras el partido no haya empezado. Al comenzar el partido la apuesta se cierra y ya no se puede modificar.' },
     { q: '¿Cuándo se pagan las apuestas?', a: 'Automáticamente cuando termina el partido: el sistema actualiza tu saldo y tu posición en el ranking.' },
+    { q: '¿Por qué bajó mi saldo si todavía no perdí?', a: 'Al apostar, esos puntos quedan "en juego" hasta que termine el partido. Tu disponible baja, pero el ranking cuenta tu PATRIMONIO = disponible + en juego, así que no pierdes posición por apostar. Solo bajas si una apuesta se resuelve perdida.' },
     { q: '¿Cómo creo o me uno a un equipo?', a: 'Desde tu Perfil, con el botón de equipo. Puedes crear 1 equipo propio o unirte a uno existente. También puedes jugar individual.' },
     { q: '¿Cómo se calcula el ranking de equipos?', a: 'Por el promedio de puntos de sus integrantes, así los equipos grandes y chicos compiten parejo.' },
     { q: '¿Puedo quedarme sin puntos?', a: 'Sí, puedes llegar a 0. En la segunda fase del torneo habrá una recarga de puntos para todos.' },

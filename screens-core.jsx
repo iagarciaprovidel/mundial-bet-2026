@@ -178,10 +178,11 @@ function Dashboard({ user, onNav, onPredict }) {
   }, [authUser]);
   const SAL = 90000;
   const fmtN = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
-  const saldoOfU = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  const saldoOfU = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL; // disponible (billetera)
+  const worthOf = (u) => window.MB_worth ? window.MB_worth(u) : saldoOfU(u);  // patrimonio (ranking)
   const meRec = authUser ? hdrUsers.find(u => u.uid === authUser.uid) : null;
   const myPts = meRec ? saldoOfU(meRec) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
-  const myPos = meRec ? (hdrUsers.slice().sort((a, b) => saldoOfU(b) - saldoOfU(a)).findIndex(u => u.uid === authUser.uid) + 1) : 0;
+  const myPos = meRec ? (hdrUsers.slice().sort((a, b) => worthOf(b) - worthOf(a)).findIndex(u => u.uid === authUser.uid) + 1) : 0;
   const myBets = (store && authUser) ? Object.keys(store.bets).map(k => store.bets[k]) : [];
   const mySettled = myBets.filter(b => b.status === 'won' || b.status === 'lost');
   const myAcc = mySettled.length ? Math.round((mySettled.filter(b => b.status === 'won').length / mySettled.length) * 100) : 0;

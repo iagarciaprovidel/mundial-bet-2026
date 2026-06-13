@@ -12,6 +12,16 @@
   const SALDO_INICIAL = 90000;
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
 
+  // ── Puntaje del jugador para rankings ──────────────────────────────────────
+  // PATRIMONIO = saldo disponible + puntos EN JUEGO (apuestas abiertas todavía
+  // sin resolver). Los puntos apostados siguen siendo tuyos hasta que el partido
+  // se liquide, así que el ranking debe contarlos: de lo contrario, el que más
+  // apuesta parece "perder" aunque acierte. El agente devuelve `staked` al liquidar
+  // (agent/index.js), así que no hay doble conteo. Helpers globales para toda la app:
+  window.MB_avail = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SALDO_INICIAL;   // disponible (para apostar)
+  window.MB_staked = (u) => (u && typeof u.staked === 'number' && u.staked > 0) ? u.staked : 0; // en juego
+  window.MB_worth = (u) => window.MB_avail(u) + window.MB_staked(u);                        // patrimonio (ranking)
+
   // ── Store compartido: una sola suscripción a cuotas + mis apuestas + mi saldo ──
   const store = { odds: {}, bets: {}, saldo: null, watch: [], notif: false, ready: false, listeners: new Set() };
   function emit() { store.listeners.forEach((fn) => { try { fn(); } catch (e) {} }); }

@@ -165,9 +165,12 @@ function Perfil() {
   const SAL = 90000;
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
   const ms = (t) => (t && typeof t.toMillis === 'function') ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
-  const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  // Patrimonio (disponible + en juego) para el ranking. Ver window.MB_worth en mb-bet.jsx.
+  const saldoOf = (u) => window.MB_worth ? window.MB_worth(u) : ((u && typeof u.saldo === 'number') ? u.saldo : SAL);
   const meRec = users.find(u => u.uid === authUser.uid) || null;
   const saldo = meRec ? saldoOf(meRec) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
+  const avail = meRec ? (window.MB_avail ? window.MB_avail(meRec) : meRec.saldo) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
+  const enJuego = meRec ? (window.MB_staked ? window.MB_staked(meRec) : 0) : 0;
   const dispName = authUser.displayName || (meRec && meRec.nombre) || 'Jugador';
   const teamName = (meRec && meRec.groupName) ? '👥 ' + meRec.groupName : ((meRec && meRec.noGroup) ? '🙋 Individual' : 'Sin equipo');
   const ini = (() => { const p = String(dispName).trim().split(/\s+/); return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase(); })();
@@ -201,9 +204,9 @@ function Perfil() {
         {window.MB_NotifButton && <div style={{ marginTop: 10, maxWidth: 280, marginLeft: 'auto', marginRight: 'auto' }}>{React.createElement(window.MB_NotifButton)}</div>}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: enJuego > 0 ? 8 : 18 }}>
         {[
-          ['Saldo', fmt(saldo), 'var(--gold-light)'],
+          ['Puntos', fmt(saldo), 'var(--gold-light)'],
           ['Posición', pos ? '#' + pos : '—', 'var(--info)'],
           ['Apuestas', String(bets.length), 'var(--text)'],
           ['Aciertos', settled.length ? aciertos + '%' : '—', 'var(--success)'],
@@ -214,6 +217,13 @@ function Perfil() {
           </Card>
         ))}
       </div>
+      {enJuego > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 18, padding: '8px 12px', borderRadius: 'var(--r-md)', background: 'var(--surface-1)', border: '1px solid var(--border)', fontSize: 'var(--t-2xs)' }}>
+          <span style={{ color: 'var(--muted)' }}>💰 Disponible <span className="num" style={{ color: 'var(--text)', fontWeight: 800 }}>{fmt(avail)}</span></span>
+          <span style={{ color: 'var(--muted-2)' }}>·</span>
+          <span style={{ color: 'var(--muted)' }}>🎟️ En juego <span className="num" style={{ color: 'var(--info)', fontWeight: 800 }}>{fmt(enJuego)}</span></span>
+        </div>
+      )}
 
       {window.MB_openFiguritas && (() => {
         const r = window.MB_figuritasResumen ? window.MB_figuritasResumen() : { tengo: 0, total: 0, pct: 0 };

@@ -561,10 +561,11 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
   }, [authUser]);
   const SAL = 90000;
   const fmtN = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
-  const saldoOfU = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  const saldoOfU = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL; // disponible (billetera)
+  const worthOf = (u) => window.MB_worth ? window.MB_worth(u) : saldoOfU(u);  // patrimonio (ranking)
   const meRec = authUser ? hdrUsers.find(u => u.uid === authUser.uid) : null;
   const myPts = meRec ? saldoOfU(meRec) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
-  const myPos = meRec ? (hdrUsers.slice().sort((a, b) => saldoOfU(b) - saldoOfU(a)).findIndex(u => u.uid === authUser.uid) + 1) : 0;
+  const myPos = meRec ? (hdrUsers.slice().sort((a, b) => worthOf(b) - worthOf(a)).findIndex(u => u.uid === authUser.uid) + 1) : 0;
   const myBets = (store && authUser) ? Object.keys(store.bets).map(k => store.bets[k]) : [];
   const mySettled = myBets.filter(b => b.status === 'won' || b.status === 'lost');
   const myAcc = mySettled.length ? Math.round((mySettled.filter(b => b.status === 'won').length / mySettled.length) * 100) : 0;
@@ -935,9 +936,12 @@ function PerfilWeb() {
   const SAL = 90000;
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
   const ms = (t) => (t && typeof t.toMillis === 'function') ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
-  const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  // Patrimonio (disponible + en juego) para ranking/posición. Ver window.MB_worth en mb-bet.jsx.
+  const saldoOf = (u) => window.MB_worth ? window.MB_worth(u) : ((u && typeof u.saldo === 'number') ? u.saldo : SAL);
   const meRec = users.find(u => u.uid === authUser.uid) || null;
   const saldo = meRec ? saldoOf(meRec) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
+  const avail = meRec ? (window.MB_avail ? window.MB_avail(meRec) : meRec.saldo) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
+  const enJuego = meRec ? (window.MB_staked ? window.MB_staked(meRec) : 0) : 0;
   const dispName = authUser.displayName || (meRec && meRec.nombre) || 'Jugador';
   const teamName = (meRec && meRec.groupName) ? '👥 ' + meRec.groupName : ((meRec && meRec.noGroup) ? '🙋 Individual' : 'Sin equipo');
   const ini = (() => { const p = String(dispName).trim().split(/\s+/); return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase(); })();
@@ -976,12 +980,19 @@ function PerfilWeb() {
           {window.MB_NotifButton && <div style={{ marginTop: 10 }}>{React.createElement(window.MB_NotifButton)}</div>}
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
             <MetricW label="Posición" value={pos ? '#' + pos : '—'} tone="var(--info)" icon="📊" />
-            <MetricW label="Saldo" value={fmt(saldo)} tone="var(--gold-light)" icon="🏆" />
+            <MetricW label="Puntos" value={fmt(saldo)} tone="var(--gold-light)" icon="🏆" />
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
             <MetricW label="Apuestas" value={bets.length} tone="var(--text)" icon="🎟️" />
             <MetricW label="Aciertos" value={settled.length ? aciertos + '%' : '—'} tone="var(--success)" icon="🎯" />
           </div>
+          {enJuego > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 12, padding: '8px 12px', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', border: '1px solid var(--border)', fontSize: 'var(--t-2xs)' }}>
+              <span style={{ color: 'var(--muted)' }}>💰 Disponible <span className="num" style={{ color: 'var(--text)', fontWeight: 800 }}>{fmt(avail)}</span></span>
+              <span style={{ color: 'var(--muted-2)' }}>·</span>
+              <span style={{ color: 'var(--muted)' }}>🎟️ En juego <span className="num" style={{ color: 'var(--info)', fontWeight: 800 }}>{fmt(enJuego)}</span></span>
+            </div>
+          )}
         </Card>
       </div>
 

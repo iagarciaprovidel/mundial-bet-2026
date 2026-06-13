@@ -11,7 +11,8 @@
   const { useState, useEffect } = React;
   const FB = () => window.MBFirebase || {};
   const SAL = 90000;
-  const saldoOf = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL;
+  // Patrimonio (disponible + en juego). Ver window.MB_worth en mb-bet.jsx.
+  const saldoOf = (u) => window.MB_worth ? window.MB_worth(u) : ((u && typeof u.saldo === 'number') ? u.saldo : SAL);
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
   function initials(name) {
     const p = String(name || '').trim().split(/\s+/);
@@ -85,12 +86,13 @@
                   </div>
                   {members.map((m, i) => {
                     const saldo = saldoOf(m), gan = saldo - SAL, mine = m.uid === meUid;
+                    const enJuego = window.MB_staked ? window.MB_staked(m) : 0;
                     return (
                       <div key={m.uid || i} style={{ display: 'grid', gridTemplateColumns: '34px 1fr 84px', gap: 10, alignItems: 'center', padding: '10px 2px', borderBottom: i < members.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', background: mine ? 'rgba(212,175,55,0.10)' : 'transparent', borderRadius: 'var(--r-sm)' }}>
                         {window.MB_champAvatar ? window.MB_champAvatar(m.championCode, m.champion, m.nombre, 32) : <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(m.nombre)}</span>}
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(m.championCode, m.champion)}{mine && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
-                          <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>📅 Ingresó {fmtDate(m.creado)}</div>
+                          <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>📅 Ingresó {fmtDate(m.creado)}{enJuego > 0 ? ' · 🎟️ ' + fmt(enJuego) + ' en juego' : ''}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div className="num" style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>{fmt(saldo)}</div>
