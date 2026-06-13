@@ -429,19 +429,24 @@
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {live.map(({ m, o }) => (
-            <div key={m.id} onClick={go} className="mb-press" title="Ver el partido" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.10)', border: '1px solid rgba(220,80,80,0.28)', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
-                <img src={'https://flagcdn.com/h40/' + m.homeCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
+            <div key={m.id} onClick={go} className="mb-press" title="Ver el partido" style={{ padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.10)', border: '1px solid rgba(220,80,80,0.28)', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                  <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
+                  <img src={'https://flagcdn.com/h40/' + m.homeCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
+                </div>
+                <div style={{ textAlign: 'center', flexShrink: 0, minWidth: 52 }}>
+                  <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{o.gh != null ? o.gh : 0} <span style={{ color: 'var(--muted-2)' }}>-</span> {o.ga != null ? o.ga : 0}</div>
+                  <div style={{ fontSize: 8.5, color: '#ff6b6b', fontWeight: 800, marginTop: 2, whiteSpace: 'nowrap' }}>🔴 {minTxt(o)}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                  <img src={'https://flagcdn.com/h40/' + m.awayCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
+                  <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.away}</span>
+                </div>
               </div>
-              <div style={{ textAlign: 'center', flexShrink: 0, minWidth: 52 }}>
-                <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{o.gh != null ? o.gh : 0} <span style={{ color: 'var(--muted-2)' }}>-</span> {o.ga != null ? o.ga : 0}</div>
-                <div style={{ fontSize: 8.5, color: '#ff6b6b', fontWeight: 800, marginTop: 2, whiteSpace: 'nowrap' }}>🔴 {minTxt(o)}</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-                <img src={'https://flagcdn.com/h40/' + m.awayCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
-                <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.away}</span>
-              </div>
+              {o.scorers && o.scorers.length ? (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(220,80,80,0.20)' }}>{scorersEl(o.scorers)}</div>
+              ) : null}
             </div>
           ))}
         </div>
