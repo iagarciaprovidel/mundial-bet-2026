@@ -117,6 +117,14 @@ function espnToFd(e) {
     const txt = (x.type && x.type.text) || '';
     return { side: side, name: ath ? (ath.displayName || ath.shortName || '') : '', minute: (x.clock && x.clock.displayValue) || '', og: /own/i.test(txt), pen: /penal/i.test(txt) };
   }).filter((g) => g.side && g.name);
+  // Tarjetas (amarillas/rojas), si ESPN las incluye en el scoreboard.
+  const cards = ((c.details || []).filter((x) => { const t = (x.type && x.type.text) || ''; return /card|tarjeta/i.test(t); })).map((x) => {
+    const tid = x.team && x.team.id;
+    const side = (tid && tid === hid) ? 'home' : (tid && tid === aid) ? 'away' : null;
+    const ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
+    const t = (x.type && x.type.text) || '';
+    return { side: side, name: ath ? (ath.displayName || ath.shortName || '') : '', minute: (x.clock && x.clock.displayValue) || '', red: /red|roja|second yellow|segunda amarilla/i.test(t) };
+  }).filter((g) => g.side && g.name);
   return {
     status: status,
     minute: (e.status && (e.status.displayClock || e.status.period)) || null,
@@ -124,6 +132,7 @@ function espnToFd(e) {
     homeTeam: { name: (home.team && (home.team.displayName || home.team.name)) || '' },
     awayTeam: { name: (away.team && (away.team.displayName || away.team.name)) || '' },
     goals: goals,
+    cards: cards,
   };
 }
 async function espnMatches() {
@@ -372,6 +381,11 @@ async function main() {
       const playerSide = og ? (goalSide === 'home' ? 'away' : 'home') : goalSide;       // de qué equipo es el jugador
       return { code: playerSide === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, og: og, pen: !!g.pen };
     });
+    // Tarjetas en nuestra orientación: code = bandera del equipo del jugador.
+    const cards = (m.cards || []).map((g) => {
+      const side = mm.sameOrient ? g.side : (g.side === 'home' ? 'away' : 'home');
+      return { code: side === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, red: !!g.red };
+    });
     if (scorers.length) console.log(`  Goles ${mm.our.id}: ` + scorers.map((s) => `${s.code} ${s.name} ${s.minute}`).join(', '));
 
     if (isLive) {
@@ -381,7 +395,7 @@ async function main() {
       // Marcador casi en vivo (se refresca en cada corrida del agente).
       await db.collection('odds').doc(mm.our.id).set({
         live: true, gh: ghOur, ga: gaOur, minute: (m.minute != null ? m.minute : null),
-        scorers: scorers, liveAt: admin.firestore.FieldValue.serverTimestamp(), notifiedScore: scoreKey,
+        scorers: scorers, cards: cards, liveAt: admin.firestore.FieldValue.serverTimestamp(), notifiedScore: scoreKey,
       }, { merge: true });
       lives++;
       // Avisa GOL a los seguidores cuando cambia el marcador (y hay al menos un gol).
@@ -403,7 +417,7 @@ async function main() {
     const wasFinished = odoc.exists && odoc.data().finished;
     // Siempre refresca resultado + goleadores (aunque ya estuviera marcado finished).
     await db.collection('odds').doc(mm.our.id).set(Object.assign(
-      { finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: scorers },
+      { finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: scorers, cards: cards },
       wasFinished ? {} : { finishedAt: admin.firestore.FieldValue.serverTimestamp() }
     ), { merge: true });
     if (!wasFinished) results++;

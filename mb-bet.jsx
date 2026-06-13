@@ -127,6 +127,24 @@
     );
   };
 
+  // Lista de tarjetas amarillas/rojas (rectángulo de color + bandera + nombre + minuto).
+  // odds.cards viene del agente (ESPN), si el feed las incluye.
+  const cardsEl = (list) => {
+    if (!list || !list.length) return null;
+    return (
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {list.map((c, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-2xs)' }}>
+            <span style={{ width: 9, height: 12, borderRadius: 1.5, background: c.red ? '#e5484d' : '#f2c94c', flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.4)' }} />
+            {c.code && <img src={'https://flagcdn.com/h20/' + c.code + '.png'} alt="" style={{ height: 11, width: 'auto', borderRadius: 1, flexShrink: 0 }} />}
+            <span style={{ color: 'var(--text)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}{c.red ? ' 🟥' : ''}</span>
+            <span className="num" style={{ color: 'var(--muted-2)', marginLeft: 'auto', flexShrink: 0 }}>{c.minute}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // ── Caja de apuesta (1·X·2) ──
   function BetBox({ m, compact }) {
     const s = useBetStore();
@@ -158,6 +176,7 @@
             <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
           </div>
           {scorersEl(odds.scorers)}
+          {cardsEl(odds.cards)}
           {settledBet && (
             <div style={{ marginTop: 6, padding: '7px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (won ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: won ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: won ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}</span>
@@ -182,6 +201,7 @@
             <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
           </div>
           {scorersEl(odds.scorers)}
+          {cardsEl(odds.cards)}
           {bet && bet.status === 'open' && (
             <div style={{ marginTop: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}</div>
           )}
@@ -423,6 +443,7 @@
     const live = fx.map((m) => ({ m: m, o: s.odds[m.id] })).filter((x) => x.o && x.o.live && !x.o.finished);
     if (!live.length) return null;
     const go = () => { if (window.__mbNav) window.__mbNav('partidos'); };
+    const openTeam = (e, name) => { if (e) e.stopPropagation(); if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
     const minTxt = (o) => o.minute == null ? 'EN VIVO' : (typeof o.minute === 'number' ? o.minute + "'" : String(o.minute));
     return (
       <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(220,80,80,0.5)', borderRadius: 'var(--r-lg)', padding: '13px 16px', boxShadow: 'var(--sh-1)' }}>
@@ -435,7 +456,7 @@
           {live.map(({ m, o }) => (
             <div key={m.id} onClick={go} className="mb-press" title="Ver el partido" style={{ padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.10)', border: '1px solid rgba(220,80,80,0.28)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                <div onClick={(e) => openTeam(e, m.home)} title={'Ver ' + m.home} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
                   <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
                   <img src={'https://flagcdn.com/h40/' + m.homeCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
                 </div>
@@ -443,13 +464,16 @@
                   <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{o.gh != null ? o.gh : 0} <span style={{ color: 'var(--muted-2)' }}>-</span> {o.ga != null ? o.ga : 0}</div>
                   <div style={{ fontSize: 8.5, color: '#ff6b6b', fontWeight: 800, marginTop: 2, whiteSpace: 'nowrap' }}>🔴 {minTxt(o)}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                <div onClick={(e) => openTeam(e, m.away)} title={'Ver ' + m.away} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
                   <img src={'https://flagcdn.com/h40/' + m.awayCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
                   <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.away}</span>
                 </div>
               </div>
-              {o.scorers && o.scorers.length ? (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(220,80,80,0.20)' }}>{scorersEl(o.scorers)}</div>
+              {((o.scorers && o.scorers.length) || (o.cards && o.cards.length)) ? (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(220,80,80,0.20)' }}>
+                  {scorersEl(o.scorers)}
+                  {cardsEl(o.cards)}
+                </div>
               ) : null}
             </div>
           ))}
