@@ -189,6 +189,8 @@ function Dashboard({ user, onNav, onPredict }) {
 
   return (
     <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 18, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+      {/* Hero de bienvenida (solo visitantes sin sesión) */}
+      {!authUser && window.MB_WelcomeHero ? React.createElement(window.MB_WelcomeHero) : null}
       {/* saludo */}
       <div>
         <h1 className="display" style={{ fontSize: 'var(--t-2xl)', margin: '4px 0 2px', color: 'var(--text)' }}>

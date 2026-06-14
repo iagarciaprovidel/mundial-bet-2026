@@ -572,6 +572,8 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.65fr) minmax(0,1fr)', gap: 20, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Hero de bienvenida (solo visitantes sin sesión) */}
+        {!authUser && window.MB_WelcomeHero ? React.createElement(window.MB_WelcomeHero) : null}
         <div>
           <h2 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '0 0 2px' }}>
             {greetName ? <>{saludo} {greetName}!</> : <>¡Hola! 👋</>} <span style={{ fontSize: 26 }}>{Mw[me.mascot].emoji}</span>{greetName && window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 18)}

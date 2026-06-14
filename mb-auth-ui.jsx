@@ -60,6 +60,18 @@
             <button onClick={onClose} className="mb-press" style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 14 }}>✕</button>
           </div>
 
+          {!sent && (
+            <div style={{ marginBottom: 16, padding: '13px 15px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg, rgba(212,175,55,0.20), rgba(201,155,31,0.07))', border: '1px solid var(--gold)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 5 }}>
+                <span style={{ fontSize: 24 }}>🎁</span>
+                <span className="num" style={{ fontSize: 'var(--t-xl)', fontWeight: 800, color: 'var(--gold-light)' }}>90.000 puntos GRATIS</span>
+              </div>
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', lineHeight: 1.45 }}>
+                Te los regalamos al entrar, para apostar a los partidos del Mundial 2026 y competir con tus amigos. <strong style={{ color: 'var(--gold-light)' }}>Son puntos virtuales, sin dinero real.</strong>
+              </div>
+            </div>
+          )}
+
           {sent ? (
             <div style={{ textAlign: 'center', padding: '6px 0' }}>
               <div style={{ fontSize: 30, marginBottom: 6 }}>📧</div>
@@ -152,5 +164,34 @@
     return <div style={{ textAlign: 'center', padding: '22px 16px' }}>{inner}</div>;
   }
 
-  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton, MB_SignInNote: SignInNote });
+  // Hero de bienvenida para VISITANTES no logueados: vende el regalo de 90.000
+  // y los invita a entrar. Devuelve null si ya hay sesión (no estorba).
+  function WelcomeHero() {
+    const user = useAuth();
+    const [open, setOpen] = useState(false);
+    if (user) return null;
+    return (
+      <div style={{ background: 'linear-gradient(135deg, rgba(13,20,15,0.96), rgba(22,30,18,0.96))', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-2)', padding: '20px 18px', textAlign: 'center' }}>
+        <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>🏆 MundialBet Club · Mundial 2026</div>
+        <h2 className="display" style={{ margin: '0 0 12px', fontSize: 'var(--t-2xl)', color: 'var(--text)' }}>Apostá con tus amigos. Gratis.</h2>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 11, padding: '10px 18px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', marginBottom: 13 }}>
+          <span style={{ fontSize: 28 }}>🎁</span>
+          <div style={{ textAlign: 'left' }}>
+            <div className="num" style={{ fontSize: 'var(--t-2xl)', fontWeight: 800, color: 'var(--gold-light)', lineHeight: 1 }}>90.000</div>
+            <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>puntos gratis al entrar</div>
+          </div>
+        </div>
+        <p style={{ margin: '0 auto 16px', maxWidth: 440, fontSize: 'var(--t-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
+          Apostá al ganador de cada partido del Mundial 2026, pronosticá al campeón y subí en el ranking con tu familia y amigos. <strong style={{ color: 'var(--text)' }}>Son puntos virtuales, sin dinero real.</strong>
+        </p>
+        <button onClick={() => setOpen(true)} className="mb-press" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 26px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-md)', boxShadow: 'var(--glow-gold)' }}>
+          🚀 Entrar y reclamar mis 90.000
+        </button>
+        <div style={{ marginTop: 10, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Con tu correo o Google · sin contraseña · toma 20 segundos</div>
+        {open && <LoginModal onClose={() => setOpen(false)} />}
+      </div>
+    );
+  }
+
+  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton, MB_SignInNote: SignInNote, MB_WelcomeHero: WelcomeHero });
 })();
