@@ -43,6 +43,7 @@
     const [email, setEmail] = useState('');
     const [sent, setSent] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [safe, setSafe] = useState(false); // desplegable "¿Es seguro?"
     const send = () => {
       const v = email.trim();
       if (!v || v.indexOf('@') === -1) { alert('Escribe un correo válido.'); return; }
@@ -101,6 +102,42 @@
               <button onClick={signInGoogle} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', cursor: 'pointer', background: '#fff', color: '#1f2328', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
                 <GoogleIcon /> Continuar con Google
               </button>
+            </div>
+          )}
+
+          {!sent && (
+            <div style={{ marginTop: 14 }}>
+              {/* Nota de privacidad */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.45 }}>
+                <span style={{ flexShrink: 0 }}>🔒</span>
+                <span>Solo usamos tu correo para guardar tu progreso. <strong style={{ color: 'var(--muted)' }}>Sin contraseña, sin spam, y no compartimos tus datos.</strong></span>
+              </div>
+              {/* Sello de confianza */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px 12px', marginTop: 9, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700 }}>
+                <span>✅ 100% gratis</span>
+                <span>✅ Sin dinero real</span>
+                <span>✅ Entre amigos</span>
+              </div>
+              {/* ¿Es seguro? desplegable */}
+              <button onClick={() => setSafe((v) => !v)} className="mb-press" style={{ marginTop: 11, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)' }}>
+                <span>🛡️ ¿Es seguro? ¿Tiene algún costo?</span>
+                <span style={{ color: 'var(--muted-2)', transform: safe ? 'rotate(0)' : 'rotate(-90deg)', transition: 'transform var(--dur-base)' }}>▾</span>
+              </button>
+              {safe && (
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 9, padding: '4px 2px', animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
+                  {[
+                    ['¿Cuesta algo?', 'No. Es 100% gratis y siempre lo será.'],
+                    ['¿Me van a cobrar o pedir tarjeta?', 'Nunca. No se usa dinero real: juegas con puntos virtuales.'],
+                    ['¿Qué hacen con mi correo?', 'Solo guardar tu progreso (saldo, apuestas, equipo). No lo compartimos ni te llega spam.'],
+                    ['¿Puedo borrar mi cuenta?', 'Sí, cuando quieras. Nos escribes y la eliminamos.'],
+                  ].map((q, i) => (
+                    <div key={i}>
+                      <div style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: 'var(--text)' }}>{q[0]}</div>
+                      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.4, marginTop: 1 }}>{q[1]}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -173,7 +210,7 @@
     return (
       <div style={{ background: 'linear-gradient(135deg, rgba(13,20,15,0.96), rgba(22,30,18,0.96))', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-2)', padding: '20px 18px', textAlign: 'center' }}>
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>🏆 MundialBet Club · Mundial 2026</div>
-        <h2 className="display" style={{ margin: '0 0 12px', fontSize: 'var(--t-2xl)', color: 'var(--text)' }}>Apostá con tus amigos. Gratis.</h2>
+        <h2 className="display" style={{ margin: '0 0 12px', fontSize: 'var(--t-2xl)', color: 'var(--text)' }}>Apuesta con tus amigos. Gratis.</h2>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 11, padding: '10px 18px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', marginBottom: 13 }}>
           <span style={{ fontSize: 28 }}>🎁</span>
           <div style={{ textAlign: 'left' }}>
@@ -182,12 +219,17 @@
           </div>
         </div>
         <p style={{ margin: '0 auto 16px', maxWidth: 440, fontSize: 'var(--t-sm)', color: 'var(--muted)', lineHeight: 1.5 }}>
-          Apostá al ganador de cada partido del Mundial 2026, pronosticá al campeón y subí en el ranking con tu familia y amigos. <strong style={{ color: 'var(--text)' }}>Son puntos virtuales, sin dinero real.</strong>
+          Apuesta al ganador de cada partido del Mundial 2026, pronostica al campeón y sube en el ranking con tu familia y amigos. <strong style={{ color: 'var(--text)' }}>Son puntos virtuales, sin dinero real.</strong>
         </p>
         <button onClick={() => setOpen(true)} className="mb-press" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 26px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-md)', boxShadow: 'var(--glow-gold)' }}>
           🚀 Entrar y reclamar mis 90.000
         </button>
-        <div style={{ marginTop: 10, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Con tu correo o Google · sin contraseña · toma 20 segundos</div>
+        <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '4px 14px', fontSize: 'var(--t-3xs)', color: 'var(--muted)', fontWeight: 700 }}>
+          <span>✅ 100% gratis</span>
+          <span>✅ Sin tarjeta ni dinero real</span>
+          <span>✅ Solo para jugar entre amigos</span>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Con tu correo o Google · sin contraseña · toma 20 segundos</div>
         {open && <LoginModal onClose={() => setOpen(false)} />}
       </div>
     );

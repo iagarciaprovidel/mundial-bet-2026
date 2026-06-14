@@ -276,7 +276,7 @@ async function matchAlerts() {
     // Aviso a los que APOSTARON en este partido (aunque no lo sigan con la campanita).
     if (!nt.betSoon && minToKo > 0 && minToKo <= SOON_MIN) {
       const mins = Math.max(1, Math.round(minToKo));
-      const c = await notifyOpenBettors(o.id, '⏰ Tu apuesta empieza pronto', `${o.home} vs ${o.away} arranca en ~${mins} min. Aún podés cambiarla o cancelarla.`);
+      const c = await notifyOpenBettors(o.id, '⏰ Tu apuesta empieza pronto', `${o.home} vs ${o.away} comienza en ~${mins} min. Aún puedes cambiarla o cancelarla.`);
       nt.betSoon = true; await ref.set({ notified: nt }, { merge: true });
       if (c) { sent += c; console.log(`  AVISO apuesta-pronto ${o.id} → ${c} apostador(es)`); }
     }

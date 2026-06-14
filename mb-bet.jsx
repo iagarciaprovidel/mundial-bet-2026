@@ -518,7 +518,7 @@
       const P = [
         '🔥 ¡' + live.home + ' vs ' + live.away + ' EN VIVO! A morderse las uñas',
         '📣 Rueda la pelota: ' + live.home + ' ' + sc + ' ' + live.away,
-        '🍿 Pausá todo, se juega ' + live.home + ' vs ' + live.away,
+        '🍿 Pausa todo, se juega ' + live.home + ' vs ' + live.away,
         '⚽ ' + live.home + ' vs ' + live.away + ' en cancha… ¿quién la rompe?',
         '😱 ' + live.home + ' ' + sc + ' ' + live.away + ' ¡y todavía falta!',
       ];
@@ -529,7 +529,7 @@
       const hrs = (new Date(next.kickoff).getTime() - now) / 3600000;
       const soon = hrs <= 14;
       const Psoon = [
-        '🍿 Hoy juega ' + next.home + ' vs ' + next.away + ', prepará los nervios',
+        '🍿 Hoy juega ' + next.home + ' vs ' + next.away + ', prepara los nervios',
         '⏳ Se viene ' + next.home + ' vs ' + next.away + '… ¿ya hiciste tu apuesta?',
         '🎯 ' + next.home + ' vs ' + next.away + ' a la vuelta de la esquina',
         '👀 Ojo que se acerca ' + next.home + ' vs ' + next.away,
@@ -537,7 +537,7 @@
       const Pfar = [
         '⚽ Lo próximo en el radar: ' + next.home + ' vs ' + next.away,
         '🔮 Calentando motores para ' + next.home + ' vs ' + next.away,
-        '🧠 Andá pensando tu apuesta para ' + next.home + ' vs ' + next.away,
+        '🧠 Ve pensando tu apuesta para ' + next.home + ' vs ' + next.away,
       ];
       return pick(soon ? Psoon : Pfar, hash(next.id));
     }
@@ -670,7 +670,7 @@
           : closed
             ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '8px 0' }}>El pronóstico del campeón ya cerró.</div>
             : <button onClick={() => setOpen(true)} className="mb-press" style={{ width: '100%', padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>🏆 Elegir mi campeón</button>}
-        <div style={{ marginTop: 8, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{closed ? 'El pronóstico del campeón está cerrado.' : 'Gratis · podés elegir o cambiar hasta que termine la fase de grupos.'} Si aciertas, ganas +{fmt(CHAMPION_BONUS)} puntos al final.</div>
+        <div style={{ marginTop: 8, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{closed ? 'El pronóstico del campeón está cerrado.' : 'Gratis · puedes elegir o cambiar hasta que termine la fase de grupos.'} Si aciertas, ganas +{fmt(CHAMPION_BONUS)} puntos al final.</div>
         {modalEl}
       </div>
     );

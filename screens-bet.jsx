@@ -206,9 +206,9 @@ function BetHowTo() {
   const [open, setOpen] = useStateB(() => { try { return localStorage.getItem(KEY) !== '1'; } catch (e) { return true; } });
   const toggle = () => setOpen((o) => { const n = !o; try { localStorage.setItem(KEY, n ? '0' : '1'); } catch (e) {} return n; });
   const steps = [
-    { ic: '🎯', t: 'Elegí quién gana', d: 'Tocá el equipo —o Empate— que crees que ganará. La cuota (ej. x2.40) es cuánto multiplica tu apuesta.' },
-    { ic: '💰', t: 'Elegí cuánto apostar', d: 'Apostás puntos virtuales (mínimo 1.000). Arrancás con 90.000 gratis.' },
-    { ic: '🏆', t: 'Si aciertas, ganás', d: 'Tu apuesta × la cuota vuelve a tu saldo. Si fallás, perdés lo apostado.' },
+    { ic: '🎯', t: 'Elige quién gana', d: 'Toca el equipo —o Empate— que crees que ganará. La cuota (ej. x2.40) es cuánto multiplica tu apuesta.' },
+    { ic: '💰', t: 'Elige cuánto apostar', d: 'Apuestas puntos virtuales (mínimo 1.000). Empiezas con 90.000 gratis.' },
+    { ic: '🏆', t: 'Si aciertas, ganas', d: 'Tu apuesta × la cuota vuelve a tu saldo. Si fallas, pierdes lo apostado.' },
   ];
   return (
     <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', marginBottom: 16, overflow: 'hidden' }}>
@@ -235,7 +235,7 @@ function BetHowTo() {
             ))}
           </div>
           <div style={{ marginTop: 11, padding: '8px 11px', borderRadius: 'var(--r-md)', background: 'var(--info-bg)', border: '1px solid rgba(74,144,226,0.3)', fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.4 }}>
-            🔒 Son <strong style={{ color: 'var(--text)' }}>puntos virtuales</strong>, no dinero real. Apostás por diversión y para competir en el ranking con tus amigos.
+            🔒 Son <strong style={{ color: 'var(--text)' }}>puntos virtuales</strong>, no dinero real. Juegas por diversión y compites en el ranking con tus amigos.
           </div>
         </div>
       )}
