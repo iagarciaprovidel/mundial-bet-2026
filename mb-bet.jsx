@@ -581,6 +581,12 @@
 
   // ── Pronóstico del campeón del Mundial (gratis, cierra al primer partido) ──
   const CHAMPION_BONUS = 30000;
+  // Premio progresivo del campeón: ganas a medida que tu selección avanza (acumulativo).
+  const CHAMP_LADDER = [
+    ['Pasa de fase', 5000], ['Octavos', 7000], ['Cuartos', 10000],
+    ['Semifinal', 15000], ['Final', 20000], ['🏆 Campeón', CHAMPION_BONUS],
+  ];
+  const CHAMP_TOTAL = CHAMP_LADDER.reduce((s, x) => s + x[1], 0); // 87.000
   function ChampionPick(props) {
     const compact = !!(props && props.compact); // modo compacto: una línea, sin tarjeta propia
     const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
@@ -618,6 +624,19 @@
             <h2 className="display" style={{ margin: 0, flex: 1, fontSize: 'var(--t-xl)' }}>Elige al campeón</h2>
             <button onClick={() => setOpen(false)} className="mb-press" style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15 }}>✕</button>
           </div>
+          {/* Escalera de premios: motiva a elegir mostrando que ganas a medida que avanza */}
+          <div style={{ marginBottom: 14, padding: '11px 13px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg, rgba(212,175,55,0.16), rgba(201,155,31,0.05))', border: '1px solid var(--gold)' }}>
+            <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700, marginBottom: 8 }}>Ganas a medida que tu selección avanza:</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 10px' }}>
+              {CHAMP_LADDER.map((x, i) => (
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--t-3xs)' }}>
+                  <span style={{ color: 'var(--muted)' }}>{x[0]}</span>
+                  <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(x[1])}</span>
+                </span>
+              ))}
+            </div>
+            <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 8 }}>Hasta <strong style={{ color: 'var(--gold-light)' }}>+{fmt(CHAMP_TOTAL)}</strong> si tu selección sale campeona. Gratis · sin riesgo para tu saldo.</div>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: 8 }}>
             {TEAMS.map((t) => {
               const active = t.name === pick;
@@ -646,7 +665,7 @@
           ) : closed ? (
             <span style={{ flex: 1, fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>El pronóstico del campeón cerró.</span>
           ) : (
-            <button onClick={() => setOpen(true)} className="mb-press" style={{ flex: 1, padding: '7px 10px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>🏆 Elegir mi campeón (+{fmt(CHAMPION_BONUS)})</button>
+            <button onClick={() => setOpen(true)} className="mb-press" style={{ flex: 1, padding: '7px 10px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>🏆 Elegir mi campeón · gana hasta +{fmt(CHAMP_TOTAL)}</button>
           )}
           {modalEl}
         </div>
@@ -670,7 +689,7 @@
           : closed
             ? <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '8px 0' }}>El pronóstico del campeón ya cerró.</div>
             : <button onClick={() => setOpen(true)} className="mb-press" style={{ width: '100%', padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>🏆 Elegir mi campeón</button>}
-        <div style={{ marginTop: 8, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{closed ? 'El pronóstico del campeón está cerrado.' : 'Gratis · puedes elegir o cambiar hasta que termine la fase de grupos.'} Si aciertas, ganas +{fmt(CHAMPION_BONUS)} puntos al final.</div>
+        <div style={{ marginTop: 8, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{closed ? 'El pronóstico del campeón está cerrado.' : 'Gratis · puedes elegir o cambiar hasta que termine la fase de grupos.'} Ganas premios a medida que tu selección avanza, hasta +{fmt(CHAMP_TOTAL)} si es campeona.</div>
         {modalEl}
       </div>
     );
