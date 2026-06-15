@@ -627,6 +627,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
         ) : (
           window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
         )}
+        {window.MB_TeamCTA && React.createElement(window.MB_TeamCTA)}
         {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
         <Card title="Apostadores" action="Ver ranking" onAction={() => onNav('ranking')} style={{ padding: '14px 16px' }}>
           {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, { compact: true, limit: 6 }) : null}

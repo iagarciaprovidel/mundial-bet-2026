@@ -197,4 +197,52 @@
   }
 
   window.MB_GroupsHome = GroupsHome;
+
+  // ── CTA para crear/unirse a un equipo + invitar (impulsa la participación) ──
+  function TeamCTA() {
+    const user = window.MB_useAuth ? window.MB_useAuth() : null;
+    const [me, setMe] = useState(null);
+    useEffect(() => {
+      if (!user || !FB().subscribeMe) { setMe(null); return undefined; }
+      const un = FB().subscribeMe(setMe);
+      return () => { if (typeof un === 'function') un(); };
+    }, [user]);
+    if (!user) return null;
+    const team = me && me.groupName;
+    const url = (typeof location !== 'undefined') ? (location.origin + location.pathname) : '';
+    const share = () => {
+      const txt = team
+        ? '¡Únete a mi equipo "' + team + '" en MundialBet Club! Apostamos al Mundial 2026 con 90.000 puntos gratis. ' + url
+        : 'Te invito a MundialBet Club: apuesta al Mundial 2026 con 90.000 puntos gratis. ' + url;
+      if (navigator.share) { navigator.share({ title: 'MundialBet Club', text: txt }).catch(function () {}); }
+      else if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(function () { alert('¡Invitación copiada! Pégala en WhatsApp.'); }).catch(function () {}); }
+      else { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); }
+    };
+    const gold = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' };
+    const ghost = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 16px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', cursor: 'pointer', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' };
+    const wrap = { background: 'rgba(13,20,15,0.92)', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', padding: '14px 16px' };
+    if (team) {
+      return (
+        <div style={Object.assign({}, wrap, { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' })}>
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>👥 Juegas en {team}</div>
+            <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Invita a más amigos y suban juntos en el ranking de equipos.</div>
+          </div>
+          <button onClick={share} className="mb-press" style={gold}>🔗 Invitar amigos</button>
+        </div>
+      );
+    }
+    return (
+      <div style={Object.assign({}, wrap, { textAlign: 'center' })}>
+        <div style={{ fontSize: 24, marginBottom: 4 }}>🏆</div>
+        <div className="display" style={{ fontSize: 'var(--t-lg)', color: 'var(--text)', marginBottom: 4 }}>Compite en equipo</div>
+        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.45, marginBottom: 12, maxWidth: 380, marginLeft: 'auto', marginRight: 'auto' }}>Crea tu equipo (familia, amigos, trabajo) o únete a uno, y compitan juntos en el ranking. ¡Es más divertido en grupo!</div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button onClick={() => window.MB_openMyTeams && window.MB_openMyTeams()} className="mb-press" style={gold}>➕ Crear mi equipo</button>
+          <button onClick={() => window.MB_openTeamPicker && window.MB_openTeamPicker()} className="mb-press" style={ghost}>👥 Unirme a uno</button>
+        </div>
+      </div>
+    );
+  }
+  window.MB_TeamCTA = TeamCTA;
 })();

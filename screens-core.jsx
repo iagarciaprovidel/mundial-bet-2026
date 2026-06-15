@@ -253,6 +253,9 @@ function Dashboard({ user, onNav, onPredict }) {
         );
       })()}
 
+      {/* CTA crear/unirse a equipo (impulsa participación) */}
+      {window.MB_TeamCTA && React.createElement(window.MB_TeamCTA)}
+
       {/* Equipos de apostadores (abajo) */}
       {window.MB_GroupsHome && React.createElement(window.MB_GroupsHome)}
 
