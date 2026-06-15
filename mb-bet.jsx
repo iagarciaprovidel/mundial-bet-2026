@@ -160,6 +160,16 @@
     const [err, setErr] = useState('');
     const [ok, setOk] = useState('');
 
+    // Al elegir un resultado, pre-rellena un monto SUGERIDO (~25% de tu saldo,
+    // redondeado), si el monto actual era el mínimo por defecto o no alcanza.
+    useEffect(() => {
+      if (!sel) return;
+      const maxS = (typeof saldo === 'number' ? saldo : SALDO_INICIAL) + ((bet && bet.status === 'open') ? (bet.stake || 0) : 0);
+      if (maxS < MIN_BET) return;
+      const sugg = Math.min(Math.floor(maxS), Math.max(MIN_BET, Math.round((maxS * 0.25) / 1000) * 1000));
+      setStake((cur) => (cur === MIN_BET || cur > maxS) ? sugg : cur);
+    }, [sel]);
+
     if (!user) return null; // solo apostadores logueados ven la caja
 
     // Partido TERMINADO: muestra el marcador final (y el resultado de tu apuesta si jugaste).
@@ -300,7 +310,12 @@
           })}
         </div>
 
-        {sel && (
+        {sel && maxSaldo < MIN_BET && (
+          <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.10)', border: '1px solid rgba(220,80,80,0.4)', fontSize: 'var(--t-2xs)', color: '#e98b8b', fontWeight: 700, lineHeight: 1.4 }}>
+            Te quedan <span className="num">{fmt(Math.floor(maxSaldo))}</span> disponibles y el mínimo para apostar es <span className="num">{fmt(MIN_BET)}</span>. Espera a que se resuelvan tus apuestas en juego para recuperar saldo.
+          </div>
+        )}
+        {sel && maxSaldo >= MIN_BET && (
           <div style={{ marginTop: 10, animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>Monto a apostar</span>
@@ -312,12 +327,25 @@
                 <button onClick={() => setStake((a) => a + 1000)} className="mb-press" style={stepBtn}>+</button>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 5, marginBottom: 9 }}>
-              {[1000, 5000, 10000].map((v) => (
-                <button key={v} onClick={() => setStake(v)} className="mb-press" style={chipBtn(stake === v)}>{fmt(v)}</button>
-              ))}
-              <button onClick={() => setStake(Math.max(MIN_BET, Math.floor(maxSaldo)))} className="mb-press" style={chipBtn(false)}>Todo</button>
-            </div>
+            {(() => {
+              // Montos sugeridos adaptados a TU saldo disponible (10% / 25% / 50%),
+              // redondeados a 1.000, válidos (≥ mínimo y ≤ saldo). El ~25% va marcado 💡.
+              const affordable = Math.floor(maxSaldo);
+              const round1k = (v) => Math.round(v / 1000) * 1000;
+              const cands = affordable >= MIN_BET
+                ? Array.from(new Set([0.1, 0.25, 0.5].map((p) => Math.min(affordable, Math.max(MIN_BET, round1k(affordable * p)))))).filter((v) => v >= MIN_BET && v <= affordable).sort((a, b) => a - b)
+                : [];
+              const suggested = cands.length ? cands[Math.min(1, cands.length - 1)] : null;
+              if (!cands.length) return null;
+              return (
+                <div style={{ display: 'flex', gap: 5, marginBottom: 9, flexWrap: 'wrap' }}>
+                  {cands.map((v) => (
+                    <button key={v} onClick={() => setStake(v)} className="mb-press" title={v === suggested ? 'Te sugerimos este monto' : undefined} style={chipBtn(stake === v)}>{v === suggested ? '💡 ' : ''}{fmt(v)}</button>
+                  ))}
+                  <button onClick={() => setStake(affordable)} className="mb-press" style={chipBtn(stake === affordable)}>Todo</button>
+                </div>
+              );
+            })()}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 11px', background: 'var(--success-bg)', borderRadius: 'var(--r-md)', marginBottom: 9 }}>
               <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)' }}>Ganancia si aciertas</span>
               <span className="num" style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: 'var(--success)' }}>{fmt(win)}</span>
