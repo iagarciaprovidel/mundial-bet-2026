@@ -4,43 +4,83 @@ rules_version = '2';
 // MundialBet Club 2026 — Reglas de seguridad de Firestore
 // Estas reglas se aplican EN EL SERVIDOR: el cliente no decide.
 // Publícalas en: Firebase Console → Firestore Database → Rules.
+// (Fuente única; debe coincidir con FIREBASE-SETUP.md.)
 // ============================================================
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
 
-    // Perfiles: lectura para autenticados; cada quien edita el suyo
+    // ¿El usuario es admin de ESE equipo? (su correo está en adminEmails del grupo)
+    function isTeamAdmin(gid) {
+      return signedIn() &&
+        request.auth.token.email.lower() in
+        get(/databases/$(database)/documents/groups/$(gid)).data.adminEmails;
+    }
+
+    // Álbum de figuritas compartido: ¿soy miembro / dueño de ESE equipo?
+    function albumMember(gid) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.groupId == gid;
+    }
+
+    // Perfiles
     match /users/{uid} {
-      allow read: if signedIn();
-      allow create, update: if request.auth.uid == uid;
-      allow delete: if false;
+      allow read:   if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid;
+      // el dueño edita su perfil; un admin de un equipo puede asignar a alguien a ESE equipo (aprobar)
+      allow update: if signedIn() && (request.auth.uid == uid
+                      || (request.resource.data.groupId != null && isTeamAdmin(request.resource.data.groupId)));
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
 
-    // Partidos: lectura pública; escritura solo manual (consola / admin)
-    match /matches/{matchId} {
-      allow read: if true;
-      allow write: if false;
+    // Equipos: cualquiera crea uno (debe incluirse como admin); el admin del equipo lo edita/borra.
+    match /groups/{gid} {
+      allow read:   if signedIn();
+      allow create: if signedIn() && request.auth.token.email.lower() in request.resource.data.adminEmails;
+      allow update, delete: if isTeamAdmin(gid);
     }
 
-    // Predicciones (id = "<uid>_<matchId>")
-    match /predictions/{predId} {
-      // Por ahora lectura para autenticados. Para anonimato TOTAL hasta el
-      // kickoff conviene revelar vía Cloud Function; ver nota del chat.
-      allow read: if signedIn();
+    // Solicitudes de ingreso (equipos cerrados)
+    match /joinRequests/{rid} {
+      allow read:   if signedIn() && (resource.data.uid == request.auth.uid || isTeamAdmin(resource.data.groupId));
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isTeamAdmin(resource.data.groupId));
+    }
 
-      allow create, update: if signedIn()
-        && request.resource.data.uid == request.auth.uid
-        && predId == request.auth.uid + '_' + request.resource.data.matchId
-        && request.resource.data.golesLocal is int
-        && request.resource.data.golesVisita is int
-        && request.resource.data.golesLocal >= 0 && request.resource.data.golesLocal <= 20
-        && request.resource.data.golesVisita >= 0 && request.resource.data.golesVisita <= 20
-        // No se puede predecir/editar después del kickoff del partido
-        && exists(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
-        && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.kickoff > request.time;
+    // Cuotas por partido (las carga el agente). Lectura libre para apostar.
+    // TEMP: escritura abierta a logueados para pruebas; con el agente se restringe al service account.
+    match /odds/{mid} {
+      allow read:  if signedIn();
+      allow write: if signedIn();
+    }
 
-      allow delete: if false;
+    // Apuestas: cada quien crea/edita/borra las suyas. El agente liquida.
+    // (resource == null permite leer un doc que aún no existe: necesario para
+    //  la transacción de placeBet al apostar por primera vez en un partido.)
+    match /bets/{bid} {
+      allow read:           if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete:         if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Predicciones de marcador (quiniela)
+    match /predictions/{pid} {
+      allow read:  if signedIn();
+      allow write: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Álbum de figuritas COMPARTIDO por equipo (co-op). Aparte de las apuestas.
+    // Desbloqueado: cualquier integrante edita o pone candado.
+    // Bloqueado: nadie edita; SOLO quien lo puso (lockedBy) puede quitar el candado.
+    match /figuritasAlbums/{gid} {
+      allow read:   if albumMember(gid);
+      allow create: if albumMember(gid);
+      allow update: if albumMember(gid) && (
+                       resource.data.get('locked', false) == false
+                       || (resource.data.lockedBy == request.auth.uid
+                           && request.resource.data.get('locked', false) == false)
+                     );
     }
   }
 }
