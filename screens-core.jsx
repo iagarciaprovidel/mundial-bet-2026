@@ -234,7 +234,9 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* partidos del día: apostables; los terminados aparecen al final con el marcador */}
       {(() => {
         const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };
-        const list = day.list.length ? day.list : fallback;
+        // Excluye los que ya están EN VIVO arriba (no repetir el mismo partido).
+        const liveIds = new Set((window.MB_liveMatches ? window.MB_liveMatches(store ? store.odds : {}) : []).map(x => x.m.id));
+        const list = (day.list.length ? day.list : fallback).filter(m => !liveIds.has(m.id));
         if (!list.length) return null;
         return (
           <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 14px', boxShadow: 'var(--sh-1)' }}>
