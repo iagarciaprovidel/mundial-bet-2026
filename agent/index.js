@@ -319,21 +319,26 @@ async function settle(our, ourResult) {
   return n;
 }
 
-// ── Recalcula el monto apostado (suma de apuestas abiertas) de cada usuario ──
+// ── Recalcula el monto apostado (apuestas abiertas) y el total de apuestas
+//    (participación) de cada usuario. Escribe staked + betsCount. ──
 async function recomputeStaked() {
-  const bets = await db.collection('bets').where('status', '==', 'open').get();
-  const byUid = {};
-  bets.forEach(function (d) { const b = d.data(); byUid[b.uid] = (byUid[b.uid] || 0) + (b.stake || 0); });
-  const toUpdate = {};
-  Object.keys(byUid).forEach(function (uid) { toUpdate[uid] = byUid[uid]; });
-  // resetea a 0 los usuarios que tenían monto pero ya no tienen apuestas abiertas
+  const bets = await db.collection('bets').get(); // todas las apuestas
+  const stakeByUid = {}, countByUid = {};
+  bets.forEach(function (d) {
+    const b = d.data(); if (!b.uid) return;
+    countByUid[b.uid] = (countByUid[b.uid] || 0) + 1;                 // participación (todas)
+    if (b.status === 'open') stakeByUid[b.uid] = (stakeByUid[b.uid] || 0) + (b.stake || 0); // en juego (abiertas)
+  });
+  // Usuarios a tocar: los que tienen apuestas + los que tenían staked>0 (para resetear).
+  const uids = {};
+  Object.keys(countByUid).forEach(function (u) { uids[u] = true; });
   try {
     const withStaked = await db.collection('users').where('staked', '>', 0).get();
-    withStaked.forEach(function (d) { if (toUpdate[d.id] == null) toUpdate[d.id] = 0; });
+    withStaked.forEach(function (d) { uids[d.id] = true; });
   } catch (e) {}
   let n = 0;
-  for (const uid of Object.keys(toUpdate)) {
-    await db.collection('users').doc(uid).set({ staked: toUpdate[uid] }, { merge: true });
+  for (const uid of Object.keys(uids)) {
+    await db.collection('users').doc(uid).set({ staked: stakeByUid[uid] || 0, betsCount: countByUid[uid] || 0 }, { merge: true });
     n++;
   }
   return n;

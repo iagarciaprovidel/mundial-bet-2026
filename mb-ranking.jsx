@@ -33,6 +33,7 @@
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
     const [users, setUsers] = useState(undefined);
+    const [sortBy, setSortBy] = useState('puntos'); // 'puntos' | 'activos' (participación)
     useEffect(() => {
       if (!user) { setUsers([]); return; }
       const unsub = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
@@ -44,14 +45,33 @@
     if (users === undefined) return note('Cargando…');
     if (!users.length) return note('Aún no hay jugadores registrados. ¡Sé el primero!');
 
-    const list = users.slice().sort((a, b) => saldoOf(b) - saldoOf(a) || tsMillis(a.creado) - tsMillis(b.creado));
-    const shown = limit ? list.slice(0, limit) : list;
-    // Mi monto apostado calculado al instante desde mis apuestas abiertas.
+    // Mi monto apostado y mi nº de apuestas, al instante desde el store.
     const myStaked = (store && store.bets) ? Object.keys(store.bets).reduce((s, k) => { const b = store.bets[k]; return s + (b && b.status === 'open' ? (b.stake || 0) : 0); }, 0) : 0;
+    const myCount = (store && store.bets) ? Object.keys(store.bets).length : 0;
+    const countOf = (u) => (u && u.uid === user.uid) ? myCount : ((u && typeof u.betsCount === 'number') ? u.betsCount : 0);
+    const byActivos = sortBy === 'activos';
+    const list = users.slice().sort((a, b) => byActivos
+      ? (countOf(b) - countOf(a)) || (saldoOf(b) - saldoOf(a))
+      : (saldoOf(b) - saldoOf(a)) || tsMillis(a.creado) - tsMillis(b.creado));
+    const shown = limit ? list.slice(0, limit) : list;
 
     return (
       <div>
-        {!compact && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', textAlign: 'center', marginBottom: 10 }}>Cada jugador parte con 90.000 puntos para apostar</div>}
+        {!compact && (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            {[['puntos', '🏆 Puntos'], ['activos', '🔥 Más activos']].map((o) => {
+              const on = sortBy === o[0];
+              return (
+                <button key={o[0]} onClick={() => setSortBy(o[0])} className="mb-press" style={{
+                  flex: 1, padding: '7px 6px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+                  fontWeight: 800, fontSize: 'var(--t-2xs)', border: on ? '1px solid var(--gold)' : '1px solid var(--border-2)',
+                  background: on ? 'var(--coin-bg)' : 'transparent', color: on ? 'var(--gold-light)' : 'var(--muted)',
+                }}>{o[1]}</button>
+              );
+            })}
+          </div>
+        )}
+        {!compact && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', textAlign: 'center', marginBottom: 10 }}>{byActivos ? 'Quién más participa: nº de apuestas hechas' : 'Cada jugador parte con 90.000 puntos para apostar'}</div>}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {shown.map((u, i) => {
             const isMe = u.uid === user.uid;
@@ -64,8 +84,17 @@
                   <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={SALDO_INICIAL} /></div>
-                  {(() => { const st = isMe ? myStaked : (u.staked || 0); return st > 0 ? <div className="num" style={{ fontSize: 9, color: 'var(--info)', fontWeight: 700 }}>{fmt(st)} apostado</div> : null; })()}
+                  {byActivos ? (
+                    <React.Fragment>
+                      <div className="num" style={{ color: 'var(--gold-light)', fontWeight: 800, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{countOf(u)} <span style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700 }}>apuestas</span></div>
+                      <div className="num" style={{ fontSize: 9, color: 'var(--muted-2)' }}>{fmt(saldoOf(u))} pts</div>
+                    </React.Fragment>
+                  ) : (
+                    <React.Fragment>
+                      <div className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={SALDO_INICIAL} /></div>
+                      {(() => { const st = isMe ? myStaked : (u.staked || 0); return st > 0 ? <div className="num" style={{ fontSize: 9, color: 'var(--info)', fontWeight: 700 }}>{fmt(st)} apostado</div> : null; })()}
+                    </React.Fragment>
+                  )}
                 </div>
               </div>
             );
