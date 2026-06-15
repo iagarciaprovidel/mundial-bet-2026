@@ -96,6 +96,7 @@
     users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); } });
     // Equipo: promedio de saldo de sus jugadores; desempate por orden de creación.
     const teams = groups.map(g => { const n = countByGroup[g.id] || 0; return { g: g, n: n, pts: n ? Math.round(sumByGroup[g.id] / n) : 0 }; })
+      .filter(t => t.n > 0) // oculta equipos sin integrantes
       .sort((a, b) => b.pts - a.pts || tsMillis(a.g.creado) - tsMillis(b.g.creado)).slice(0, 20);
     const players = users.slice()
       .sort((a, b) => saldoOf(b) - saldoOf(a) || tsMillis(a.creado) - tsMillis(b.creado)).slice(0, 20);
@@ -216,6 +217,7 @@
     users.forEach(u => { if (u.groupId) { cnt[u.groupId] = (cnt[u.groupId] || 0) + 1; sum[u.groupId] = (sum[u.groupId] || 0) + saldoOf(u); stk[u.groupId] = (stk[u.groupId] || 0) + (u.staked || 0); } });
     const teams = groups.filter(g => g && g.name && String(g.name).trim())
       .map(g => { const n = cnt[g.id] || 0; return { g: g, n: n, pts: n ? Math.round(sum[g.id] / n) : 0, stk: stk[g.id] || 0 }; })
+      .filter(t => t.n > 0) // oculta equipos sin integrantes
       .sort((a, b) => b.pts - a.pts || b.n - a.n || tsMillis(a.g.creado) - tsMillis(b.g.creado));
     const shown = limit ? teams.slice(0, limit) : teams;
     if (!shown.length) return note('Aún no hay equipos.');

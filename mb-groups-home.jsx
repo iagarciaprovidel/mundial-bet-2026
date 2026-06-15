@@ -145,10 +145,11 @@
     }, [user]);
 
     if (!user) return null;
-    const groupsList = groups.filter(g => g && g.name && String(g.name).trim()); // oculta equipos sin nombre
     const myId = profile && profile.groupId;
     const countByGroup = {}, sumByGroup = {}, stakedByGroup = {};
     users.forEach(u => { if (u.groupId) { countByGroup[u.groupId] = (countByGroup[u.groupId] || 0) + 1; sumByGroup[u.groupId] = (sumByGroup[u.groupId] || 0) + saldoOf(u); stakedByGroup[u.groupId] = (stakedByGroup[u.groupId] || 0) + (u.staked || 0); } });
+    // Oculta equipos sin nombre y sin integrantes (el agente los borra; aquí no se ven).
+    const groupsList = groups.filter(g => g && g.name && String(g.name).trim() && (countByGroup[g.id] || 0) > 0);
     const avgOf = (gid) => { const n = countByGroup[gid] || 0; return n ? Math.round(sumByGroup[gid] / n) : 0; };
 
     return (

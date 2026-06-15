@@ -319,6 +319,34 @@ async function settle(our, ourResult) {
   return n;
 }
 
+// ── Borra los equipos SIN integrantes (ningún usuario con ese groupId).
+//    Margen de 10 min para no borrar uno recién creado (mientras se asigna el
+//    creador). Limpia también sus solicitudes de ingreso huérfanas. ──
+async function cleanupEmptyGroups() {
+  const [groupsSnap, usersSnap] = await Promise.all([
+    db.collection('groups').get(),
+    db.collection('users').get(),
+  ]);
+  const used = {};
+  usersSnap.forEach(function (d) { const g = d.data().groupId; if (g) used[g] = true; });
+  const now = Date.now();
+  let n = 0;
+  for (const doc of groupsSnap.docs) {
+    if (used[doc.id]) continue;
+    const c = doc.data().creado;
+    const ms = (c && typeof c.toMillis === 'function') ? c.toMillis() : (c && c.seconds ? c.seconds * 1000 : 0);
+    if (ms && (now - ms) < 10 * 60 * 1000) continue; // recién creado: dale margen
+    try {
+      const reqs = await db.collection('joinRequests').where('groupId', '==', doc.id).get();
+      for (const r of reqs.docs) await r.ref.delete();
+    } catch (e) {}
+    await doc.ref.delete();
+    n++;
+    console.log(`  Equipo vacío borrado: "${doc.data().name}" (${doc.id})`);
+  }
+  return n;
+}
+
 // ── Recalcula el monto apostado (apuestas abiertas) y el total de apuestas
 //    (participación) de cada usuario. Escribe staked + betsCount. ──
 async function recomputeStaked() {
@@ -413,6 +441,8 @@ async function main() {
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
   const stkN = await recomputeStaked();
   if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
+  const gone = await cleanupEmptyGroups();
+  if (gone) console.log(`Equipos vacíos borrados: ${gone}.`);
   const alertN = await matchAlerts();
   if (alertN) console.log(`Avisos de partido (pronto/cierre) enviados: ${alertN}.`);
 
