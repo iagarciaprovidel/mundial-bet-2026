@@ -187,21 +187,22 @@ function Perfil() {
 
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ textAlign: 'center', marginBottom: 18 }}>
-        <div style={{ width: 92, height: 92, borderRadius: '50%', margin: '0 auto 8px', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', marginBottom: 12 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 6px', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {(meRec && meRec.championCode)
             ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Campeón: ' + (meRec.champion || '')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ fontWeight: 800, fontSize: 32, color: 'var(--gold-light)' }}>{ini}</span>}
+            : <span style={{ fontWeight: 800, fontSize: 24, color: 'var(--gold-light)' }}>{ini}</span>}
         </div>
-        <h2 className="display" style={{ margin: '4px 0 6px', fontSize: 'var(--t-2xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
-        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{authUser.email || ''}</div>
-        <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, marginTop: 3 }}>{teamName}</div>
-        {window.MB_openTeamPicker && (
-          <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ marginTop: 10, padding: '8px 16px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(74,144,226,0.5)', background: 'rgba(74,144,226,0.12)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>
-            {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
-          </button>
-        )}
-        {window.MB_NotifButton && <div style={{ marginTop: 10, maxWidth: 280, marginLeft: 'auto', marginRight: 'auto' }}>{React.createElement(window.MB_NotifButton)}</div>}
+        <h2 className="display" style={{ margin: '2px 0 3px', fontSize: 'var(--t-xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
+        <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{authUser.email || ''} · {teamName}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          {window.MB_openTeamPicker && (
+            <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ padding: '7px 14px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(74,144,226,0.5)', background: 'rgba(74,144,226,0.12)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>
+              {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
+            </button>
+          )}
+          {window.MB_NotifButton && React.createElement(window.MB_NotifButton)}
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: enJuego > 0 ? 8 : 18 }}>
