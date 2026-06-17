@@ -8,7 +8,11 @@
    ============================================================ */
 self.MB_FIREBASE_CONFIG = {
   apiKey: "AIzaSyBGRFQvrO14CrTmDRI2bRHLS-UcaXxZa-Q",
-  authDomain: "mundialbet-club.firebaseapp.com",
+  // authDomain = mismo dominio de la app (Firebase Hosting sirve /__/auth/ aquí).
+  // Evita el redirect cross-dominio que rompe el login en la PWA instalada
+  // ("missing initial state" por particionado de sessionStorage). Ver docs:
+  // firebase.google.com/docs/auth/web/redirect-best-practices
+  authDomain: "mundialbet-club.web.app",
   projectId: "mundialbet-club",
   storageBucket: "mundialbet-club.firebasestorage.app",
   messagingSenderId: "133773637375",
