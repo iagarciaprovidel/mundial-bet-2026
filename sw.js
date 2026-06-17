@@ -3,7 +3,7 @@
    intenta traer la versión más nueva), con fallback a caché para que la
    app funcione sin conexión una vez visitada. */
 
-const CACHE = 'mundialbet-v125';
+const CACHE = 'mundialbet-v126';
 
 // App shell (rutas relativas al scope /mundial-bet-2026/)
 const SHELL = [
@@ -62,13 +62,17 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
+  // NO interceptar el flujo de autenticación de Firebase (/__/auth/handler e
+  // /__/auth/iframe). Si el service worker los sirve/cachea, el login se rompe
+  // (pantalla en blanco en la PWA). Lo maneja el navegador directamente.
+  let url;
+  try { url = new URL(request.url); } catch (e) {}
+  if (url && url.origin === self.location.origin && url.pathname.startsWith('/__/')) return;
+
   // Para archivos PROPIOS pedimos a la red saltando el caché HTTP del navegador
   // (cache: 'reload'), así siempre llega la última versión y no queda atrás.
   let netRequest = request;
-  try {
-    const url = new URL(request.url);
-    if (url.origin === self.location.origin) netRequest = new Request(request, { cache: 'reload' });
-  } catch (e) {}
+  if (url && url.origin === self.location.origin) netRequest = new Request(request, { cache: 'reload' });
 
   event.respondWith(
     fetch(netRequest)
