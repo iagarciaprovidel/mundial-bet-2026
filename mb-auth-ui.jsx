@@ -1,6 +1,7 @@
 /* ============================================================
    MundialBet Club 2026 — UI de autenticación
    - Google (popup)
+   - Facebook (popup)
    - Correo con confirmación (email link / passwordless)
    Expone window.MB_useAuth (hook) y window.MB_LoginButton (componente).
    ============================================================ */
@@ -20,13 +21,23 @@
     return user;
   }
 
+  function handleAuthError(e) {
+    const code = (e && e.code) || e;
+    if (code === 'no-config') return;
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+    if (code === 'auth/account-exists-with-different-credential') {
+      alert('Ya tienes una cuenta con ese correo usando otro método (por ejemplo Google o correo). Entra con ese método.');
+      return;
+    }
+    alert('No se pudo iniciar sesión: ' + ((e && e.message) || code));
+  }
+
   function signInGoogle() {
-    window.MBFirebase.signInGoogle().catch((e) => {
-      const code = (e && e.code) || e;
-      if (code === 'no-config') return;
-      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
-      alert('No se pudo iniciar sesión: ' + ((e && e.message) || code));
-    });
+    window.MBFirebase.signInGoogle().catch(handleAuthError);
+  }
+
+  function signInFacebook() {
+    window.MBFirebase.signInFacebook().catch(handleAuthError);
   }
 
   const GoogleIcon = () => (
@@ -35,6 +46,12 @@
       <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 7.1 29.5 5 24 5 16.3 5 9.7 9.3 6.3 14.7z" />
       <path fill="#4CAF50" d="M24 45c5.2 0 10-2 13.6-5.2l-6.3-5.3C29.2 35.9 26.7 37 24 37c-5.3 0-9.7-2.6-11.3-6.9l-6.5 5C9.6 40.6 16.2 45 24 45z" />
       <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.3 5.3C41.9 35.7 45 30.4 45 24c0-1.2-.1-2.3-.4-3.5z" />
+    </svg>
+  );
+
+  const FacebookIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+      <path fill="#fff" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.09 24 18.1 24 12.07z" />
     </svg>
   );
 
@@ -101,6 +118,9 @@
               </div>
               <button onClick={signInGoogle} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', cursor: 'pointer', background: '#fff', color: '#1f2328', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
                 <GoogleIcon /> Continuar con Google
+              </button>
+              <button onClick={signInFacebook} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: '#1877F2', color: '#fff', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
+                <FacebookIcon /> Continuar con Facebook
               </button>
             </div>
           )}
@@ -229,7 +249,7 @@
           <span>✅ Sin tarjeta ni dinero real</span>
           <span>✅ Solo para jugar entre amigos</span>
         </div>
-        <div style={{ marginTop: 8, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Con tu correo o Google · sin contraseña · toma 20 segundos</div>
+        <div style={{ marginTop: 8, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Con tu correo, Google o Facebook · sin contraseña · toma 20 segundos</div>
         {open && <LoginModal onClose={() => setOpen(false)} />}
       </div>
     );

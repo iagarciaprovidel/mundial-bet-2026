@@ -129,6 +129,11 @@
     signInGoogle() {
       return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     },
+    signInFacebook() {
+      const prov = new firebase.auth.FacebookAuthProvider();
+      prov.addScope('email');
+      return auth.signInWithPopup(prov);
+    },
     signOut() { return auth.signOut(); },
     currentUser() { return auth.currentUser; },
     isAdmin(user) { const u = user || auth.currentUser; return !!u && isAdminEmail(u.email); },
