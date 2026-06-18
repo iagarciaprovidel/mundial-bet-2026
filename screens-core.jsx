@@ -225,6 +225,9 @@ function Dashboard({ user, onNav, onPredict }) {
         window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
       )}
 
+      {/* Aviso para elegir campeón (solo si aún no eligió y el plazo sigue abierto) */}
+      {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
+
       {/* Cuenta regresiva al próximo partido */}
       {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
 

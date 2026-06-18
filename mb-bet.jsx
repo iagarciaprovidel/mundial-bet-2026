@@ -685,6 +685,25 @@
         </div>
       </div>, document.body);
 
+    // —— Modo banner: aviso llamativo que aparece SOLO si aún no elige campeón
+    //    (y el plazo sigue abierto). Desaparece en cuanto elige o al cerrar. ——
+    if (props && props.banner) {
+      if (pick || closed) return null;
+      return (
+        <React.Fragment>
+          <button onClick={() => setOpen(true)} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '13px 15px', borderRadius: 'var(--r-lg)', border: '1px solid var(--gold)', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(201,155,31,0.07))', textAlign: 'left', boxShadow: 'var(--glow-gold)', fontFamily: 'var(--font-body)' }}>
+            <span style={{ fontSize: 26, flexShrink: 0 }}>🏆</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>¡Aún no eliges tu campeón!</span>
+              <span style={{ display: 'block', fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 1 }}>Gratis. Ganas hasta <strong style={{ color: 'var(--gold-light)' }}>+{fmt(CHAMP_TOTAL)}</strong> a medida que tu selección avanza.</span>
+            </span>
+            <span style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 'var(--r-pill)', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>Elegir</span>
+          </button>
+          {modalEl}
+        </React.Fragment>
+      );
+    }
+
     // —— Modo compacto: una sola línea (para meterlo dentro de la tarjeta de métricas) ——
     if (compact) {
       return (
