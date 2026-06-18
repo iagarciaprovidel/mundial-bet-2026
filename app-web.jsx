@@ -770,17 +770,23 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
     <div ref={ref}>
     <Card style={{ padding: '14px 16px', transition: 'box-shadow var(--dur-base) var(--ease-out)', ...hlStyle }}>
       <h3 className="display" style={{ margin: '0 0 10px', fontSize: 'var(--t-md)' }}>Grupo {letter}</h3>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, padding: '0 0 6px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700, padding: '0 0 6px', borderBottom: '1px solid var(--border)' }}>
         <span style={{ width: 14 }}>#</span>
         <span style={{ width: 15 }} />
-        <span style={{ flex: 1 }}>Equipo · DT</span>
-        <span style={{ width: 24, textAlign: 'center' }}>J</span>
-        <span style={{ width: 28, textAlign: 'center' }}>Pts</span>
+        <span style={{ flex: 1, minWidth: 0 }}>Equipo · DT</span>
+        <span style={{ width: 20, textAlign: 'center' }} title="Partidos jugados">PJ</span>
+        <span style={{ width: 16, textAlign: 'center' }} title="Ganados">G</span>
+        <span style={{ width: 16, textAlign: 'center' }} title="Empatados">E</span>
+        <span style={{ width: 16, textAlign: 'center' }} title="Perdidos">P</span>
+        <span style={{ width: 20, textAlign: 'center' }} title="Goles a favor">GF</span>
+        <span style={{ width: 20, textAlign: 'center' }} title="Goles en contra">GC</span>
+        <span style={{ width: 24, textAlign: 'center' }} title="Diferencia de gol">DG</span>
+        <span style={{ width: 26, textAlign: 'center' }} title="Puntos">Pts</span>
       </div>
       {rows.map(r => (
         <div key={r.name} onClick={() => onTeam && onTeam(Object.assign({}, r, { group: letter }))} className={onTeam ? 'mb-press mb-team-row' : ''}
           title={onTeam ? `Ver ficha de ${r.name}` : undefined}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 4px', margin: '0 -4px', borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: onTeam ? 'pointer' : 'default' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 4px', margin: '0 -4px', borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: onTeam ? 'pointer' : 'default' }}>
           <span style={{ width: 14, color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{r.pos}</span>
           <img src={`https://flagcdn.com/h24/${r.code || ''}.png`} alt="" style={{ height: 15, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
           <span style={{ flex: 1, minWidth: 0 }}>
@@ -793,8 +799,14 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
               </span>
             )}
           </span>
-          <span style={{ width: 24, textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.j}</span>
-          <span className="num" style={{ width: 28, textAlign: 'center', color: 'var(--gold-light)' }}>{r.pts}</span>
+          <span style={{ width: 20, textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.j}</span>
+          <span style={{ width: 16, textAlign: 'center', fontSize: 'var(--t-2xs)', fontWeight: 700, color: r.g ? 'var(--success)' : 'var(--muted)' }}>{r.g}</span>
+          <span style={{ width: 16, textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.e}</span>
+          <span style={{ width: 16, textAlign: 'center', fontSize: 'var(--t-2xs)', fontWeight: 700, color: r.p ? '#e98b8b' : 'var(--muted)' }}>{r.p}</span>
+          <span style={{ width: 20, textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.gf}</span>
+          <span style={{ width: 20, textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.gc}</span>
+          <span style={{ width: 24, textAlign: 'center', fontSize: 'var(--t-2xs)', fontWeight: 700, color: (r.dg || 0) > 0 ? 'var(--success)' : (r.dg || 0) < 0 ? '#e98b8b' : 'var(--muted)' }}>{(r.dg || 0) > 0 ? '+' + r.dg : (r.dg || 0)}</span>
+          <span className="num" style={{ width: 26, textAlign: 'center', color: 'var(--gold-light)', fontWeight: 700 }}>{r.pts}</span>
         </div>
       ))}
     </Card>
@@ -839,7 +851,7 @@ function EquiposWeb({ highlight, onTeam }) {
       <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
         Los <strong>12 grupos</strong> del Mundial 2026 · 48 selecciones con su <strong>DT</strong>. Toca una bandera (arriba) o cualquier selección para ver su ficha completa.
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(370px, 1fr))', gap: 16 }}>
         {Object.keys(gs).map(letter => <GroupTableWeb key={letter} letter={letter} rows={gs[letter]} highlighted={letter === highlight} onTeam={onTeam} />)}
       </div>
       <RefereesPanel />
