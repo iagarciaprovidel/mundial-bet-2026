@@ -197,9 +197,10 @@ function Perfil() {
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{authUser.email || ''} · {teamName}</div>
         {(() => {
           const nb = bets.length;
-          const b = nb >= 50 ? ['🥇', 'Apostador experto'] : nb >= 25 ? ['🥈', 'Apostador frecuente'] : nb >= 10 ? ['🥉', 'Apostador activo'] : null;
-          if (!b) return null;
-          return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, padding: '4px 12px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', fontSize: 'var(--t-3xs)', fontWeight: 800, color: 'var(--gold-light)' }}><span style={{ fontSize: 14 }}>{b[0]}</span>{b[1]}</div>;
+          if (nb < 1) return null;
+          const icons = '🔥' + (nb >= 10 ? '🥉' : '') + (nb >= 25 ? '🥈' : '') + (nb >= 50 ? '🥇' : '');
+          const label = nb >= 50 ? 'Apostador experto' : nb >= 25 ? 'Apostador frecuente' : nb >= 10 ? 'Apostador activo' : 'En racha';
+          return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, padding: '4px 12px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', fontSize: 'var(--t-3xs)', fontWeight: 800, color: 'var(--gold-light)' }}><span style={{ fontSize: 14 }}>{icons}</span>{label}</div>;
         })()}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 8 }}>
           {window.MB_openTeamPicker && (

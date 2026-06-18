@@ -16,9 +16,10 @@
   // Ranking por PATRIMONIO (disponible + en juego). Ver window.MB_worth en mb-bet.jsx.
   function saldoOf(u) { return window.MB_worth ? window.MB_worth(u) : ((u && typeof u.saldo === 'number') ? u.saldo : SALDO_INICIAL); }
   function fmt(n) { return Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.'); }
-  // Insignia por nº de apuestas (impulsa a participar): 🥉10 · 🥈25 · 🥇50.
-  function betBadge(n) { return n >= 50 ? '🥇' : n >= 25 ? '🥈' : n >= 10 ? '🥉' : ''; }
-  function BetBadge(n) { const b = betBadge(n); return b ? <span title={n + ' apuestas'} style={{ marginLeft: 5 }}>{b}</span> : null; }
+  // Insignias ACUMULABLES por nº de apuestas (impulsa a participar):
+  // 🔥 al apostar · +🥉 a las 10 · +🥈 a las 25 · +🥇 a las 50.
+  function badgeIcons(n) { return (!n || n < 1) ? '' : '🔥' + (n >= 10 ? '🥉' : '') + (n >= 25 ? '🥈' : '') + (n >= 50 ? '🥇' : ''); }
+  function BetBadge(n) { const s = badgeIcons(n); return s ? <span title={n + ' apuestas'} style={{ marginLeft: 5 }}>{s}</span> : null; }
   // Flecha ▲/▼: verde si el patrimonio está por ENCIMA del inicio (90.000) → va
   // ganando; roja si por debajo → va perdiendo. (Antes comparaba el disponible y
   // daba falsos ▼ al apostar, aunque el patrimonio subiera.)
