@@ -364,11 +364,30 @@ async function recomputeStaked() {
     const withStaked = await db.collection('users').where('staked', '>', 0).get();
     withStaked.forEach(function (d) { uids[d.id] = true; });
   } catch (e) {}
-  let n = 0;
+  // Meta de participación: +2.000 monedas por cada 10 apuestas. Se paga una vez
+  // por meta (betRewardPaid = metas ya pagadas, solo sube; no se quita si cancela).
+  const REWARD_EVERY = 10, REWARD_PER = 2000;
+  let n = 0, rewarded = 0;
   for (const uid of Object.keys(uids)) {
-    await db.collection('users').doc(uid).set({ staked: stakeByUid[uid] || 0, betsCount: countByUid[uid] || 0 }, { merge: true });
+    const count = countByUid[uid] || 0;
+    const ref = db.collection('users').doc(uid);
+    const snap = await ref.get();
+    const u = snap.exists ? snap.data() : {};
+    const update = { staked: stakeByUid[uid] || 0, betsCount: count };
+    const milestones = Math.floor(count / REWARD_EVERY);
+    const paid = u.betRewardPaid || 0;
+    if (milestones > paid) {
+      const add = (milestones - paid) * REWARD_PER;
+      const saldo = (typeof u.saldo === 'number') ? u.saldo : SALDO_INICIAL;
+      update.saldo = saldo + add;
+      update.betRewardPaid = milestones;
+      rewarded++;
+      console.log(`  Recarga participación: +${add} (${count} apuestas) → ${uid}`);
+    }
+    await ref.set(update, { merge: true });
     n++;
   }
+  if (rewarded) console.log(`Recargas por metas de apuestas: ${rewarded} usuario(s).`);
   return n;
 }
 

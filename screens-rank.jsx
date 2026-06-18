@@ -195,6 +195,12 @@ function Perfil() {
         </div>
         <h2 className="display" style={{ margin: '2px 0 3px', fontSize: 'var(--t-xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{authUser.email || ''} · {teamName}</div>
+        {(() => {
+          const nb = bets.length;
+          const b = nb >= 50 ? ['🥇', 'Apostador experto'] : nb >= 25 ? ['🥈', 'Apostador frecuente'] : nb >= 10 ? ['🥉', 'Apostador activo'] : null;
+          if (!b) return null;
+          return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, padding: '4px 12px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', fontSize: 'var(--t-3xs)', fontWeight: 800, color: 'var(--gold-light)' }}><span style={{ fontSize: 14 }}>{b[0]}</span>{b[1]}</div>;
+        })()}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 8 }}>
           {window.MB_openTeamPicker && (
             <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ padding: '7px 14px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(74,144,226,0.5)', background: 'rgba(74,144,226,0.12)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>

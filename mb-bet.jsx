@@ -634,6 +634,7 @@
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
     const lastGroupKO = fx.length ? Math.max.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
     const closed = Date.now() >= (lastGroupKO + 2 * 60 * 60 * 1000); // ~fin del último partido de grupos
+    const deadlineStr = isFinite(lastGroupKO) ? new Date(lastGroupKO).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : null;
     const pick = me && me.champion;
     const pickCode = me && me.championCode;
 
@@ -665,6 +666,11 @@
             </div>
             <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 8 }}>Hasta <strong style={{ color: 'var(--gold-light)' }}>+{fmt(CHAMP_TOTAL)}</strong> si tu selección sale campeona. Gratis · sin riesgo para tu saldo.</div>
           </div>
+          {deadlineStr && (
+            <div style={{ marginBottom: 12, padding: '9px 12px', borderRadius: 'var(--r-md)', background: 'var(--info-bg)', border: '1px solid rgba(74,144,226,0.3)', fontSize: 'var(--t-3xs)', color: 'var(--text)', lineHeight: 1.45 }}>
+              🔁 Puedes <strong>cambiar tu campeón las veces que quieras hasta el {deadlineStr}</strong> (fin de la fase de grupos). Después queda fijo para el resto del Mundial.
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: 8 }}>
             {TEAMS.map((t) => {
               const active = t.name === pick;
@@ -688,7 +694,7 @@
             <React.Fragment>
               {pickCode && <img src={`https://flagcdn.com/h20/${pickCode}.png`} alt="" style={{ height: 13, width: 'auto', borderRadius: 2, flexShrink: 0 }} />}
               <span style={{ flex: 1, minWidth: 0, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}><span style={{ color: 'var(--muted-2)' }}>Mi campeón: </span><span style={{ color: 'var(--gold-light)', fontWeight: 800 }}>{pick}</span></span>
-              {!closed && <button onClick={() => setOpen(true)} className="mb-press" style={{ padding: '5px 11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-3xs)', flexShrink: 0 }}>Cambiar</button>}
+              {!closed && <button onClick={() => setOpen(true)} title={deadlineStr ? 'Puedes cambiar tu campeón hasta el ' + deadlineStr : 'Cambiar campeón'} className="mb-press" style={{ padding: '5px 11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-3xs)', flexShrink: 0 }}>Cambiar</button>}
             </React.Fragment>
           ) : closed ? (
             <span style={{ flex: 1, fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>El pronóstico del campeón cerró.</span>
