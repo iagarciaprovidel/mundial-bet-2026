@@ -244,16 +244,41 @@ function BetHowTo() {
 }
 
 function Partidos() {
-  const [tab, setTab] = useStateB('J1');
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const odds = (store && store.odds) || {};
   const fx = (window.MB.WC_FIXTURES) || [];
   const ko = (window.MB.WC_KNOCKOUTS) || [];
   const mdMap = { J1: 1, J2: 2, J3: 3 };
+  const now = Date.now();
+
+  // Estado de cada jornada: terminada / con partido en vivo. Usa las cuotas del
+  // agente (finished/live) y, como respaldo si aún no hay cuota, la hora de inicio.
+  const matchDone = (m) => { const o = odds[m.id]; if (o && o.finished) return true; if (o && o.live) return false; return new Date(m.kickoff).getTime() + 2.5 * 3600e3 < now; };
+  const matchLive = (m) => { const o = odds[m.id]; return !!(o && o.live && !o.finished); };
+  const jState = (md) => { const ms = fx.filter(m => m.md === md); return { done: ms.length > 0 && ms.every(matchDone), live: ms.some(matchLive) }; };
+  const st = { 1: jState(1), 2: jState(2), 3: jState(3) };
+  // Jornada actual = primera que aún no termina (si todas terminaron → eliminatorias).
+  const curTab = !st[1].done ? 'J1' : !st[2].done ? 'J2' : !st[3].done ? 'J3' : 'KO';
+
+  const [tab, setTab] = useStateB(curTab); // abre por defecto en la jornada actual
+
+  const dotEl = (color, pulse) => <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: color, marginLeft: 5, verticalAlign: 'middle', animation: pulse ? 'mb-pulse-live 1s var(--ease-out) infinite' : 'none' }} />;
+  const jLabel = (md) => {
+    const s = st[md], key = 'J' + md, isActive = tab === key;
+    return (
+      <span style={{ opacity: s.done && !isActive ? 0.55 : 1 }}>
+        Jor. {md}
+        {s.done && <span style={{ color: isActive ? '#fff' : 'var(--success)', marginLeft: 4, fontWeight: 800 }}>✓</span>}
+        {s.live ? dotEl('#ff5252', true) : (key === curTab && !s.done && !isActive ? dotEl('var(--info)', false) : null)}
+      </span>
+    );
+  };
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       <BetHowTo />
       <div style={{ marginBottom: 16 }}>
         <SegTabs accent="var(--info)" value={tab} onChange={setTab}
-          options={[{ v: 'J1', label: 'Jor. 1' }, { v: 'J2', label: 'Jor. 2' }, { v: 'J3', label: 'Jor. 3' }, { v: 'KO', label: 'Elim.' }]} />
+          options={[{ v: 'J1', label: jLabel(1) }, { v: 'J2', label: jLabel(2) }, { v: 'J3', label: jLabel(3) }, { v: 'KO', label: 'Elim.' }]} />
       </div>
       {tab !== 'KO' ? (
         <>
