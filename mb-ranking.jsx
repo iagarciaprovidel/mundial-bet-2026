@@ -16,9 +16,10 @@
   // Ranking por PATRIMONIO (disponible + en juego). Ver window.MB_worth en mb-bet.jsx.
   function saldoOf(u) { return window.MB_worth ? window.MB_worth(u) : ((u && typeof u.saldo === 'number') ? u.saldo : SALDO_INICIAL); }
   function fmt(n) { return Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.'); }
-  // Insignias ACUMULABLES por nº de apuestas (impulsa a participar):
-  // 🔥 al apostar · +🥉 a las 10 · +🥈 a las 25 · +🥇 a las 50.
-  function badgeIcons(n) { return (!n || n < 1) ? '' : '🔥' + (n >= 10 ? '🥉' : '') + (n >= 25 ? '🥈' : '') + (n >= 50 ? '🥇' : ''); }
+  // Medallas ACUMULABLES por nº de apuestas (junto al nombre, sin llama: la
+  // llama con la cantidad va una sola vez en el subtexto "🔥 N apuestas").
+  // +🥉 a las 10 · +🥈 a las 25 · +🥇 a las 50.
+  function badgeIcons(n) { return (!n || n < 10) ? '' : '🥉' + (n >= 25 ? '🥈' : '') + (n >= 50 ? '🥇' : ''); }
   function BetBadge(n) { const s = badgeIcons(n); return s ? <span title={n + ' apuestas'} style={{ marginLeft: 5 }}>{s}</span> : null; }
   // Flecha ▲/▼: verde si el patrimonio está por ENCIMA del inicio (90.000) → va
   // ganando; roja si por debajo → va perdiendo. (Antes comparaba el disponible y
@@ -147,7 +148,7 @@
                 {window.MB_champAvatar ? window.MB_champAvatar(u.championCode, u.champion, u.nombre, 30) : <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}{BetBadge(typeof u.betsCount === 'number' ? u.betsCount : 0)}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
-                  <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}</div>
+                  <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}{(u.betsCount || 0) > 0 ? ' · 🔥 ' + u.betsCount + (u.betsCount === 1 ? ' apuesta' : ' apuestas') : ''}</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div className="num" style={{ color: 'var(--gold-light)', fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap' }}>{fmt(saldoOf(u))}<Arrow cur={saldoOf(u)} prev={SALDO_INICIAL} /></div>
