@@ -439,10 +439,20 @@ async function main() {
   // Estas NO dependen de football-data → corren SIEMPRE (aunque la API falle):
   const oddsN = await ensureOdds();
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
-  const stkN = await recomputeStaked();
-  if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
-  const gone = await cleanupEmptyGroups();
-  if (gone) console.log(`Equipos vacíos borrados: ${gone}.`);
+
+  // Tareas PESADAS (leen colecciones completas: users/bets/groups). El cron
+  // corre cada 5 min; correrlas siempre agota la cuota diaria de Firestore
+  // (plan gratuito). Solo 1 vez por hora (en la corrida del minuto :00).
+  // El saldo "en juego" ya se mantiene al apostar/cancelar/liquidar, así que
+  // recomputeStaked es solo reconciliación; los grupos vacíos pueden esperar.
+  const hourly = new Date().getUTCMinutes() < 5;
+  if (hourly) {
+    const stkN = await recomputeStaked();
+    if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
+    const gone = await cleanupEmptyGroups();
+    if (gone) console.log(`Equipos vacíos borrados: ${gone}.`);
+  }
+
   const alertN = await matchAlerts();
   if (alertN) console.log(`Avisos de partido (pronto/cierre) enviados: ${alertN}.`);
 
