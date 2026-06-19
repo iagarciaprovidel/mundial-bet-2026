@@ -200,7 +200,7 @@ function Perfil() {
           if (nb < 10) return null;
           const icons = '🥉' + (nb >= 25 ? '🥈' : '') + (nb >= 50 ? '🥇' : '');
           const label = nb >= 50 ? 'Apostador experto' : nb >= 25 ? 'Apostador frecuente' : 'Apostador activo';
-          return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, padding: '4px 12px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', fontSize: 'var(--t-3xs)', fontWeight: 800, color: 'var(--gold-light)' }}><span style={{ fontSize: 14 }}>{icons}</span><span className="num">{nb}</span> · {label}</div>;
+          return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6, padding: '3px 11px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', fontSize: 'var(--t-3xs)', fontWeight: 800, color: 'var(--gold-light)' }}><span style={{ fontSize: 12 }}>{icons}</span><span className="num">{nb}</span> apuestas · {label}</div>;
         })()}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 8 }}>
           {window.MB_openTeamPicker && (
