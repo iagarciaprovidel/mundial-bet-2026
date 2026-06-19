@@ -79,9 +79,9 @@ function Header({ me, accent, role, onAdmin }) {
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: '🏠' },
   { id: 'partidos', label: 'Apostar', icon: '⚽' },
-  { id: 'equipos', label: 'Equipos', icon: '🌍' },
+  { id: 'equipos', label: 'Selecciones', icon: '🌍' },
   { id: 'ranking', label: 'Ranking', icon: '🏆' },
-  { id: 'liga', label: 'Liga', icon: '💰' },
+  { id: 'liga', label: 'Mi grupo', icon: '👥' },
   { id: 'perfil', label: 'Perfil', icon: '👤' },
 ];
 function BottomNav({ tab, onTab, accent }) {
@@ -215,7 +215,12 @@ function App() {
     equipos: <TeamsScreen />,
     quiniela: <Quiniela />,
     ranking: <Ranking />,
-    liga: <Liga />,
+    liga: (
+      <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {window.MB_TeamCTA ? React.createElement(window.MB_TeamCTA) : null}
+        {window.MB_GroupsHome ? React.createElement(window.MB_GroupsHome) : null}
+      </div>
+    ),
     perfil: <Perfil user={me} />,
     feed: <Feed />,
     admin: <Admin onCloseTournament={() => setCloseScreen(true)} />,

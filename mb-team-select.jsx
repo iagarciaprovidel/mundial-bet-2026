@@ -23,10 +23,48 @@
   const getPendingJoin = () => { try { return sessionStorage.getItem('mb_pending_join') || null; } catch (e) { return null; } };
   const clearPendingJoin = () => { try { sessionStorage.removeItem('mb_pending_join'); } catch (e) {} };
 
+  // Modal propio para nombrar el grupo (reemplaza el window.prompt). onCreate(nombre, abierto).
+  function GroupNameModal({ onClose, onCreate }) {
+    const [gname, setGname] = useState('');
+    const [open, setOpen] = useState(true);
+    const [busy, setBusy] = useState(false);
+    const submit = () => {
+      const v = gname.trim();
+      if (v.length < 3) { alert('El nombre del grupo debe tener al menos 3 caracteres.'); return; }
+      setBusy(true);
+      Promise.resolve(onCreate(v, open)).catch(() => {}).finally(() => setBusy(false));
+    };
+    return ReactDOM.createPortal(
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)', padding: 22, width: 'min(400px, 94vw)', boxShadow: 'var(--sh-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <span style={{ fontSize: 22 }}>🏆</span>
+            <h2 className="display" style={{ margin: 0, flex: 1, fontSize: 'var(--t-xl)' }}>Crea tu grupo</h2>
+            <button onClick={onClose} className="mb-press" style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+          </div>
+          <label style={{ display: 'block', fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 5 }}>Nombre del grupo (familia, curso, amigos…)</label>
+          <input value={gname} onChange={e => setGname(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); }} maxLength={24} autoFocus placeholder="ej: 8°B, Los Cracks…"
+            style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-md)', fontWeight: 700 }} />
+          <div style={{ fontSize: 9, color: 'var(--muted-2)', margin: '4px 0 16px', textAlign: 'right' }}><span className="num">{gname.trim().length}/24</span></div>
+          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 8 }}>¿Quién puede entrar?</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+            {[[true, '🔓 Abierto', 'Cualquiera entra'], [false, '🔒 Cerrado', 'Tú apruebas']].map(([val, t, d]) => (
+              <button key={String(val)} onClick={() => setOpen(val)} className="mb-press" style={{ flex: 1, padding: '10px 8px', borderRadius: 'var(--r-md)', cursor: 'pointer', background: open === val ? 'var(--coin-bg)' : 'var(--surface-2)', border: open === val ? '1.5px solid var(--gold)' : '1px solid var(--border-2)', color: 'var(--text)', fontFamily: 'var(--font-body)' }}>
+                <div style={{ fontWeight: 800, fontSize: 'var(--t-2xs)' }}>{t}</div>
+                <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 2 }}>{d}</div>
+              </button>
+            ))}
+          </div>
+          <button onClick={submit} disabled={busy} className="mb-press" style={{ width: '100%', padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: busy ? 0.6 : 1 }}>{busy ? 'Creando…' : '➕ Crear grupo'}</button>
+        </div>
+      </div>, document.body);
+  }
+
   function TeamSelectModal({ onDone, onSkip }) {
     const [groups, setGroups] = useState([]);
     const [name, setName] = useState('');
     const [busy, setBusy] = useState(false);
+    const [naming, setNaming] = useState(false);
 
     useEffect(() => {
       const unsub = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
@@ -64,15 +102,8 @@
       setBusy(true);
       FB().setDisplayName(n).then(() => FB().joinGroupById(g.id)).then(onJoined).catch(fail).finally(() => setBusy(false));
     };
-    // Crear mi propio equipo (quedo como admin + miembro).
-    const createTeam = () => {
-      const n = ensureName(); if (!n) return;
-      const teamName = window.prompt('Nombre de tu nuevo equipo:');
-      if (!teamName || !teamName.trim()) return;
-      const closed = window.confirm('¿El equipo será CERRADO (tú apruebas a cada uno)?\n\nAceptar = Cerrado 🔒\nCancelar = Abierto 🔓');
-      setBusy(true);
-      FB().setDisplayName(n).then(() => FB().createGroup(teamName.trim(), !closed)).then(() => onDone()).catch(fail).finally(() => setBusy(false));
-    };
+    // Crear mi propio equipo (quedo como admin + miembro). Abre el modal de nombre.
+    const createTeam = () => { if (!ensureName()) return; setNaming(true); };
     // Jugar sin equipo (individual). Si no se puede guardar (reglas), entra igual esta sesión.
     const playSolo = () => {
       const n = ensureName(); if (!n) return;
@@ -126,6 +157,8 @@
             Cerrar sesión
           </button>
         </div>
+        {naming && <GroupNameModal onClose={() => setNaming(false)}
+          onCreate={(gn, open) => FB().setDisplayName(name.trim()).then(() => FB().createGroup(gn, open)).then(() => { setNaming(false); onDone(); }).catch(fail)} />}
       </div>
     );
   }
@@ -138,6 +171,7 @@
     const [profile, setProfile] = useState(null);
     const [owns, setOwns] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [naming, setNaming] = useState(false);
     useEffect(() => { const u = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null; return () => { if (typeof u === 'function') u(); }; }, []);
     const refresh = () => { if (FB().getMyProfile) FB().getMyProfile().then(p => setProfile(p || null)).catch(() => {}); if (FB().ownsGroup) FB().ownsGroup().then(setOwns).catch(() => {}); };
     useEffect(() => { refresh(); }, []);
@@ -158,13 +192,7 @@
         onClose();
       }).catch(fail).finally(() => setBusy(false));
     };
-    const create = () => {
-      const teamName = window.prompt('Nombre de tu nuevo equipo:');
-      if (!teamName || !teamName.trim()) return;
-      const closed = window.confirm('¿El equipo será CERRADO (tú apruebas a cada uno)?\n\nAceptar = Cerrado 🔒\nCancelar = Abierto 🔓');
-      setBusy(true);
-      FB().createGroup(teamName.trim(), !closed).then(() => onClose()).catch(fail).finally(() => setBusy(false));
-    };
+    const create = () => setNaming(true);
     const solo = () => { setBusy(true); FB().chooseNoGroup().then(() => onClose()).catch(fail).finally(() => setBusy(false)); };
 
     const modal = (
@@ -209,7 +237,13 @@
         </div>
       </div>
     );
-    return ReactDOM.createPortal(modal, document.body);
+    return (
+      <React.Fragment>
+        {ReactDOM.createPortal(modal, document.body)}
+        {naming && <GroupNameModal onClose={() => setNaming(false)}
+          onCreate={(gn, open) => FB().createGroup(gn, open).then(() => { setNaming(false); onClose(); }).catch(fail)} />}
+      </React.Fragment>
+    );
   }
 
   function TeamPickerLauncher() {

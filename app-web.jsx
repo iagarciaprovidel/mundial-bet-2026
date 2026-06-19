@@ -25,16 +25,16 @@ const TWEAK_DEFAULTS_W = /*EDITMODE-BEGIN*/{
 const NAV_W = [
   { id: 'inicio',   label: 'Inicio',   icon: '🏠' },
   { id: 'partidos', label: 'Apostar',  icon: '⚽' },
-  { id: 'equipos',  label: 'Equipos',  icon: '🌍' },
+  { id: 'equipos',  label: 'Selecciones', icon: '🌍' },
   { id: 'ranking',  label: 'Ranking',  icon: '🏆' },
-  { id: 'liga',     label: 'Liga',     icon: '💰' },
+  { id: 'liga',     label: 'Mi grupo', icon: '👥' },
   { id: 'perfil',   label: 'Perfil',   icon: '👤' },
   { id: 'feed',     label: 'Feed',     icon: '📣' },
 ];
 
 const TITLES = {
-  inicio: 'Inicio', partidos: 'Apostar', equipos: 'Equipos y grupos',
-  ranking: 'Ranking', liga: 'Liga', perfil: 'Mi perfil', feed: 'Feed social',
+  inicio: 'Inicio', partidos: 'Apostar', equipos: 'Selecciones del Mundial',
+  ranking: 'Ranking', liga: 'Mi grupo', perfil: 'Mi perfil', feed: 'Feed social',
   quiniela: 'Quiniela anónima', admin: 'Panel Admin',
 };
 
@@ -918,8 +918,9 @@ function InfoRow({ label, value }) {
 
 function LigaWeb() {
   return (
-    <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      {window.MB_LigaReal ? React.createElement(window.MB_LigaReal, {}) : null}
+    <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {window.MB_TeamCTA ? React.createElement(window.MB_TeamCTA) : null}
+      {window.MB_GroupsHome ? React.createElement(window.MB_GroupsHome) : null}
     </div>
   );
 }
