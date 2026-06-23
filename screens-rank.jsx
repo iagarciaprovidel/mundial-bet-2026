@@ -181,17 +181,19 @@ function Perfil() {
   const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
   const wonN = settled.filter(b => b.status === 'won').length;
   const aciertos = settled.length ? Math.round((wonN / settled.length) * 100) : 0;
+  // Medallas por volumen de apuestas (🥉 10 · 🥈 25 · 🥇 50). Mismo umbral que la insignia.
+  const medals = (bets.length >= 10 ? 1 : 0) + (bets.length >= 25 ? 1 : 0) + (bets.length >= 50 ? 1 : 0);
   const PICK = (b) => (b.pick === 'home' ? b.home : b.pick === 'away' ? b.away : 'Empate');
   const FX = (window.MB_WC && window.MB_WC.FIXTURES) || [];
   const koOf = (id) => { const f = FX.find(x => x.id === id); return f ? new Date(f.kickoff).getTime() : 0; };
 
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ textAlign: 'center', marginBottom: 12 }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 6px', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', marginBottom: 10 }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', margin: '0 auto 5px', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {(meRec && meRec.championCode)
             ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Campeón: ' + (meRec.champion || '')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ fontWeight: 800, fontSize: 24, color: 'var(--gold-light)' }}>{ini}</span>}
+            : <span style={{ fontWeight: 800, fontSize: 22, color: 'var(--gold-light)' }}>{ini}</span>}
         </div>
         <h2 className="display" style={{ margin: '2px 0 3px', fontSize: 'var(--t-xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{authUser.email || ''} · {teamName}</div>
@@ -213,7 +215,7 @@ function Perfil() {
       </div>
 
       {/* Métricas compactas en una sola tarjeta (4 columnas) */}
-      <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', overflow: 'hidden', marginBottom: enJuego > 0 ? 6 : 14 }}>
+      <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', overflow: 'hidden', marginBottom: enJuego > 0 ? 6 : 12 }}>
         <div style={{ display: 'flex', alignItems: 'stretch' }}>
           {[
             ['⚽', 'Puntos', fmt(saldo), 'var(--gold-light)'],
@@ -238,11 +240,11 @@ function Perfil() {
         </div>
       )}
 
-      {/* Escalera del campeón: puntos que se regalan al terminar la fase de grupos */}
-      {window.MB_ChampLadder && <div style={{ marginBottom: 14 }}>{React.createElement(window.MB_ChampLadder)}</div>}
+      {/* Premios al terminar la 3ª fecha: bono por campeón (2ª fase) + bono por medallas */}
+      {window.MB_ChampLadder && <div style={{ marginBottom: 12 }}>{React.createElement(window.MB_ChampLadder, { medals })}</div>}
 
       {/* Mi grupo: CTA para crear/unirse + tabla de equipos (lo mismo que la pestaña "Mi grupo") */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
         {window.MB_TeamCTA ? React.createElement(window.MB_TeamCTA) : null}
         {window.MB_GroupsHome ? React.createElement(window.MB_GroupsHome) : null}
       </div>
@@ -250,7 +252,7 @@ function Perfil() {
       {window.MB_openFiguritas && (() => {
         const r = window.MB_figuritasResumen ? window.MB_figuritasResumen() : { tengo: 0, total: 0, pct: 0 };
         return (
-          <Card hover onClick={() => window.MB_openFiguritas()} style={{ padding: '14px', marginBottom: 14, cursor: 'pointer' }}>
+          <Card hover onClick={() => window.MB_openFiguritas()} style={{ padding: '13px 14px', marginBottom: 12, cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 28 }}>🎴</span>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -266,7 +268,7 @@ function Perfil() {
         );
       })()}
 
-      <Card title="Mi historial de apuestas" style={{ padding: '14px 14px', marginBottom: 18 }}>
+      <Card title="Mi historial de apuestas" style={{ padding: '13px 14px', marginBottom: 12 }}>
         {bets.length === 0
           ? <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-sm)', padding: '16px 8px' }}>Aún no has hecho apuestas.<br /><span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Ve a <strong style={{ color: 'var(--gold-light)' }}>Partidos</strong> y apuesta al ganador.</span></div>
           : bets.map((b, i) => {

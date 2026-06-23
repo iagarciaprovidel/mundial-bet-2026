@@ -81,7 +81,6 @@ const NAV = [
   { id: 'partidos', label: 'Apostar', icon: '⚽' },
   { id: 'equipos', label: 'Selecciones', icon: '🌍' },
   { id: 'ranking', label: 'Ranking', icon: '🏆' },
-  { id: 'liga', label: 'Mi grupo', icon: '👥' },
   { id: 'perfil', label: 'Perfil', icon: '👤' },
 ];
 function BottomNav({ tab, onTab, accent }) {
