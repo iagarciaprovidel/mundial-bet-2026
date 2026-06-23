@@ -749,6 +749,36 @@
   }
   window.MB_ChampionPick = ChampionPick;
 
+  // ── Anuncio de la "escalera del campeón": qué puntos se regalan al terminar
+  //    la fase de grupos (3ª fecha) y a medida que avanza la selección elegida.
+  //    Es informativo: deja claro QUÉ se regala y CUÁNDO empieza a pagarse. ──
+  function ChampLadder() {
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const lastGroupKO = fx.length ? Math.max.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
+    const deadlineStr = isFinite(lastGroupKO) ? new Date(lastGroupKO).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : null;
+    return (
+      <div style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.16), rgba(201,155,31,0.05))', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 18 }}>🎁</span>
+          <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-md)', color: 'var(--text)' }}>Puntos de regalo · Escalera del campeón</h3>
+        </div>
+        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.45, marginBottom: 10 }}>
+          Al <strong style={{ color: 'var(--gold-light)' }}>terminar la fase de grupos{deadlineStr ? ' (3ª fecha · ' + deadlineStr + ')' : ' (3ª fecha)'}</strong> empezamos a regalar puntos según hasta dónde llegue la selección que elegiste como campeona. Gratis y sin riesgo para tu saldo.
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', marginBottom: 8 }}>
+          {CHAMP_LADDER.map((x, i) => (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 'var(--r-pill)', background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border)', fontSize: 'var(--t-3xs)' }}>
+              <span style={{ color: 'var(--muted)' }}>{x[0]}</span>
+              <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(x[1])}</span>
+            </span>
+          ))}
+        </div>
+        <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>Hasta <strong style={{ color: 'var(--gold-light)' }}>+{fmt(CHAMP_TOTAL)}</strong> si tu selección sale campeona. Los premios son acumulativos.</div>
+      </div>
+    );
+  }
+  window.MB_ChampLadder = ChampLadder;
+
   // Banderita del campeón elegido por un jugador (para mostrar junto a su nombre).
   window.MB_champFlag = function (code, name, h) {
     if (!code) return null;

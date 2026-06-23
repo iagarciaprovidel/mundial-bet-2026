@@ -212,31 +212,45 @@ function Perfil() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: enJuego > 0 ? 8 : 18 }}>
-        {[
-          ['Puntos', fmt(saldo), 'var(--gold-light)'],
-          ['Posición', pos ? '#' + pos : '—', 'var(--info)'],
-          ['Apuestas', String(bets.length), 'var(--text)'],
-          ['Aciertos', settled.length ? aciertos + '%' : '—', 'var(--success)'],
-        ].map(([k, v, c]) => (
-          <Card key={k} style={{ padding: '12px 8px', textAlign: 'center' }}>
-            <div className="num" style={{ fontSize: 'var(--t-lg)', color: c }}>{v}</div>
-            <div style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>{k}</div>
-          </Card>
-        ))}
+      {/* Métricas compactas en una sola tarjeta (4 columnas) */}
+      <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--sh-1)', overflow: 'hidden', marginBottom: enJuego > 0 ? 6 : 14 }}>
+        <div style={{ display: 'flex', alignItems: 'stretch' }}>
+          {[
+            ['⚽', 'Puntos', fmt(saldo), 'var(--gold-light)'],
+            ['📊', 'Posición', pos ? '#' + pos : '—', 'var(--info)'],
+            ['🎟️', 'Apuestas', String(bets.length), 'var(--text)'],
+            ['🎯', 'Aciertos', settled.length ? aciertos + '%' : '—', 'var(--success)'],
+          ].map(([icon, k, v, c], i) => (
+            <div key={k} style={{ flex: 1, textAlign: 'center', padding: '11px 4px', borderLeft: i ? '1px solid var(--border)' : 'none' }}>
+              <div className="num" style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: c, lineHeight: 1.1 }}>{v}</div>
+              <div style={{ fontSize: 8.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em', marginTop: 3, whiteSpace: 'nowrap' }}>{icon} {k}</div>
+            </div>
+          ))}
+        </div>
+        {/* Mi campeón (línea compacta) */}
+        {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { compact: true })}
       </div>
       {enJuego > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 18, padding: '8px 12px', borderRadius: 'var(--r-md)', background: 'var(--surface-1)', border: '1px solid var(--border)', fontSize: 'var(--t-2xs)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 14, padding: '8px 12px', borderRadius: 'var(--r-md)', background: 'var(--surface-1)', border: '1px solid var(--border)', fontSize: 'var(--t-2xs)' }}>
           <span style={{ color: 'var(--muted)' }}>💰 Disponible <span className="num" style={{ color: 'var(--text)', fontWeight: 800 }}>{fmt(avail)}</span></span>
           <span style={{ color: 'var(--muted-2)' }}>·</span>
           <span style={{ color: 'var(--muted)' }}>🎟️ En juego <span className="num" style={{ color: 'var(--info)', fontWeight: 800 }}>{fmt(enJuego)}</span></span>
         </div>
       )}
 
+      {/* Escalera del campeón: puntos que se regalan al terminar la fase de grupos */}
+      {window.MB_ChampLadder && <div style={{ marginBottom: 14 }}>{React.createElement(window.MB_ChampLadder)}</div>}
+
+      {/* Mi grupo: CTA para crear/unirse + tabla de equipos (lo mismo que la pestaña "Mi grupo") */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }}>
+        {window.MB_TeamCTA ? React.createElement(window.MB_TeamCTA) : null}
+        {window.MB_GroupsHome ? React.createElement(window.MB_GroupsHome) : null}
+      </div>
+
       {window.MB_openFiguritas && (() => {
         const r = window.MB_figuritasResumen ? window.MB_figuritasResumen() : { tengo: 0, total: 0, pct: 0 };
         return (
-          <Card hover onClick={() => window.MB_openFiguritas()} style={{ padding: '14px', marginBottom: 18, cursor: 'pointer' }}>
+          <Card hover onClick={() => window.MB_openFiguritas()} style={{ padding: '14px', marginBottom: 14, cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 28 }}>🎴</span>
               <div style={{ flex: 1, minWidth: 0 }}>
