@@ -763,7 +763,7 @@
     const deadlineStr = isFinite(lastGroupKO) ? new Date(lastGroupKO).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : null;
     const medalIcons = medals >= 3 ? '🥉🥈🥇' : medals === 2 ? '🥉🥈' : medals === 1 ? '🥉' : '';
     return (
-      <div style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.16), rgba(201,155,31,0.05))', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', padding: '13px 15px', boxShadow: 'var(--sh-1)' }}>
+      <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', padding: '13px 15px', boxShadow: 'var(--sh-1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
           <span style={{ fontSize: 18 }}>🎁</span>
           <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-md)', color: 'var(--text)' }}>Puntos de regalo al terminar la 3ª fecha</h3>
