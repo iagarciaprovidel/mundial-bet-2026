@@ -793,78 +793,62 @@
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
     const lastGroupKO = fx.length ? Math.max.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
     const deadlineStr = isFinite(lastGroupKO) ? new Date(lastGroupKO).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : null;
-    const row = { paddingTop: 9, marginTop: 9, borderTop: '1px solid var(--border)' };
-    const head = { fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700 };
-    const sub = { fontSize: 9, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.4 };
     const gold = { color: 'var(--gold-light)', fontWeight: 800 };
-    const chip = { display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 'var(--r-pill)', background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border)', fontSize: 'var(--t-3xs)' };
+
+    // ── Desglose: lo ASEGURADO (ya bloqueado) y lo PENDIENTE (aún sumable) ──
+    const secured = [];
+    if (bd.recarga > 0) secured.push(['🎟️', 'Recarga · ' + bets + ' apuestas', bd.recarga]);
+    if (bd.precision > 0) secured.push(['🎯', 'Precisión · ' + acc + '% de aciertos', bd.precision]);
+    if (bd.streak > 0) secured.push(['🔥', 'Racha · ' + streak + ' seguidas', bd.streak]);
+
+    const pending = [];
+    // Recarga: siempre hay un próximo escalón de +2.000.
+    pending.push(['🎟️', 'Llega a ' + nextRecargaAt + ' apuestas', BET_RECARGA_PER10]);
+    // Precisión: subir de tramo (solo cuenta el mayor → se muestra la diferencia).
+    const precAsc = PRECISION_TIERS.slice().sort((a, b) => a[0] - b[0]); // [50,5k] [65,12k] [80,25k]
+    if (settled < PRECISION_MIN_BETS) {
+      pending.push(['🎯', 'Resuelve ' + PRECISION_MIN_BETS + ' apuestas con ≥50%', precAsc[0][1]]);
+    } else {
+      for (let i = 0; i < precAsc.length; i++) { if (acc < precAsc[i][0]) { pending.push(['🎯', 'Sube a ≥' + precAsc[i][0] + '% de aciertos', precAsc[i][1] - bd.precision]); break; } }
+    }
+    // Racha: próximos tramos no alcanzados (son acumulables).
+    STREAK_TIERS.forEach((t) => { if (streak < t[0]) pending.push(['🔥', t[0] + ' aciertos seguidos', t[1]]); });
+    // Campeón: depende del torneo (no se puede asegurar todavía).
+    pending.push(['🏆', 'Que tu selección pase de fase', CHAMP_LADDER[0][1], 'hasta +' + fmt(CHAMP_TOTAL) + ' si es campeona']);
+
+    const line = (it, i, tone) => (
+      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 0', borderTop: i ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+        <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', minWidth: 0 }}>{it[0]} {it[1]}{it[3] ? <span style={{ fontSize: 9, color: 'var(--muted-2)' }}> · {it[3]}</span> : null}</span>
+        <span className="num" style={{ fontSize: 'var(--t-2xs)', color: tone, fontWeight: 800, flexShrink: 0 }}>+{fmt(it[2])}</span>
+      </div>
+    );
+
     return (
       <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', padding: '13px 15px', boxShadow: 'var(--sh-1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
           <span style={{ fontSize: 18 }}>🎁</span>
           <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-md)', color: 'var(--text)' }}>Premios al terminar la 3ª fecha</h3>
         </div>
-        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.4, marginBottom: 4 }}>
-          Al <strong style={gold}>terminar la fase de grupos{deadlineStr ? ' (3ª fecha · ' + deadlineStr + ')' : ' (3ª fecha)'}</strong> repartimos puntos, gratis y sin riesgo para tu saldo:
+        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.4, marginBottom: 11 }}>
+          Se reparten al <strong style={gold}>terminar la fase de grupos{deadlineStr ? ' (3ª fecha · ' + deadlineStr + ')' : ' (3ª fecha)'}</strong>, gratis y sin riesgo para tu saldo.
         </div>
 
-        {/* 1) Campeón (azar) */}
-        <div style={row}>
-          <div style={head}>🏆 Tu campeón — si tu selección <strong style={gold}>pasó a la 2ª fase</strong>, y más a medida que avanza:</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', marginTop: 6 }}>
-            {CHAMP_LADDER.map((x, i) => (
-              <span key={i} style={chip}><span style={{ color: 'var(--muted)' }}>{x[0]}</span><span className="num" style={gold}>+{fmt(x[1])}</span></span>
-            ))}
+        {/* ✅ Asegurado */}
+        <div style={{ padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'var(--coin-bg)', border: '1px solid rgba(212,175,55,0.4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 800 }}>✅ Llevas asegurado</span>
+            <span className="num" style={{ fontSize: 'var(--t-lg)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(bd.total)}</span>
           </div>
-          <div style={sub}>Hasta <strong style={gold}>+{fmt(CHAMP_TOTAL)}</strong> si tu selección sale campeona (acumulativo).</div>
+          {secured.length
+            ? <div style={{ marginTop: 4 }}>{secured.map((it, i) => line(it, i, 'var(--gold-light)'))}</div>
+            : <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 4 }}>Aún no aseguras puntos. Apuesta para empezar a sumar.</div>}
         </div>
 
-        {/* 2) Recarga por apuestas (actividad) */}
-        <div style={row}>
-          <div style={head}>🎟️ Recarga por apuestas: <span className="num" style={gold}>+{fmt(BET_RECARGA_PER10)}</span> por cada 10 apuestas</div>
-          <div style={sub}>
-            {bets >= 10
-              ? <>Tienes <strong style={gold}>{bets} apuestas</strong> = <span className="num" style={gold}>+{fmt(bd.recarga)}</span> asegurados. La apuesta n.º {nextRecargaAt} suma otros +{fmt(BET_RECARGA_PER10)}.</>
-              : <>Llevas <strong style={gold}>{bets}</strong> de 10 apuestas. Llega a 10 y suma <span className="num" style={gold}>+{fmt(BET_RECARGA_PER10)}</span>.</>}
-          </div>
-        </div>
-
-        {/* 3) Precisión (habilidad) */}
-        <div style={row}>
-          <div style={head}>🎯 Precisión — por tu % de aciertos (mín. {PRECISION_MIN_BETS} apuestas):</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', marginTop: 6 }}>
-            {PRECISION_TIERS.slice().reverse().map((t, i) => (
-              <span key={i} style={chip}><span style={{ color: 'var(--muted)' }}>≥{t[0]}%</span><span className="num" style={gold}>+{fmt(t[1])}</span></span>
-            ))}
-          </div>
-          <div style={sub}>
-            {settled < PRECISION_MIN_BETS
-              ? <>Necesitas <strong style={gold}>{PRECISION_MIN_BETS}</strong> apuestas resueltas (llevas {settled}).</>
-              : bd.precision > 0
-                ? <>Vas <strong style={gold}>{acc}%</strong> en {settled} apuestas = <span className="num" style={gold}>+{fmt(bd.precision)}</span>.</>
-                : <>Vas {acc}% en {settled} apuestas. Llega a 50% y suma <span className="num" style={gold}>+{fmt(5000)}</span>.</>}
-          </div>
-        </div>
-
-        {/* 4) Racha (habilidad) */}
-        <div style={row}>
-          <div style={head}>🔥 Racha — aciertos seguidos (se suman):</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', marginTop: 6 }}>
-            {STREAK_TIERS.map((t, i) => (
-              <span key={i} style={chip}><span style={{ color: 'var(--muted)' }}>{t[0]} seguidas</span><span className="num" style={gold}>+{fmt(t[1])}</span></span>
-            ))}
-          </div>
-          <div style={sub}>
-            {streak > 0
-              ? <>Tu mejor racha: <strong style={gold}>{streak}</strong> {streak === 1 ? 'acierto' : 'aciertos'}{bd.streak > 0 ? <> = <span className="num" style={gold}>+{fmt(bd.streak)}</span></> : <> (llega a 3 y suma +{fmt(2000)})</>}.</>
-              : <>Encadena 3 aciertos seguidos y suma <span className="num" style={gold}>+{fmt(2000)}</span>.</>}
-          </div>
-        </div>
-
-        {/* Total asegurado (sin contar el campeón, que depende del torneo) */}
-        <div style={{ marginTop: 11, padding: '8px 11px', borderRadius: 'var(--r-md)', background: 'var(--coin-bg)', border: '1px solid rgba(212,175,55,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700 }}>Llevas asegurado <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 400 }}>(sin contar el campeón)</span></span>
-          <span className="num" style={{ fontSize: 'var(--t-lg)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(bd.total)}</span>
+        {/* ⏳ Por asegurar */}
+        <div style={{ marginTop: 9, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.22)', border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 800, marginBottom: 2 }}>⏳ Por asegurar</div>
+          {pending.map((it, i) => line(it, i, 'var(--muted)'))}
+          <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 6, lineHeight: 1.4 }}>El campeón suma a medida que avanza tu selección (Octavos, Cuartos…) hasta <strong style={gold}>+{fmt(CHAMP_TOTAL)}</strong>.</div>
         </div>
       </div>
     );
