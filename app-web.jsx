@@ -329,30 +329,55 @@ function TeamModal({ team, onClose }) {
           <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 6, paddingLeft: 2 }}>Los 2 primeros avanzan de fase.</div>
         </div>
 
-        <SectionHead title="Partidos en el grupo" />
+        <SectionHead title="Partidos y resultados" />
         {teamFixtures.length === 0 && (
           <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Sin partidos registrados.</div>
         )}
-        {teamFixtures.map((m, i) => (
-          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < teamFixtures.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-            <Chip tone="blue">J{m.md}</Chip>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 'var(--t-sm)', fontWeight: 700 }}>{m.home} vs {m.away}</div>
-              <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {m.stadium}</div>
-              {(() => {
-                const r = window.MB.refForMatch && window.MB.refForMatch(m);
-                return r ? (
-                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
-                    <span>🧑‍⚖️</span>
-                    <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 8, width: 'auto', borderRadius: 1 }} />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
-                  </div>
-                ) : null;
-              })()}
+        {teamFixtures.map((m, i) => {
+          const od = (store && store.odds) ? store.odds[m.id] : null;
+          const isLive = !!(od && od.live && !od.finished);
+          const isFin = !!(od && od.finished);
+          const hasScore = (isLive || isFin) && od.gh != null && od.ga != null;
+          const isHome = m.home === team.name;
+          let res = null; // resultado desde la perspectiva del equipo seleccionado
+          if (isFin && hasScore) {
+            const my = isHome ? od.gh : od.ga, ot = isHome ? od.ga : od.gh;
+            res = my > ot ? { t: '✓ Ganó', c: 'var(--success)', bg: 'var(--success-bg)' }
+                : my < ot ? { t: '✕ Perdió', c: 'var(--danger)', bg: 'rgba(232,64,64,0.12)' }
+                : { t: '= Empató', c: 'var(--muted)', bg: 'var(--surface-2)' };
+          }
+          return (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < teamFixtures.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+              <Chip tone="blue">J{m.md}</Chip>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 'var(--t-sm)', fontWeight: 700 }}>{m.home} vs {m.away}</div>
+                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {m.stadium}</div>
+                {(() => {
+                  const r = window.MB.refForMatch && window.MB.refForMatch(m);
+                  return r ? (
+                    <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                      <span>🧑‍⚖️</span>
+                      <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 8, width: 'auto', borderRadius: 1 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 64 }}>
+                {hasScore ? (
+                  <React.Fragment>
+                    <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, lineHeight: 1, color: isLive ? '#ff6b6b' : 'var(--text)' }}>{od.gh}<span style={{ color: 'var(--muted-2)', margin: '0 2px' }}>–</span>{od.ga}</div>
+                    {isLive
+                      ? <div style={{ fontSize: 9, color: '#ff6b6b', fontWeight: 800, marginTop: 3 }}>🔴 EN VIVO</div>
+                      : (res && <span style={{ display: 'inline-block', marginTop: 4, fontSize: 9, fontWeight: 700, color: res.c, background: res.bg, padding: '2px 7px', borderRadius: 'var(--r-pill)' }}>{res.t}</span>)}
+                  </React.Fragment>
+                ) : (
+                  <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{fmtKO(m.kickoff)}</span>
+                )}
+              </div>
             </div>
-            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'right', flexShrink: 0 }}>{fmtKO(m.kickoff)}</span>
-          </div>
-        ))}
+          );
+        })}
 
         <div style={{ marginTop: 18 }}>
           <SectionHead title={`Jugadores convocados (${squad.length})`} />
