@@ -30,6 +30,19 @@ const DISCOVER = process.argv.includes('discover');
 const DIAG = process.argv.includes('diag');
 const SALDO_INICIAL = 90000;
 
+// ── Esquema de premios que paga el motor de cierre de fase (espejo de
+//    window.MB_REBAL / MB_bonusBreakdown en mb-bet.jsx — mantener en sync). ──
+const BONUS = {
+  recargaPer10: 2000,                              // +2.000 por cada 10 apuestas
+  precisionMinBets: 8,                             // mín. apuestas liquidadas para optar a precisión
+  precisionTiers: [[80, 25000], [65, 12000], [50, 5000]], // %acierto → bono (solo el mayor)
+  streakTiers: [[3, 2000], [5, 5000], [7, 10000]], // racha de aciertos → bono (acumulable)
+  champPassPhase: 5000,                            // campeón pasó a 2ª fase ("Pasa de fase" de CHAMP_LADDER)
+};
+// SEGURIDAD: por defecto SIMULA (no escribe saldos). Para pagar de verdad,
+// define la variable de entorno BONUS_DRY_RUN=0 en el workflow del agente.
+const BONUS_DRY_RUN = process.env.BONUS_DRY_RUN !== '0';
+
 // ── Nuestros partidos (generados desde wc2026.js) ──
 const OURS = JSON.parse(fs.readFileSync(path.join(__dirname, 'our-fixtures.json'), 'utf8'));
 
@@ -375,6 +388,109 @@ async function recomputeStaked() {
   return n;
 }
 
+// ── Motor de cierre de la FASE DE GRUPOS (fin de la 3ª fecha) ──
+//    Paga, UNA sola vez por jugador, los premios rebalanceados:
+//      · Recarga por apuestas (+2.000 c/10) · Precisión · Racha
+//      · Campeón "Pasa de fase" (+5.000) si su selección clasificó.
+//    Clasifican los 2 primeros de cada grupo + los 8 mejores terceros
+//    (formato 2026). Idempotente vía meta/bonuses.groupsClosed y
+//    users/{uid}.rewards.groupsClosed. DRY_RUN simula sin escribir. ──
+async function payGroupStageBonuses() {
+  // ¿Ya se pagó? (evita releer users/bets en cada corrida posterior).
+  if (!BONUS_DRY_RUN) {
+    const metaDone = await db.collection('meta').doc('bonuses').get();
+    if (metaDone.exists && metaDone.data().groupsClosed) return 0;
+  }
+  // Necesitamos los 72 partidos de grupos TERMINADOS (con marcador).
+  const ids = OURS.map((f) => f.id);
+  const oddsSnap = await db.collection('odds').get();
+  const odds = {};
+  oddsSnap.forEach((d) => { odds[d.id] = d.data(); });
+  const done = ids.filter((id) => odds[id] && odds[id].finished && odds[id].gh != null && odds[id].ga != null);
+  if (done.length < ids.length) {
+    console.log(`  Cierre de grupos: ${done.length}/${ids.length} partidos terminados — aún no se paga.`);
+    return 0;
+  }
+
+  // Tabla de cada grupo + clasificados (top 2 + 8 mejores terceros).
+  // Desempate: puntos → diferencia de gol → goles a favor (simplificado).
+  const byGroup = {};
+  OURS.forEach((f) => {
+    const o = odds[f.id], g = f.group;
+    byGroup[g] = byGroup[g] || {};
+    const H = byGroup[g][f.homeCode] = byGroup[g][f.homeCode] || { code: f.homeCode, name: f.home, pts: 0, gf: 0, gc: 0 };
+    const A = byGroup[g][f.awayCode] = byGroup[g][f.awayCode] || { code: f.awayCode, name: f.away, pts: 0, gf: 0, gc: 0 };
+    const gh = o.gh | 0, ga = o.ga | 0;
+    H.gf += gh; H.gc += ga; A.gf += ga; A.gc += gh;
+    if (gh > ga) H.pts += 3; else if (gh < ga) A.pts += 3; else { H.pts++; A.pts++; }
+  });
+  const cmp = (a, b) => b.pts - a.pts || (b.gf - b.gc) - (a.gf - a.gc) || b.gf - a.gf;
+  const qualified = new Set();
+  const thirds = [];
+  Object.keys(byGroup).forEach((g) => {
+    const table = Object.keys(byGroup[g]).map((k) => byGroup[g][k]).sort(cmp);
+    if (table[0]) qualified.add(table[0].code);
+    if (table[1]) qualified.add(table[1].code);
+    if (table[2]) thirds.push(table[2]);
+  });
+  thirds.sort(cmp).slice(0, 8).forEach((t) => qualified.add(t.code));
+
+  // Apuestas por usuario + kickoff por partido (para la racha cronológica).
+  const koOf = {};
+  OURS.forEach((f) => { koOf[f.id] = new Date(f.kickoff).getTime(); });
+  const betsSnap = await db.collection('bets').get();
+  const byUid = {};
+  betsSnap.forEach((d) => { const b = d.data(); if (!b.uid) return; (byUid[b.uid] = byUid[b.uid] || []).push(b); });
+
+  // Iteramos sobre TODOS los usuarios (un campeón clasificado paga aunque no haya apostado).
+  const usersSnap = await db.collection('users').get();
+  let paid = 0, totalPts = 0;
+  for (const ud of usersSnap.docs) {
+    const u = ud.data() || {};
+    if (u.rewards && u.rewards.groupsClosed) continue; // ya pagado a este jugador
+    const list = byUid[ud.id] || [];
+    const nbets = list.length;
+    const settledList = list.filter((b) => b.status === 'won' || b.status === 'lost');
+    const won = settledList.filter((b) => b.status === 'won').length;
+    const acc = settledList.length ? Math.round((won / settledList.length) * 100) : 0;
+    const chron = settledList.slice().sort((a, b) => (koOf[a.matchId] || 0) - (koOf[b.matchId] || 0));
+    let best = 0, cur = 0;
+    chron.forEach((b) => { if (b.status === 'won') { cur++; if (cur > best) best = cur; } else cur = 0; });
+
+    const recarga = Math.floor(nbets / 10) * BONUS.recargaPer10;
+    let precision = 0;
+    if (settledList.length >= BONUS.precisionMinBets) for (const t of BONUS.precisionTiers) { if (acc >= t[0]) { precision = t[1]; break; } }
+    let streak = 0;
+    BONUS.streakTiers.forEach((t) => { if (best >= t[0]) streak += t[1]; });
+    const champPass = (u.championCode && qualified.has(u.championCode)) ? BONUS.champPassPhase : 0;
+    const sum = recarga + precision + streak + champPass;
+    const detail = { recarga: recarga, precision: precision, streak: streak, champPass: champPass, total: sum };
+
+    if (BONUS_DRY_RUN) {
+      console.log(`  [DRY] ${u.nombre || ud.id}: recarga+${recarga} precisión+${precision} racha+${streak} campeón+${champPass} = +${sum} (apuestas ${nbets}, aciertos ${acc}%, mejor racha ${best})`);
+    } else {
+      await db.runTransaction(async (tx) => {
+        const ref = db.collection('users').doc(ud.id);
+        const cur2 = await tx.get(ref);
+        const data = cur2.exists ? cur2.data() : {};
+        if (data.rewards && data.rewards.groupsClosed) return; // doble chequeo anti-duplicado
+        const saldo = (typeof data.saldo === 'number') ? data.saldo : SALDO_INICIAL;
+        tx.set(ref, {
+          prevSaldo: saldo, saldo: saldo + sum,
+          rewards: Object.assign({}, data.rewards, { groupsClosed: true, groups: detail, at: admin.firestore.FieldValue.serverTimestamp() }),
+        }, { merge: true });
+      });
+      if (sum > 0) await notify(ud.id, '🎁 Premios de la fase de grupos', `Recibiste +${sum} puntos por tu actividad y precisión. ¡Sigue jugando!`);
+    }
+    paid++; totalPts += sum;
+  }
+  if (!BONUS_DRY_RUN) {
+    await db.collection('meta').doc('bonuses').set({ groupsClosed: true, at: admin.firestore.FieldValue.serverTimestamp(), qualified: Array.from(qualified) }, { merge: true });
+  }
+  console.log(`  Cierre de grupos: ${BONUS_DRY_RUN ? 'SIMULADO (DRY_RUN, no se escribió)' : 'PAGADO'} a ${paid} jugador(es), ${totalPts} pts. Clasificados: ${qualified.size} selecciones.`);
+  return paid;
+}
+
 async function main() {
   if (!TOKEN) throw new Error('Falta FOOTBALL_DATA_TOKEN');
   console.log(`Agente MundialBet (football-data.org · ${COMP}) · ${new Date().toISOString()}`);
@@ -454,6 +570,9 @@ async function main() {
     if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
     const gone = await cleanupEmptyGroups();
     if (gone) console.log(`Equipos vacíos borrados: ${gone}.`);
+    // Motor de cierre de fase: paga los premios al terminar la fase de grupos.
+    // DRY_RUN por defecto (simula). Tolerante a fallos (no debe tumbar la corrida).
+    try { await payGroupStageBonuses(); } catch (e) { console.warn('Cierre de grupos falló:', (e && e.message) || e); }
   }
 
   const alertN = await matchAlerts();

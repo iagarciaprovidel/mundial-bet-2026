@@ -186,6 +186,15 @@ function Perfil() {
   const PICK = (b) => (b.pick === 'home' ? b.home : b.pick === 'away' ? b.away : 'Empate');
   const FX = (window.MB_WC && window.MB_WC.FIXTURES) || [];
   const koOf = (id) => { const f = FX.find(x => x.id === id); return f ? new Date(f.kickoff).getTime() : 0; };
+  // Mejor racha de aciertos seguidos (apuestas liquidadas en orden cronológico de partido).
+  const bestStreak = (() => {
+    const chron = settled.slice().sort((a, b) => koOf(a.matchId) - koOf(b.matchId) || ms(a.creado) - ms(b.creado));
+    let best = 0, cur = 0;
+    chron.forEach(b => { if (b.status === 'won') { cur++; if (cur > best) best = cur; } else { cur = 0; } });
+    return best;
+  })();
+  // Stats para el desglose de premios (recarga + precisión + racha).
+  const bonusStats = { bets: bets.length, settled: settled.length, accuracy: aciertos, bestStreak: bestStreak };
 
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
@@ -240,8 +249,8 @@ function Perfil() {
         </div>
       )}
 
-      {/* Premios al terminar la 3ª fecha: bono por campeón (2ª fase) + bono por medallas */}
-      {window.MB_ChampLadder && <div style={{ marginBottom: 12 }}>{React.createElement(window.MB_ChampLadder, { medals })}</div>}
+      {/* Premios al terminar la 3ª fecha: campeón (2ª fase) + recarga + precisión + racha */}
+      {window.MB_ChampLadder && <div style={{ marginBottom: 12 }}>{React.createElement(window.MB_ChampLadder, { stats: bonusStats })}</div>}
 
       {/* Mi grupo: CTA para crear/unirse + tabla de equipos (lo mismo que la pestaña "Mi grupo") */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>

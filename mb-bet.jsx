@@ -749,50 +749,122 @@
   }
   window.MB_ChampionPick = ChampionPick;
 
-  // ── Anuncio de premios que se reparten al TERMINAR LA 3ª FECHA (fin de la
-  //    fase de grupos). Dos regalos de puntos, gratis y sin riesgo para el saldo:
-  //      1) Por tu campeón: si la selección que elegiste pasó a la 2ª fase
-  //         (y acumula más a medida que avanza, hasta salir campeona).
-  //      2) Por tus medallas: un bono por cada medalla (🥉🥈🥇) que tengas.
-  //    Recibe `medals` (cantidad de medallas del jugador) para mostrar su bono. ──
-  const MEDAL_BONUS = 3000; // puntos de regalo por cada medalla al cerrar la 3ª fecha
+  // ── Esquema de premios (rebalanceado). Se pagan AL CERRAR LA FASE DE GRUPOS
+  //    (fin de la 3ª fecha). Respeta lo ya definido y suma premios por habilidad:
+  //      1) Campeón (azar): escalera CHAMP_LADDER — si tu selección pasó a 2ª fase
+  //         y más a medida que avanza (hasta 87.000 si es campeona).
+  //      2) Recarga por apuestas (actividad): +2.000 por cada 10 apuestas.
+  //      3) Precisión (habilidad): bono por % de aciertos (mín. 8 apuestas).
+  //      4) Racha (habilidad): bono acumulable por aciertos seguidos.
+  //    El motor de cierre en agent/index.js paga estos montos (usa MB_bonusBreakdown). ──
+  const BET_RECARGA_PER10 = 2000;                                 // +2.000 por cada 10 apuestas
+  const PRECISION_MIN_BETS = 8;                                   // mín. apuestas liquidadas para optar
+  const PRECISION_TIERS = [[80, 25000], [65, 12000], [50, 5000]]; // %acierto → bono (solo el mayor)
+  const STREAK_TIERS = [[3, 2000], [5, 5000], [7, 10000]];        // racha de aciertos → bono (acumulable)
+
+  // Desglose de premios de un jugador (sin contar el campeón, que depende del torneo).
+  // stats: { bets, settled, accuracy, bestStreak }. Misma lógica que paga el agente.
+  function bonusBreakdown(stats) {
+    const s = stats || {};
+    const bets = Math.max(0, s.bets | 0);
+    const settled = Math.max(0, s.settled | 0);
+    const acc = Math.max(0, Math.min(100, s.accuracy | 0));
+    const streak = Math.max(0, s.bestStreak | 0);
+    const recarga = Math.floor(bets / 10) * BET_RECARGA_PER10;
+    let precision = 0;
+    if (settled >= PRECISION_MIN_BETS) {
+      for (let i = 0; i < PRECISION_TIERS.length; i++) { if (acc >= PRECISION_TIERS[i][0]) { precision = PRECISION_TIERS[i][1]; break; } }
+    }
+    let streakBonus = 0;
+    STREAK_TIERS.forEach((t) => { if (streak >= t[0]) streakBonus += t[1]; });
+    return { recarga: recarga, precision: precision, streak: streakBonus, total: recarga + precision + streakBonus };
+  }
+  window.MB_REBAL = { BET_RECARGA_PER10: BET_RECARGA_PER10, PRECISION_MIN_BETS: PRECISION_MIN_BETS, PRECISION_TIERS: PRECISION_TIERS, STREAK_TIERS: STREAK_TIERS, CHAMP_LADDER: CHAMP_LADDER, CHAMP_TOTAL: CHAMP_TOTAL };
+  window.MB_bonusBreakdown = bonusBreakdown;
+
   function ChampLadder(props) {
-    const medals = Math.max(0, (props && props.medals) | 0);
+    const stats = (props && props.stats) || {};
+    const bd = bonusBreakdown(stats);
+    const bets = Math.max(0, stats.bets | 0);
+    const settled = Math.max(0, stats.settled | 0);
+    const acc = Math.max(0, Math.min(100, stats.accuracy | 0));
+    const streak = Math.max(0, stats.bestStreak | 0);
+    const nextRecargaAt = (Math.floor(bets / 10) + 1) * 10; // próxima apuesta que suma +2.000
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
     const lastGroupKO = fx.length ? Math.max.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
     const deadlineStr = isFinite(lastGroupKO) ? new Date(lastGroupKO).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : null;
-    const medalIcons = medals >= 3 ? '🥉🥈🥇' : medals === 2 ? '🥉🥈' : medals === 1 ? '🥉' : '';
+    const row = { paddingTop: 9, marginTop: 9, borderTop: '1px solid var(--border)' };
+    const head = { fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700 };
+    const sub = { fontSize: 9, color: 'var(--muted-2)', marginTop: 3, lineHeight: 1.4 };
+    const gold = { color: 'var(--gold-light)', fontWeight: 800 };
+    const chip = { display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 'var(--r-pill)', background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border)', fontSize: 'var(--t-3xs)' };
     return (
       <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', padding: '13px 15px', boxShadow: 'var(--sh-1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
           <span style={{ fontSize: 18 }}>🎁</span>
-          <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-md)', color: 'var(--text)' }}>Puntos de regalo al terminar la 3ª fecha</h3>
+          <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-md)', color: 'var(--text)' }}>Premios al terminar la 3ª fecha</h3>
         </div>
-        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.4, marginBottom: 11 }}>
-          Al <strong style={{ color: 'var(--gold-light)' }}>terminar la fase de grupos{deadlineStr ? ' (3ª fecha · ' + deadlineStr + ')' : ' (3ª fecha)'}</strong> repartimos puntos gratis, sin riesgo para tu saldo:
+        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.4, marginBottom: 4 }}>
+          Al <strong style={gold}>terminar la fase de grupos{deadlineStr ? ' (3ª fecha · ' + deadlineStr + ')' : ' (3ª fecha)'}</strong> repartimos puntos, gratis y sin riesgo para tu saldo:
         </div>
 
-        {/* 1) Bono por el campeón elegido */}
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700, marginBottom: 6 }}>🏆 Si la selección que elegiste <strong style={{ color: 'var(--gold-light)' }}>pasó a la 2ª fase</strong>, y más a medida que avanza:</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px' }}>
+        {/* 1) Campeón (azar) */}
+        <div style={row}>
+          <div style={head}>🏆 Tu campeón — si tu selección <strong style={gold}>pasó a la 2ª fase</strong>, y más a medida que avanza:</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', marginTop: 6 }}>
             {CHAMP_LADDER.map((x, i) => (
-              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 'var(--r-pill)', background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border)', fontSize: 'var(--t-3xs)' }}>
-                <span style={{ color: 'var(--muted)' }}>{x[0]}</span>
-                <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(x[1])}</span>
-              </span>
+              <span key={i} style={chip}><span style={{ color: 'var(--muted)' }}>{x[0]}</span><span className="num" style={gold}>+{fmt(x[1])}</span></span>
             ))}
           </div>
+          <div style={sub}>Hasta <strong style={gold}>+{fmt(CHAMP_TOTAL)}</strong> si tu selección sale campeona (acumulativo).</div>
         </div>
 
-        {/* 2) Bono por medallas */}
-        <div style={{ paddingTop: 9, borderTop: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700 }}>🏅 Por cada medalla que tengas (🥉🥈🥇): <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(MEDAL_BONUS)}</span></div>
-          <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 3 }}>
-            {medals > 0
-              ? <>Tienes <strong style={{ color: 'var(--gold-light)' }}>{medalIcons} {medals} {medals === 1 ? 'medalla' : 'medallas'}</strong> = <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(medals * MEDAL_BONUS)}</span> asegurados al cerrar la 3ª fecha.</>
-              : <>Gana medallas apostando (🥉 10 · 🥈 25 · 🥇 50 apuestas) y suma puntos al cerrar la 3ª fecha.</>}
+        {/* 2) Recarga por apuestas (actividad) */}
+        <div style={row}>
+          <div style={head}>🎟️ Recarga por apuestas: <span className="num" style={gold}>+{fmt(BET_RECARGA_PER10)}</span> por cada 10 apuestas</div>
+          <div style={sub}>
+            {bets >= 10
+              ? <>Tienes <strong style={gold}>{bets} apuestas</strong> = <span className="num" style={gold}>+{fmt(bd.recarga)}</span> asegurados. La apuesta n.º {nextRecargaAt} suma otros +{fmt(BET_RECARGA_PER10)}.</>
+              : <>Llevas <strong style={gold}>{bets}</strong> de 10 apuestas. Llega a 10 y suma <span className="num" style={gold}>+{fmt(BET_RECARGA_PER10)}</span>.</>}
           </div>
+        </div>
+
+        {/* 3) Precisión (habilidad) */}
+        <div style={row}>
+          <div style={head}>🎯 Precisión — por tu % de aciertos (mín. {PRECISION_MIN_BETS} apuestas):</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', marginTop: 6 }}>
+            {PRECISION_TIERS.slice().reverse().map((t, i) => (
+              <span key={i} style={chip}><span style={{ color: 'var(--muted)' }}>≥{t[0]}%</span><span className="num" style={gold}>+{fmt(t[1])}</span></span>
+            ))}
+          </div>
+          <div style={sub}>
+            {settled < PRECISION_MIN_BETS
+              ? <>Necesitas <strong style={gold}>{PRECISION_MIN_BETS}</strong> apuestas resueltas (llevas {settled}).</>
+              : bd.precision > 0
+                ? <>Vas <strong style={gold}>{acc}%</strong> en {settled} apuestas = <span className="num" style={gold}>+{fmt(bd.precision)}</span>.</>
+                : <>Vas {acc}% en {settled} apuestas. Llega a 50% y suma <span className="num" style={gold}>+{fmt(5000)}</span>.</>}
+          </div>
+        </div>
+
+        {/* 4) Racha (habilidad) */}
+        <div style={row}>
+          <div style={head}>🔥 Racha — aciertos seguidos (se suman):</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', marginTop: 6 }}>
+            {STREAK_TIERS.map((t, i) => (
+              <span key={i} style={chip}><span style={{ color: 'var(--muted)' }}>{t[0]} seguidas</span><span className="num" style={gold}>+{fmt(t[1])}</span></span>
+            ))}
+          </div>
+          <div style={sub}>
+            {streak > 0
+              ? <>Tu mejor racha: <strong style={gold}>{streak}</strong> {streak === 1 ? 'acierto' : 'aciertos'}{bd.streak > 0 ? <> = <span className="num" style={gold}>+{fmt(bd.streak)}</span></> : <> (llega a 3 y suma +{fmt(2000)})</>}.</>
+              : <>Encadena 3 aciertos seguidos y suma <span className="num" style={gold}>+{fmt(2000)}</span>.</>}
+          </div>
+        </div>
+
+        {/* Total asegurado (sin contar el campeón, que depende del torneo) */}
+        <div style={{ marginTop: 11, padding: '8px 11px', borderRadius: 'var(--r-md)', background: 'var(--coin-bg)', border: '1px solid rgba(212,175,55,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700 }}>Llevas asegurado <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 400 }}>(sin contar el campeón)</span></span>
+          <span className="num" style={{ fontSize: 'var(--t-lg)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(bd.total)}</span>
         </div>
       </div>
     );
