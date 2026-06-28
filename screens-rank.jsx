@@ -213,7 +213,7 @@ function Perfil() {
         })()}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
           {window.MB_openTeamPicker && (
-            <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ padding: '10px 18px', borderRadius: 'var(--r-pill)', border: 'none', background: 'var(--info)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', boxShadow: '0 2px 8px rgba(74,144,226,0.4)' }}>
+            <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ padding: '10px 18px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>
               {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
             </button>
           )}
