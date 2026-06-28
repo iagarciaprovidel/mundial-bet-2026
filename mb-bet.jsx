@@ -108,7 +108,10 @@
     'pick-invalido': 'Selección inválida.',
   };
 
-  const PICK_LABEL = (m, k) => (k === 'home' ? m.home : k === 'away' ? m.away : 'Empate');
+  const KO_STAGES = new Set(['r32', 'r16', 'qf', 'sf', 'final']);
+  const isKO = (m) => KO_STAGES.has(m && m.stage);
+  const DRAW_LABEL = (m) => isKO(m) ? 'Prórr./Pen.' : 'Empate';
+  const PICK_LABEL = (m, k) => (k === 'home' ? m.home : k === 'away' ? m.away : DRAW_LABEL(m));
 
   // Lista de goleadores (bandera + nombre + minuto). odds.scorers viene del agente (ESPN).
   const scorersEl = (list) => {
@@ -280,7 +283,7 @@
 
     const picks = [
       { k: 'home', label: m.home, odd: odds.home },
-      { k: 'draw', label: 'Empate', odd: odds.draw },
+      { k: 'draw', label: DRAW_LABEL(m), odd: odds.draw },
       { k: 'away', label: m.away, odd: odds.away },
     ];
     const selOdd = sel ? Number((picks.find((p) => p.k === sel) || {}).odd || 0) : 0;
@@ -303,12 +306,18 @@
                 background: active ? 'var(--coin-bg)' : 'var(--surface-2)', border: active ? '1.5px solid var(--gold)' : '1px solid var(--border-2)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, opacity: has ? 1 : 0.4,
               }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: active ? 'var(--gold-light)' : 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{p.k === 'draw' ? 'Empate' : (p.k === 'home' ? '🏠 ' : '✈ ') + p.label}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: active ? 'var(--gold-light)' : 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{p.k === 'draw' ? DRAW_LABEL(m) : (p.k === 'home' ? '🏠 ' : '✈ ') + p.label}</span>
                 <span className="num" style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: active ? 'var(--gold-light)' : 'var(--text)' }}>{has ? Number(p.odd).toFixed(2) : '—'}</span>
               </button>
             );
           })}
         </div>
+
+        {isKO(m) && (
+          <div style={{ marginTop: 6, fontSize: 8.5, color: 'var(--muted-2)', lineHeight: 1.5, padding: '5px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <strong style={{ color: 'var(--muted)' }}>Fase eliminatoria:</strong> no hay empates · «Prórr./Pen.» gana si el partido no se decide en los 90 min
+          </div>
+        )}
 
         {sel && maxSaldo < MIN_BET && (
           <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.10)', border: '1px solid rgba(220,80,80,0.4)', fontSize: 'var(--t-2xs)', color: '#e98b8b', fontWeight: 700, lineHeight: 1.4 }}>
