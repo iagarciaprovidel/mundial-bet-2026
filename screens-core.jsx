@@ -228,6 +228,9 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Aviso para elegir campeón (solo si aún no eligió y el plazo sigue abierto) */}
       {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
 
+      {/* Banner reclamar premios de fase de grupos */}
+      {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
+
       {/* Cuenta regresiva al próximo partido */}
       {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
 
