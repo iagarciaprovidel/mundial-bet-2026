@@ -191,12 +191,12 @@ function TeamsScreen() {
     <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 16, animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       {/* El título "Equipos" ya lo pone el shell (app.jsx); aquí solo el subtítulo. */}
       <p style={{ margin: '-4px 0 0', fontSize: 'var(--t-sm)', color: 'var(--muted)' }}>Los 12 grupos del Mundial 2026 · 48 selecciones con su DT</p>
-      {window.MB_GroupClassificationMap && React.createElement(window.MB_GroupClassificationMap)}
       {window.MB_BracketScreen && (
         <Card title="🏆 Cuadro eliminatorio" style={{ padding: '12px 14px' }}>
           {React.createElement(window.MB_BracketScreen)}
         </Card>
       )}
+      {window.MB_GroupClassificationMap && React.createElement(window.MB_GroupClassificationMap)}
       {groups.map((g, i) => <GroupCard key={g} groupId={g} color={GROUP_COLORS[i % GROUP_COLORS.length]} />)}
       <RefereesMobile />
     </div>
