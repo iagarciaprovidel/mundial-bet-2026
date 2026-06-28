@@ -63,9 +63,6 @@ function Ranking() {
       <Card title="👥 Ranking de equipos" style={{ padding: '12px 14px' }}>
         {window.MB_TeamsReal ? React.createElement(window.MB_TeamsReal, {}) : null}
       </Card>
-      <Card title="❓ Preguntas frecuentes" style={{ padding: '14px 14px' }}>
-        {window.MB_FAQ ? React.createElement(window.MB_FAQ, {}) : null}
-      </Card>
     </div>
   );
 }
