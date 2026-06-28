@@ -629,10 +629,11 @@
     if (!user) return null;
 
     // El pronóstico del campeón se puede elegir/cambiar hasta que TERMINA la fase
-    // de grupos (no al primer partido): así quien se suma tarde igual participa y
-    // el cierre es la misma fecha para todos. WC_FIXTURES son los partidos de grupos.
+    // de grupos. Filtramos solo partidos de grupos (stage 'Grupos' o sin stage) para
+    // que los fixtures de eliminatorias no desplacen el deadline.
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
-    const lastGroupKO = fx.length ? Math.max.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
+    const groupFx = fx.filter((m) => !m.stage || m.stage === 'Grupos');
+    const lastGroupKO = groupFx.length ? Math.max.apply(null, groupFx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
     const closed = Date.now() >= (lastGroupKO + 2 * 60 * 60 * 1000); // ~fin del último partido de grupos
     const deadlineStr = isFinite(lastGroupKO) ? new Date(lastGroupKO).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : null;
     const pick = me && me.champion;
@@ -791,7 +792,9 @@
     const streak = Math.max(0, stats.bestStreak | 0);
     const nextRecargaAt = (Math.floor(bets / 10) + 1) * 10; // próxima apuesta que suma +2.000
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
-    const lastGroupKO = fx.length ? Math.max.apply(null, fx.map((m) => new Date(m.kickoff).getTime())) : Infinity;
+    const groupFx2 = fx.filter((m) => !m.stage || m.stage === 'Grupos');
+    const lastGroupKO = groupFx2.length ? Math.max.apply(null, groupFx2.map((m) => new Date(m.kickoff).getTime())) : Infinity;
+    const groupsClosed = isFinite(lastGroupKO) && Date.now() >= (lastGroupKO + 2 * 60 * 60 * 1000);
     const deadlineStr = isFinite(lastGroupKO) ? new Date(lastGroupKO).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : null;
     const gold = { color: 'var(--gold-light)', fontWeight: 800 };
 
@@ -823,31 +826,40 @@
       </div>
     );
 
+    // Premios del campeón por ronda (para mostrar en eliminatorias).
+    const champPending = groupsClosed ? CHAMP_LADDER.slice(1).map((x, i) => ['🏆', x[0], x[1]]) : [];
+
     return (
       <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', padding: '13px 15px', boxShadow: 'var(--sh-1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
           <span style={{ fontSize: 18 }}>🎁</span>
-          <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-md)', color: 'var(--text)' }}>Premios al terminar la 3ª fecha</h3>
+          <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-md)', color: 'var(--text)' }}>
+            {groupsClosed ? 'Premios de eliminatorias' : 'Premios al terminar la 3ª fecha'}
+          </h3>
         </div>
         <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.4, marginBottom: 11 }}>
-          Se reparten al <strong style={gold}>terminar la fase de grupos{deadlineStr ? ' (3ª fecha · ' + deadlineStr + ')' : ' (3ª fecha)'}</strong>, gratis y sin riesgo para tu saldo.
+          {groupsClosed
+            ? <>Los premios de la fase de grupos ya se <strong style={gold}>pagaron</strong>. Ahora suma a medida que tu selección avanza en la eliminatoria.</>
+            : <>Se reparten al <strong style={gold}>terminar la fase de grupos{deadlineStr ? ' (3ª fecha · ' + deadlineStr + ')' : ' (3ª fecha)'}</strong>, gratis y sin riesgo para tu saldo.</>}
         </div>
 
         {/* ✅ Asegurado */}
         <div style={{ padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'var(--coin-bg)', border: '1px solid rgba(212,175,55,0.4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 800 }}>✅ Llevas asegurado</span>
+            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 800 }}>✅ {groupsClosed ? 'Recibiste de la fase de grupos' : 'Llevas asegurado'}</span>
             <span className="num" style={{ fontSize: 'var(--t-lg)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(bd.total)}</span>
           </div>
           {secured.length
             ? <div style={{ marginTop: 4 }}>{secured.map((it, i) => line(it, i, 'var(--gold-light)'))}</div>
-            : <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 4 }}>Aún no aseguras puntos. Apuesta para empezar a sumar.</div>}
+            : <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 4 }}>{groupsClosed ? 'No sumaste puntos en la fase de grupos.' : 'Aún no aseguras puntos. Apuesta para empezar a sumar.'}</div>}
         </div>
 
         {/* ⏳ Por asegurar */}
         <div style={{ marginTop: 9, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.22)', border: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 800, marginBottom: 2 }}>⏳ Por asegurar</div>
-          {pending.map((it, i) => line(it, i, 'var(--muted)'))}
+          <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 800, marginBottom: 2 }}>⏳ {groupsClosed ? 'Premios que aún puedes ganar' : 'Por asegurar'}</div>
+          {groupsClosed
+            ? champPending.map((it, i) => line(it, i, 'var(--muted)'))
+            : pending.map((it, i) => line(it, i, 'var(--muted)'))}
           <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 6, lineHeight: 1.4 }}>El campeón suma a medida que avanza tu selección (Octavos, Cuartos…) hasta <strong style={gold}>+{fmt(CHAMP_TOTAL)}</strong>.</div>
         </div>
       </div>
