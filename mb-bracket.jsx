@@ -481,6 +481,459 @@
     );
   }
 
+  // ══════════════════════════════════════════════════════════
+  //  BRACKET WEB — todas las rondas visibles, marcadores grandes
+  // ══════════════════════════════════════════════════════════
+  (function () {
+    // Dimensiones web (más anchas, más altas)
+    const W  = 104;   // card width
+    const H  = 58;    // card height (con sede/live/scores)
+    const CN = 18;    // conector
+    const TW = 114;   // trofeo columna
+    const G  = 4;     // gap vertical
+    const SH = H + G; // slot = 62
+
+    // X positions left half
+    const X32 = 0;
+    const X16 = W + CN;           // 122
+    const XQF = X16 + W + CN;    // 244
+    const XSF = XQF + W + CN;    // 366
+    const XFIN = XSF + W + 14;   // 484  (gap de 14 antes del trofeo)
+    const XFIN_END = XFIN + TW;  // 598
+
+    // X positions right half (espejo)
+    const XSF_R  = XFIN_END + 14; // 612
+    const XQF_R  = XSF_R + W + CN; // 734
+    const X16_R  = XQF_R + W + CN; // 856
+    const X32_R  = X16_R + W + CN; // 978
+
+    const WEB_W = X32_R + W;       // 1082
+    const WEB_H = 8 * SH - G;     // 492
+
+    // Centro Y por ronda (fórmulas exactas)
+    const cY32 = (i) => i * SH + H / 2;
+    const cY16 = (i) => (cY32(2 * i) + cY32(2 * i + 1)) / 2;
+    const cYQF = (i) => (cY16(2 * i) + cY16(2 * i + 1)) / 2;
+    const cYSF = ()  => (cYQF(0) + cYQF(1)) / 2;
+
+    // Top Y por ronda
+    const y32 = (i) => i * SH;
+    const y16 = (i) => cY16(i) - H / 2;
+    const yQF = (i) => cYQF(i) - H / 2;
+    const ySF = ()  => cYSF() - H / 2;
+
+    // Colores de conector según estado
+    const connColor = (m, od) => {
+      if (!m || !od) return 'rgba(255,255,255,0.1)';
+      if (od.finished) return 'rgba(0,200,90,0.45)';
+      if (isLive(m, od)) return 'rgba(255,82,82,0.45)';
+      return 'rgba(255,255,255,0.1)';
+    };
+
+    // Tarjeta de partido web
+    function WCard({ m, x, y, champCode, od }) {
+      if (!m) {
+        return (
+          <div style={{ position: 'absolute', left: x, top: y, width: W, height: H, background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 6, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontWeight: 700 }}>TBD</span>
+          </div>
+        );
+      }
+
+      const live     = isLive(m, od);
+      const finished = !!(od && od.finished);
+      const homeWon  = finished && od.winner === 'home';
+      const awayWon  = finished && od.winner === 'away';
+      const hs = (od && od.homeScore != null) ? od.homeScore : null;
+      const as_ = (od && od.awayScore != null) ? od.awayScore : null;
+      const hCode = m.homeCode, aCode = m.awayCode;
+      const isChamp = champCode && (hCode === champCode || aCode === champCode);
+      const openT = (n) => n && window.MB_openTeam && window.MB_openTeam(n);
+
+      // ¿quién pasa (para mostrar indicador "→ Pasa")?
+      const winner = getWinner(m, od, true);
+
+      const Row = ({ name, code, won, score, prov }) => {
+        const gold = !!(champCode && code === champCode);
+        const advancing = winner && winner.name === name;
+        return (
+          <div onClick={() => openT(name)} title={name} style={{
+            display: 'flex', alignItems: 'center', gap: 4, height: 16,
+            opacity: finished && !won ? 0.28 : 1,
+            cursor: name ? 'pointer' : 'default',
+          }}>
+            {code
+              ? <img src={`https://flagcdn.com/h20/${code}.png`} alt="" style={{ height: 12, width: 'auto', flexShrink: 0 }} />
+              : <span style={{ width: 17, height: 12, background: 'rgba(255,255,255,0.07)', borderRadius: 1, display: 'inline-block', flexShrink: 0 }} />}
+            <span style={{
+              flex: 1, fontSize: 9.5, lineHeight: 1,
+              fontWeight: gold ? 800 : won ? 700 : 500,
+              color: gold ? 'var(--gold-light)' : won ? 'var(--success)' : name ? 'var(--text)' : 'var(--muted-2)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {name || 'TBD'}{gold ? ' ⭐' : ''}
+            </span>
+            {/* Marcador */}
+            {(live || finished) && score != null && (
+              <span style={{ fontSize: 13, fontWeight: 900, flexShrink: 0, minWidth: 18, textAlign: 'right', color: won ? 'var(--success)' : live ? 'var(--text)' : 'var(--muted-2)' }}>
+                {score}
+              </span>
+            )}
+            {/* Pasa badge */}
+            {advancing && !prov && (
+              <span style={{ fontSize: 7, fontWeight: 800, color: 'var(--success)', background: 'rgba(0,200,90,0.15)', padding: '1px 3px', borderRadius: 3, flexShrink: 0, marginLeft: 1 }}>PASA</span>
+            )}
+            {advancing && prov && (
+              <span style={{ fontSize: 7, fontWeight: 800, color: 'rgba(255,165,0,0.8)', background: 'rgba(255,165,0,0.1)', padding: '1px 3px', borderRadius: 3, flexShrink: 0, marginLeft: 1 }}>~</span>
+            )}
+          </div>
+        );
+      };
+
+      const borderColor = isChamp ? 'rgba(212,175,55,0.7)' : live ? 'rgba(255,82,82,0.6)' : finished ? 'rgba(0,200,90,0.35)' : 'var(--border)';
+
+      return (
+        <div style={{
+          position: 'absolute', left: x, top: y, width: W, height: H,
+          background: isChamp ? 'rgba(212,175,55,0.07)' : 'var(--surface-1)',
+          border: `1.5px solid ${borderColor}`,
+          borderRadius: 6, boxSizing: 'border-box', padding: '0 6px', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          boxShadow: live ? '0 0 10px rgba(255,82,82,0.12)' : isChamp ? '0 0 10px rgba(212,175,55,0.12)' : 'none',
+        }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 14, paddingTop: 3, fontSize: 7.5, fontWeight: 800, letterSpacing: 0.4 }}>
+            {live && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />}
+            <span style={{ color: live ? '#ff5252' : finished ? 'var(--success)' : 'var(--muted-2)' }}>
+              {live ? 'EN VIVO' : finished ? '✓ Finalizado' : fmtDate(m.kickoff)}
+            </span>
+          </div>
+          {/* Equipos */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1 }}>
+            <Row name={m.home} code={hCode} won={homeWon} score={hs} prov={winner && winner.prov} />
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '1px -6px' }} />
+            <Row name={m.away} code={aCode} won={awayWon} score={as_} prov={winner && winner.prov} />
+          </div>
+          {/* Footer: sede */}
+          <div style={{ fontSize: 6.5, color: 'var(--muted-2)', paddingBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {m.stadium}
+          </div>
+        </div>
+      );
+    }
+
+    // Tarjeta de slot siguiente ronda (ganador provisional/confirmado o TBD)
+    function WSlot({ m, x, y, champCode, od, label }) {
+      const finished = !!(od && od.finished);
+      const live_s   = m ? isLive(m, od) : false;
+      const t1 = m ? { name: m.home, code: m.homeCode, won: finished && od.winner === 'home' } : null;
+      const t2 = m ? { name: m.away, code: m.awayCode, won: finished && od.winner === 'away' } : null;
+
+      const TeamRow = ({ t }) => {
+        if (!t) return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 15 }}>
+            <span style={{ width: 14, height: 11, background: 'rgba(255,255,255,0.06)', borderRadius: 1, display: 'inline-block', flexShrink: 0 }} />
+            <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', fontWeight: 600 }}>Por definir</span>
+          </div>
+        );
+        const gold = !!(champCode && t.code === champCode);
+        return (
+          <div onClick={() => t.name && window.MB_openTeam && window.MB_openTeam(t.name)} title={t.name} style={{
+            display: 'flex', alignItems: 'center', gap: 4, height: 15,
+            opacity: finished && !t.won ? 0.3 : 1, cursor: t.name ? 'pointer' : 'default',
+          }}>
+            {t.code
+              ? <img src={`https://flagcdn.com/h20/${t.code}.png`} alt="" style={{ height: 11, width: 'auto', flexShrink: 0 }} />
+              : <span style={{ width: 14, height: 11, background: 'rgba(255,255,255,0.06)', borderRadius: 1, display: 'inline-block', flexShrink: 0 }} />}
+            <span style={{ flex: 1, fontSize: 9, fontWeight: gold ? 800 : t.won ? 700 : 500, color: gold ? 'var(--gold-light)' : t.won ? 'var(--success)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {t.name || '?'}{gold ? ' ⭐' : ''}
+            </span>
+            {finished && t.won && <span style={{ fontSize: 7, color: 'var(--success)', fontWeight: 800 }}>✓</span>}
+          </div>
+        );
+      };
+
+      const borderClr = m ? (finished ? 'rgba(0,200,90,0.3)' : live_s ? 'rgba(255,82,82,0.4)' : 'rgba(255,255,255,0.12)') : 'rgba(255,255,255,0.07)';
+
+      return (
+        <div style={{
+          position: 'absolute', left: x, top: y, width: W, height: H,
+          background: m ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+          border: `1px ${m ? 'solid' : 'dashed'} ${borderClr}`,
+          borderRadius: 6, boxSizing: 'border-box',
+          padding: '4px 6px', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        }}>
+          {label && <div style={{ fontSize: 7, color: 'var(--muted-2)', fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase' }}>{label}</div>}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+            <TeamRow t={t1} />
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '1px -6px' }} />
+            <TeamRow t={t2} />
+          </div>
+        </div>
+      );
+    }
+
+    // Slot que muestra ganadores de dos R32 (para R16 TBD)
+    function WSlotFromWinners({ x, y, m1, od1, m2, od2, champCode, r16m, r16od }) {
+      // Si hay fixture real para R16, usarlo
+      if (r16m) return <WSlot m={r16m} x={x} y={y} champCode={champCode} od={r16od || {}} />;
+      const w1 = m1 ? getWinner(m1, od1, true) : null;
+      const w2 = m2 ? getWinner(m2, od2, true) : null;
+      return (
+        <div style={{ position: 'absolute', left: x, top: y, width: W, height: H, background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 6, boxSizing: 'border-box', padding: '4px 6px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+          {[w1, w2].map((w, i) => (
+            <React.Fragment key={i}>
+              {i === 1 && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '1px -6px' }} />}
+              <div onClick={() => w && window.MB_openTeam && window.MB_openTeam(w.name)} style={{ display: 'flex', alignItems: 'center', gap: 4, height: 15, opacity: w && w.prov ? 0.6 : 1, cursor: w ? 'pointer' : 'default' }}>
+                {w && w.code
+                  ? <img src={`https://flagcdn.com/h20/${w.code}.png`} alt="" style={{ height: 11, width: 'auto', flexShrink: 0 }} />
+                  : <span style={{ width: 14, height: 11, background: 'rgba(255,255,255,0.06)', borderRadius: 1, display: 'inline-block', flexShrink: 0 }} />}
+                <span style={{ flex: 1, fontSize: 9, color: w ? (w.prov ? 'rgba(255,165,0,0.7)' : 'var(--text)') : 'rgba(255,255,255,0.18)', fontWeight: w && !w.prov ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {w ? w.name : 'Por definir'}{w && w.prov ? ' ~' : ''}
+                </span>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      );
+    }
+
+    function BracketScreenWeb() {
+      const store     = window.MB_useBetStore ? window.MB_useBetStore() : null;
+      const users     = (store && store.users) || [];
+      const authUser  = store ? store.authUser : null;
+      const meRec     = authUser ? (users.find(u => u.uid === authUser.uid) || null) : null;
+      const champCode = meRec ? meRec.championCode : null;
+      const champName = meRec ? meRec.champion    : null;
+      const odds      = (store && store.odds) || {};
+
+      const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+      const byS = {};
+      ['r32','r16','qf','sf','final'].forEach(s => { byS[s] = fx.filter(m => m.stage === s); });
+
+      const r32 = byS.r32, r16 = byS.r16, qf = byS.qf, sf = byS.sf, fin = byS.final;
+      // Tag index for connector color calculation
+      r32.forEach((m, i) => { m._idx = i; });
+
+      const L32 = r32.slice(0, 8), R32 = r32.slice(8, 16);
+      const L16 = r16.slice(0, 4), R16 = r16.slice(4, 8);
+      const LQF = qf.slice(0, 2),  RQF = qf.slice(2, 4);
+      const LSF = sf[0] || null,    RSF = sf[1] || null;
+      const FIN = fin[0] || null;
+
+      // Construye segmentos de conector coloreados para cada par
+      const segs = [];
+
+      // LEFT: R32→R16
+      for (let i = 0; i < 4; i++) {
+        const m1 = L32[2*i], m2 = L32[2*i+1];
+        const od1 = m1 ? (odds[m1.id]||{}) : {}, od2 = m2 ? (odds[m2.id]||{}) : {};
+        const ty = m1 ? cY32(2*i) : 0, by = m2 ? cY32(2*i+1) : 0, my = cY16(i);
+        const bx = X32 + W + CN/2;
+        const c1 = connColor(m1,od1), c2 = connColor(m2,od2);
+        const cm = (od1.finished && od2.finished) ? 'rgba(0,200,90,0.4)' : (isLive(m1,od1)||isLive(m2,od2)) ? 'rgba(255,82,82,0.35)' : 'rgba(255,255,255,0.1)';
+        segs.push(
+          { d: `M${X32+W} ${ty} H${bx}`, s: c1 },
+          { d: `M${bx} ${ty} V${my}`, s: cm },
+          { d: `M${X32+W} ${by} H${bx}`, s: c2 },
+          { d: `M${bx} ${by} V${my}`, s: cm },
+          { d: `M${bx} ${my} H${X16}`, s: cm },
+        );
+      }
+      // LEFT: R16→QF
+      for (let i = 0; i < 2; i++) {
+        const m1 = L16[2*i], m2 = L16[2*i+1];
+        const od1 = m1?(odds[m1.id]||{}):{}, od2 = m2?(odds[m2.id]||{}):{};
+        const ty = cY16(2*i), by = cY16(2*i+1), my = cYQF(i);
+        const bx = X16 + W + CN/2;
+        const c1 = connColor(m1,od1), c2 = connColor(m2,od2);
+        const cm = (od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        segs.push(
+          { d: `M${X16+W} ${ty} H${bx}`, s: c1 }, { d: `M${bx} ${ty} V${my}`, s: cm },
+          { d: `M${X16+W} ${by} H${bx}`, s: c2 }, { d: `M${bx} ${by} V${my}`, s: cm },
+          { d: `M${bx} ${my} H${XQF}`, s: cm },
+        );
+      }
+      // LEFT: QF→SF
+      {
+        const m1=LQF[0],m2=LQF[1];
+        const od1=m1?(odds[m1.id]||{}):{}, od2=m2?(odds[m2.id]||{}):{};
+        const ty=cYQF(0), by=cYQF(1), my=cYSF();
+        const bx=XQF+W+CN/2;
+        const c1=connColor(m1,od1),c2=connColor(m2,od2);
+        const cm=(od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        segs.push(
+          { d: `M${XQF+W} ${ty} H${bx}`, s: c1 }, { d: `M${bx} ${ty} V${my}`, s: cm },
+          { d: `M${XQF+W} ${by} H${bx}`, s: c2 }, { d: `M${bx} ${by} V${my}`, s: cm },
+          { d: `M${bx} ${my} H${XSF}`, s: cm },
+        );
+      }
+      // LEFT: SF→Final
+      { const od=LSF?(odds[LSF.id]||{}):{};
+        const c=connColor(LSF,od);
+        segs.push({ d:`M${XSF+W} ${cYSF()} H${XFIN}`, s: c }); }
+
+      // RIGHT (mirror): R32→R16
+      for (let i = 0; i < 4; i++) {
+        const m1 = R32[2*i], m2 = R32[2*i+1];
+        if (m1) m1._idx = 2*i; if (m2) m2._idx = 2*i+1;
+        const od1 = m1?(odds[m1.id]||{}):{}, od2 = m2?(odds[m2.id]||{}):{};
+        const ty = m1?cY32(2*i):0, by = m2?cY32(2*i+1):0, my = cY16(i);
+        const bx = X16_R + W + CN/2;
+        const c1=connColor(m1,od1),c2=connColor(m2,od2);
+        const cm=(od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        segs.push(
+          { d:`M${X32_R} ${ty} H${bx}`, s:c1 }, { d:`M${bx} ${ty} V${my}`, s:cm },
+          { d:`M${X32_R} ${by} H${bx}`, s:c2 }, { d:`M${bx} ${by} V${my}`, s:cm },
+          { d:`M${bx} ${my} H${X16_R+W}`, s:cm },
+        );
+      }
+      // RIGHT: R16→QF
+      for (let i = 0; i < 2; i++) {
+        const m1=R16[2*i],m2=R16[2*i+1];
+        const od1=m1?(odds[m1.id]||{}):{}, od2=m2?(odds[m2.id]||{}):{};
+        const ty=cY16(2*i),by=cY16(2*i+1),my=cYQF(i);
+        const bx=XQF_R+W+CN/2;
+        const c1=connColor(m1,od1),c2=connColor(m2,od2);
+        const cm=(od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        segs.push(
+          { d:`M${X16_R} ${ty} H${bx}`, s:c1 }, { d:`M${bx} ${ty} V${my}`, s:cm },
+          { d:`M${X16_R} ${by} H${bx}`, s:c2 }, { d:`M${bx} ${by} V${my}`, s:cm },
+          { d:`M${bx} ${my} H${XQF_R+W}`, s:cm },
+        );
+      }
+      // RIGHT: QF→SF
+      { const m1=RQF[0],m2=RQF[1];
+        const od1=m1?(odds[m1.id]||{}):{}, od2=m2?(odds[m2.id]||{}):{};
+        const ty=cYQF(0),by=cYQF(1),my=cYSF();
+        const bx=XSF_R+W+CN/2;
+        const c1=connColor(m1,od1),c2=connColor(m2,od2);
+        const cm=(od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        segs.push(
+          { d:`M${XQF_R} ${ty} H${bx}`, s:c1 }, { d:`M${bx} ${ty} V${my}`, s:cm },
+          { d:`M${XQF_R} ${by} H${bx}`, s:c2 }, { d:`M${bx} ${by} V${my}`, s:cm },
+          { d:`M${bx} ${my} H${XSF_R+W}`, s:cm },
+        );
+      }
+      // RIGHT: SF→Final
+      { const od=RSF?(odds[RSF.id]||{}):{};
+        const c=connColor(RSF,od);
+        segs.push({ d:`M${XSF_R} ${cYSF()} H${XFIN_END}`, s: c }); }
+
+      // Etiquetas de ronda
+      const roundLabels = [
+        [X32,'R32'], [X16,'Octavos'], [XQF,'Cuartos'], [XSF,'Semis'],
+        [XFIN,'Final'], [XSF_R,'Semis'], [XQF_R,'Cuartos'], [X16_R,'Octavos'], [X32_R,'R32'],
+      ];
+
+      return (
+        <div>
+          {/* Leyenda */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+            {champCode && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-sm)', color: 'var(--muted)' }}>
+                <img src={`https://flagcdn.com/h20/${champCode}.png`} alt="" style={{ height: 14, borderRadius: 2 }} />
+                <span>Tu campeón: <strong style={{ color: 'var(--gold-light)' }}>{champName}</strong> — borde dorado</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 12, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', alignItems: 'center' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><span style={{ width: 20, height: 2, background: 'rgba(0,200,90,0.6)', display: 'inline-block' }} /> Avanza</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><span style={{ width: 20, height: 2, background: 'rgba(255,82,82,0.6)', display: 'inline-block' }} /> En vivo</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><span style={{ width: 20, height: 2, background: 'rgba(255,255,255,0.15)', display: 'inline-block' }} /> Pendiente</span>
+              <span style={{ color: 'rgba(255,165,0,0.7)' }}>~ provisional</span>
+            </div>
+          </div>
+
+          {/* Bracket */}
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 12 }}>
+            <div style={{ position: 'relative', width: WEB_W, height: WEB_H + 24 }}>
+
+              {/* SVG conectores */}
+              <svg width={WEB_W} height={WEB_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
+                {segs.map((s, i) => (
+                  <path key={i} d={s.d} fill="none" stroke={s.s} strokeWidth="2" strokeLinejoin="round" />
+                ))}
+              </svg>
+
+              {/* Etiquetas */}
+              {roundLabels.map(([rx, lbl], idx) => (
+                <div key={idx} style={{ position: 'absolute', left: rx, top: WEB_H + 6, width: W, textAlign: 'center', fontSize: 8.5, fontWeight: 700, color: lbl === 'Final' ? 'var(--gold-light)' : 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap', overflow: 'visible' }}>
+                  {lbl}
+                </div>
+              ))}
+
+              {/* ─── R32 LEFT ─── */}
+              {L32.map((m, i) => <WCard key={m.id} m={m} x={X32} y={y32(i)} champCode={champCode} od={odds[m.id]||{}} />)}
+
+              {/* ─── R16 LEFT ─── */}
+              {Array.from({length:4},(_,i)=>(
+                <WSlotFromWinners key={`l16-${i}`} x={X16} y={y16(i)} champCode={champCode}
+                  m1={L32[2*i]} od1={odds[L32[2*i]?.id]||{}}
+                  m2={L32[2*i+1]} od2={odds[L32[2*i+1]?.id]||{}}
+                  r16m={L16[i]||null} r16od={L16[i]?odds[L16[i].id]||{}:{}} />
+              ))}
+
+              {/* ─── QF LEFT ─── */}
+              {Array.from({length:2},(_,i)=>(
+                <WSlot key={`lqf-${i}`} m={LQF[i]||null} x={XQF} y={yQF(i)} champCode={champCode} od={LQF[i]?(odds[LQF[i].id]||{}):{}} label="Cuartos" />
+              ))}
+
+              {/* ─── SF LEFT ─── */}
+              <WSlot m={LSF} x={XSF} y={ySF()} champCode={champCode} od={LSF?(odds[LSF.id]||{}):{}} label="Semifinal" />
+
+              {/* ─── TROFEO CENTRAL ─── */}
+              <div style={{
+                position: 'absolute', left: XFIN, top: 0, width: TW, height: WEB_H,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                background: 'linear-gradient(180deg, rgba(212,175,55,0.02) 0%, rgba(212,175,55,0.12) 50%, rgba(212,175,55,0.02) 100%)',
+                borderLeft: '1px solid rgba(212,175,55,0.2)', borderRight: '1px solid rgba(212,175,55,0.2)',
+              }}>
+                <div style={{ fontSize: 52, lineHeight: 1, filter: 'drop-shadow(0 0 18px rgba(212,175,55,0.9)) drop-shadow(0 0 36px rgba(212,175,55,0.5)) drop-shadow(0 2px 6px rgba(0,0,0,0.7))', marginBottom: 10 }}>🏆</div>
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase', background: 'linear-gradient(135deg,#F5D76E,#C99B1F)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 4 }}>FINAL</div>
+                <div style={{ width: 32, height: 1, background: 'linear-gradient(90deg,transparent,rgba(212,175,55,0.6),transparent)', marginBottom: 6 }} />
+                {FIN ? (
+                  <div style={{ fontSize: 8, color: 'rgba(212,175,55,0.6)', textAlign: 'center', lineHeight: 1.6 }}>
+                    {fmtDate(FIN.kickoff)}<br />{FIN.stadium}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 8, color: 'rgba(212,175,55,0.5)', textAlign: 'center', lineHeight: 1.6 }}>
+                    19 jul · 2026<br />MetLife Stadium<br />Nueva Jersey
+                  </div>
+                )}
+              </div>
+
+              {/* ─── SF RIGHT ─── */}
+              <WSlot m={RSF} x={XSF_R} y={ySF()} champCode={champCode} od={RSF?(odds[RSF.id]||{}):{}} label="Semifinal" />
+
+              {/* ─── QF RIGHT ─── */}
+              {Array.from({length:2},(_,i)=>(
+                <WSlot key={`rqf-${i}`} m={RQF[i]||null} x={XQF_R} y={yQF(i)} champCode={champCode} od={RQF[i]?(odds[RQF[i].id]||{}):{}} label="Cuartos" />
+              ))}
+
+              {/* ─── R16 RIGHT ─── */}
+              {Array.from({length:4},(_,i)=>(
+                <WSlotFromWinners key={`r16-${i}`} x={X16_R} y={y16(i)} champCode={champCode}
+                  m1={R32[2*i]} od1={odds[R32[2*i]?.id]||{}}
+                  m2={R32[2*i+1]} od2={odds[R32[2*i+1]?.id]||{}}
+                  r16m={R16[i]||null} r16od={R16[i]?odds[R16[i].id]||{}:{}} />
+              ))}
+
+              {/* ─── R32 RIGHT ─── */}
+              {R32.map((m, i) => <WCard key={m.id} m={m} x={X32_R} y={y32(i)} champCode={champCode} od={odds[m.id]||{}} />)}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 4 }}>
+            ~ resultado provisional (partido en curso) · ⭐ tu campeón · Toca un equipo para ver su ficha
+          </div>
+        </div>
+      );
+    }
+
+    window.MB_BracketScreenWeb = BracketScreenWeb;
+  })();
+
   window.MB_BracketScreen  = BracketScreen;
   window.MB_SaldoSparkline = SaldoSparkline;
   window.MB_TopTodayBanner = TopTodayBanner;
