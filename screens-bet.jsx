@@ -170,7 +170,11 @@ function MobileFixtureCard({ m }) {
   return (
     <Card style={{ marginBottom: 10, padding: '11px 13px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Chip tone="blue">Grupo {m.group} · J{m.md}</Chip>
+        <Chip tone="blue">
+          {m.group
+            ? `Grupo ${m.group} · J${m.md}`
+            : m.stage === 'r32' ? 'Dieciseisavos' : m.stage === 'r16' ? 'Octavos' : m.stage === 'qf' ? 'Cuartos' : m.stage === 'sf' ? 'Semifinales' : 'Final'}
+        </Chip>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {window.MB_WatchBell ? <window.MB_WatchBell matchId={m.id} compact /> : null}
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
