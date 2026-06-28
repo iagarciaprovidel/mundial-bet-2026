@@ -111,6 +111,11 @@ function BottomNav({ tab, onTab, accent }) {
 function MobileFlagTicker({ onSelect }) {
   const teams = window.MB_ALL_TEAMS || [];
   const toCode = window.MB_flagToCode || (() => 'xx');
+  const allFx = (window.MB && window.MB.WC_FIXTURES) || [];
+  const r32Codes = new Set(allFx.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const groupFx = allFx.filter(f => !f.stage || f.stage === 'Grupos');
+  const lastKO = groupFx.length ? Math.max.apply(null, groupFx.map(f => new Date(f.kickoff).getTime())) : Infinity;
+  const groupsClosed = r32Codes.size > 0 && isFinite(lastKO) && Date.now() >= lastKO + 2 * 60 * 60 * 1000;
   const items = teams.concat(teams);
   const mask = 'linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent)';
   if (!teams.length) return null;
@@ -123,14 +128,21 @@ function MobileFlagTicker({ onSelect }) {
         display: 'flex', alignItems: 'center', gap: 14, width: 'max-content',
         padding: '7px 12px',
       }}>
-        {items.map((tm, i) => (
-          <button key={i} onClick={() => onSelect(tm)} title={tm.name} style={{
-            background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0,
-          }}>
-            <img src={`https://flagcdn.com/h40/${tm.code || toCode(tm.flag)}.png`} alt={tm.name}
-              style={{ height: 20, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
-          </button>
-        ))}
+        {items.map((tm, i) => {
+          const code = tm.code || toCode(tm.flag);
+          const eliminated = groupsClosed && !r32Codes.has(code);
+          return (
+            <button key={i} onClick={() => onSelect(tm)} title={eliminated ? tm.name + ' ❌' : tm.name} style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0,
+              opacity: eliminated ? 0.25 : 1,
+              filter: eliminated ? 'grayscale(1)' : 'none',
+              transition: 'opacity 0.3s, filter 0.3s',
+            }}>
+              <img src={`https://flagcdn.com/h40/${code}.png`} alt={tm.name}
+                style={{ height: 20, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
