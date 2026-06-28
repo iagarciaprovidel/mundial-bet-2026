@@ -35,6 +35,7 @@
   const now = () => Date.now();
 
   const isLive = (m, od) => {
+    if (!m) return false;
     const ko = new Date(m.kickoff).getTime();
     return !!(od && !od.finished && ko <= now() && ko > now() - 3 * 60 * 60 * 1000);
   };
