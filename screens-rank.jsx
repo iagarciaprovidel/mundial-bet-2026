@@ -202,7 +202,7 @@ function Perfil() {
             : <span style={{ fontWeight: 800, fontSize: 22, color: 'var(--gold-light)' }}>{ini}</span>}
         </div>
         <h2 className="display" style={{ margin: '2px 0 3px', fontSize: 'var(--t-xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
-        <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{authUser.email || ''} · {teamName}</div>
+        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2 }}>{authUser.email || ''} · {teamName}</div>
         {(() => {
           const nb = bets.length;
           if (nb < 10) return null;
@@ -231,7 +231,7 @@ function Perfil() {
           ].map(([icon, k, v, c], i) => (
             <div key={k} style={{ flex: 1, textAlign: 'center', padding: '11px 4px', borderLeft: i ? '1px solid var(--border)' : 'none' }}>
               <div className="num" style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: c, lineHeight: 1.1 }}>{v}</div>
-              <div style={{ fontSize: 8.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em', marginTop: 3, whiteSpace: 'nowrap' }}>{icon} {k}</div>
+              <div style={{ fontSize: 10, color: 'var(--text)', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 4, whiteSpace: 'nowrap' }}>{icon} {k}</div>
             </div>
           ))}
         </div>
@@ -292,14 +292,14 @@ function Perfil() {
               ? (od && od.live && !od.finished
                   ? { txt: '🔴 En vivo', col: '#ff6b6b', bg: 'rgba(220,80,80,0.12)' }
                   : started
-                    ? { txt: '🔒 Cerrada', col: 'var(--muted)', bg: 'var(--surface-2)' }
+                    ? { txt: '🔒 Cerrada', col: 'var(--text)', bg: 'var(--surface-2)' }
                     : { txt: 'Abierta', col: 'var(--info)', bg: 'rgba(74,144,226,0.12)' })
               : won ? { txt: '✓ Ganaste', col: 'var(--success)', bg: 'var(--success-bg)' } : { txt: '✕ Perdiste', col: '#e98b8b', bg: 'rgba(220,80,80,0.10)' };
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: i < bets.length - 1 ? '1px solid var(--border)' : 'none' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.home} vs {b.away}</div>
-                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{fmt(b.stake)} a {PICK(b)} @ {Number(b.odd).toFixed(2)}</div>
+                  <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.home} vs {b.away}</div>
+                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2 }}>{fmt(b.stake)} a <strong style={{ color: 'var(--text)' }}>{PICK(b)}</strong> @ {Number(b.odd).toFixed(2)}</div>
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 700, color: badge.col, background: badge.bg, padding: '3px 8px', borderRadius: 'var(--r-pill)', whiteSpace: 'nowrap' }}>{badge.txt}</span>
                 <span className="num" style={{ minWidth: 52, textAlign: 'right', fontSize: 'var(--t-sm)', color: open ? 'var(--muted)' : (delta >= 0 ? 'var(--success)' : 'var(--danger)') }}>{open ? '—' : (delta >= 0 ? '+' : '') + fmt(delta)}</span>
