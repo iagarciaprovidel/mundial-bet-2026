@@ -285,7 +285,7 @@
         .onSnapshot(function (d) { cb(d.exists ? Object.assign({ id: d.id }, d.data()) : null); }, function () { cb(null); });
     },
 
-    // ── Reclamo manual de premios de fase de grupos ──
+    // ── Reclamo manual de premios de fase de grupos + bono campeón ──
     async claimGroupBonuses(bd) {
       const u = auth.currentUser;
       if (!u) return Promise.reject('no-auth');
@@ -303,6 +303,7 @@
             recarga: bd.recarga || 0,
             precision: bd.precision || 0,
             streak: bd.streak || 0,
+            champBonus: bd.champBonus || 0,
           }),
         }, { merge: true });
       });
