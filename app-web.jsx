@@ -126,6 +126,11 @@ const teamByName = (name) => ALL_TEAMS.find(t => t.name === name) || null;
 function FlagTicker({ onSelect, onGroup }) {
   const items = ALL_TEAMS.concat(ALL_TEAMS); // duplicado para bucle continuo
   const mask = 'linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent)';
+  const allFxT = (window.MB && window.MB.WC_FIXTURES) || [];
+  const r32CodesT = new Set(allFxT.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const groupFxT = allFxT.filter(f => !f.stage || f.stage === 'Grupos');
+  const lastKOT = groupFxT.length ? Math.max.apply(null, groupFxT.map(f => new Date(f.kickoff).getTime())) : Infinity;
+  const groupsClosedT = r32CodesT.size > 0 && isFinite(lastKOT) && Date.now() >= lastKOT + 2 * 60 * 60 * 1000;
   const [hov, setHov] = useStateW(null);
   const timer = useRefW(null);
   const cancelClose = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
@@ -153,14 +158,17 @@ function FlagTicker({ onSelect, onGroup }) {
       <div className="mb-ticker" style={{
         display: 'flex', alignItems: 'center', gap: 16, width: 'max-content',
       }}>
-        {items.map((t, i) => (
-          <button key={i} className="mb-flagbtn" title={t.name}
-            onMouseEnter={(e) => open(t, e)} onMouseLeave={scheduleClose} onClick={() => onSelect(t)}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0 }}>
-            <img src={`https://flagcdn.com/h40/${teamCode(t)}.png`} alt={t.name}
-              style={{ height: 22, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
-          </button>
-        ))}
+        {items.map((t, i) => {
+          const elimT = groupsClosedT && !r32CodesT.has(teamCode(t));
+          return (
+            <button key={i} className="mb-flagbtn" title={t.name}
+              onMouseEnter={(e) => open(t, e)} onMouseLeave={scheduleClose} onClick={() => onSelect(t)}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0, opacity: elimT ? 0.45 : 1, filter: elimT ? 'grayscale(0.7)' : 'none', transition: 'opacity 0.2s' }}>
+              <img src={`https://flagcdn.com/h40/${teamCode(t)}.png`} alt={t.name}
+                style={{ height: 22, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
+            </button>
+          );
+        })}
       </div>
 
       {hov && ReactDOM.createPortal(
@@ -254,6 +262,13 @@ function TeamModal({ team, onClose }) {
   const squad = (window.MB.PLAYERS && window.MB.PLAYERS[team.name]) || [];
   const titulares = squad.filter(p => p.t);
   const suplentes = squad.filter(p => !p.t);
+  const allFxM = (window.MB && window.MB.WC_FIXTURES) || [];
+  const r32CodesM = new Set(allFxM.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const groupFxM = allFxM.filter(f => !f.stage || f.stage === 'Grupos');
+  const lastKOM = groupFxM.length ? Math.max.apply(null, groupFxM.map(f => new Date(f.kickoff).getTime())) : Infinity;
+  const groupsClosedM = r32CodesM.size > 0 && isFinite(lastKOM) && Date.now() >= lastKOM + 2 * 60 * 60 * 1000;
+  const isQualified = groupsClosedM && r32CodesM.has(code);
+  const isEliminated = groupsClosedM && !r32CodesM.has(code);
   return (
     <div onClick={onClose} style={{
       position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(6,8,15,0.72)',
@@ -278,8 +293,10 @@ function TeamModal({ team, onClose }) {
                 <strong>{team.coach}</strong>
               </div>
             )}
-            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
               <Chip tone="blue">Grupo {team.group}</Chip>
+              {isQualified && <Chip tone="green">✅ Clasificado</Chip>}
+              {isEliminated && <Chip tone="red">❌ Eliminado</Chip>}
             </div>
           </div>
           <button onClick={onClose} className="mb-press" style={{
