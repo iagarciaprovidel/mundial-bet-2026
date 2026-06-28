@@ -898,6 +898,60 @@
   }
   window.MB_ChampLadder = ChampLadder;
 
+  // Banner de inicio: "Elige tu campeón" + "Reclamar premios"
+  // Aparece en la pantalla Inicio si el usuario tiene pendientes alguna de las dos acciones.
+  function ClaimBonusBanner() {
+    const bs = useBetStore();
+    const store = bs || {};
+    const authUser = store.authUser;
+    const users = store.users || [];
+    const me = authUser ? (users.find(u => u.uid === authUser.uid) || null) : null;
+    const bets = store.bets ? Object.values(store.bets) : [];
+    const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
+    const wonN = settled.filter(b => b.status === 'won').length;
+    const acc = settled.length ? Math.round(wonN * 100 / settled.length) : 0;
+    let cur2 = 0, best2 = 0;
+    bets.slice().sort((a, b) => (a.creado && b.creado) ? (a.creado.seconds || 0) - (b.creado.seconds || 0) : 0)
+      .forEach(b => { if (b.status === 'won') { cur2++; if (cur2 > best2) best2 = cur2; } else { cur2 = 0; } });
+    const bd2 = bonusBreakdown({ bets: bets.length, settled: settled.length, accuracy: acc, bestStreak: best2 });
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const groupFx = fx.filter(m => !m.stage || m.stage === 'Grupos');
+    const lastKO = groupFx.length ? Math.max.apply(null, groupFx.map(m => new Date(m.kickoff).getTime())) : Infinity;
+    const groupsClosed = isFinite(lastKO) && Date.now() >= lastKO + 2 * 60 * 60 * 1000;
+    const alreadyClaimed = !!(me && me.rewards && me.rewards.groupsClosed);
+    const canClaim = groupsClosed && bd2.total > 0 && !alreadyClaimed;
+    const [claiming, setClaiming] = useState(false);
+    const [done, setDone] = useState(false);
+    if (!authUser || (!canClaim && !(groupsClosed && !alreadyClaimed && bd2.total === 0))) return null;
+    if (!canClaim) return null;
+    const doClaim = () => {
+      const fb = window.MBFirebase;
+      if (!fb || !fb.claimGroupBonuses || claiming) return;
+      setClaiming(true);
+      fb.claimGroupBonuses(bd2).then(() => setDone(true)).catch(() => setClaiming(false));
+    };
+    if (done) return (
+      <div style={{ padding: '12px 14px', borderRadius: 'var(--r-lg)', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)', textAlign: 'center', fontSize: 'var(--t-sm)', color: 'var(--success)', fontWeight: 800 }}>
+        ✅ ¡Premios reclamados! +{fmt(bd2.total)} pts sumados a tu saldo.
+      </div>
+    );
+    return (
+      <div style={{ padding: '13px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08))', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: 22 }}>🎁</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>Tienes <span className="num" style={{ color: 'var(--gold-light)' }}>+{fmt(bd2.total)} pts</span> por reclamar</div>
+            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>Premios de la fase de grupos · ya terminaron todos los partidos</div>
+          </div>
+        </div>
+        <button onClick={doClaim} disabled={claiming} className="mb-press" style={{ width: '100%', padding: '11px 0', borderRadius: 'var(--r-md)', border: 'none', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', cursor: claiming ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: claiming ? 0.7 : 1 }}>
+          {claiming ? 'Reclamando…' : '🎁 Reclamar mis puntos ahora'}
+        </button>
+      </div>
+    );
+  }
+  window.MB_ClaimBonusBanner = ClaimBonusBanner;
+
   // Banderita del campeón elegido por un jugador (para mostrar junto a su nombre).
   window.MB_champFlag = function (code, name, h) {
     if (!code) return null;
