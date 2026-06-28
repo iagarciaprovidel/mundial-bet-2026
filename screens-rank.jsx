@@ -250,7 +250,7 @@ function Perfil() {
       )}
 
       {/* Premios al terminar la 3ª fecha: campeón (2ª fase) + recarga + precisión + racha */}
-      {window.MB_ChampLadder && <div style={{ marginBottom: 12 }}>{React.createElement(window.MB_ChampLadder, { stats: bonusStats })}</div>}
+      {window.MB_ChampLadder && <div style={{ marginBottom: 12 }}>{React.createElement(window.MB_ChampLadder, { stats: bonusStats, me: meRec })}</div>}
 
       {/* Mi grupo: CTA para crear/unirse + tabla de equipos (lo mismo que la pestaña "Mi grupo") */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
