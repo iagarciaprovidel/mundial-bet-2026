@@ -797,6 +797,19 @@
     const groupsClosed = isFinite(lastGroupKO) && Date.now() >= (lastGroupKO + 2 * 60 * 60 * 1000);
     const deadlineStr = isFinite(lastGroupKO) ? new Date(lastGroupKO).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : null;
     const gold = { color: 'var(--gold-light)', fontWeight: 800 };
+    const me = (props && props.me) || null;
+    const alreadyClaimed = !!(me && me.rewards && me.rewards.groupsClosed);
+    const [claiming, setClaiming] = useState(false);
+    const [claimDone, setClaimDone] = useState(false);
+    const [claimErr, setClaimErr] = useState('');
+    const doClaim = () => {
+      const fb = window.MBFirebase;
+      if (!fb || !fb.claimGroupBonuses) return;
+      setClaiming(true); setClaimErr('');
+      fb.claimGroupBonuses(bd)
+        .then(() => { setClaimDone(true); setClaiming(false); })
+        .catch((e) => { setClaimErr(e === 'ya-reclamado' ? 'Ya reclamaste estos premios.' : 'Error al reclamar. Intenta de nuevo.'); setClaiming(false); });
+    };
 
     // ── Desglose: lo ASEGURADO (ya bloqueado) y lo PENDIENTE (aún sumable) ──
     const secured = [];
@@ -853,6 +866,24 @@
             ? <div style={{ marginTop: 4 }}>{secured.map((it, i) => line(it, i, 'var(--gold-light)'))}</div>
             : <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 4 }}>{groupsClosed ? 'No sumaste puntos en la fase de grupos.' : 'Aún no aseguras puntos. Apuesta para empezar a sumar.'}</div>}
         </div>
+
+        {/* 🎁 Botón reclamar (solo si la fase cerró y hay algo que cobrar) */}
+        {groupsClosed && bd.total > 0 && (
+          <div style={{ marginTop: 9 }}>
+            {(alreadyClaimed || claimDone) ? (
+              <div style={{ padding: '10px 11px', borderRadius: 'var(--r-md)', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)', textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800 }}>
+                ✅ Premios de grupos reclamados
+              </div>
+            ) : (
+              <>
+                <button onClick={doClaim} disabled={claiming} className="mb-press" style={{ width: '100%', padding: '12px 0', borderRadius: 'var(--r-md)', border: 'none', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', cursor: claiming ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: claiming ? 0.7 : 1, transition: 'opacity var(--dur-base)' }}>
+                  {claiming ? 'Reclamando…' : `🎁 Reclamar +${fmt(bd.total)} pts`}
+                </button>
+                {claimErr ? <div style={{ fontSize: 'var(--t-3xs)', color: '#f87171', marginTop: 5, textAlign: 'center' }}>{claimErr}</div> : null}
+              </>
+            )}
+          </div>
+        )}
 
         {/* ⏳ Por asegurar */}
         <div style={{ marginTop: 9, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.22)', border: '1px solid var(--border)' }}>
