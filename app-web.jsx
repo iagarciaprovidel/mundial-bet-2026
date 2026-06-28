@@ -729,7 +729,7 @@ function FixtureCardWeb({ m, onTeam }) {
   return (
     <Card style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '12px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Chip tone="blue">Grupo {m.group}</Chip>
+        <Chip tone={m.group ? 'blue' : 'gold'}>{m.group ? `Grupo ${m.group}` : (KO_STAGE_NAMES[m.stage] || m.stage || 'Eliminatoria')}</Chip>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {window.MB_WatchBell ? <window.MB_WatchBell matchId={m.id} compact /> : null}
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>
@@ -769,11 +769,17 @@ function RefLineWeb({ m }) {
   );
 }
 
+const KO_STAGE_NAMES = { r32: 'Dieciseisavos de Final', r16: 'Octavos de Final', qf: 'Cuartos de Final', sf: 'Semifinales', final: 'Final' };
+
 function PartidosWeb({ onTeam }) {
   const fx = (window.MB.WC_FIXTURES) || [];
-  const ko = (window.MB.WC_KNOCKOUTS) || [];
   const byMd = { 1: [], 2: [], 3: [] };
-  fx.forEach(m => { if (byMd[m.md]) byMd[m.md].push(m); });
+  const byKO = { r32: [], r16: [], qf: [], sf: [], final: [] };
+  fx.forEach(m => {
+    if (byMd[m.md] !== undefined) byMd[m.md].push(m);
+    else if (byKO[m.stage] !== undefined) byKO[m.stage].push(m);
+  });
+  const hasKO = Object.values(byKO).some(arr => arr.length > 0);
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       {[1, 2, 3].map(md => (
@@ -785,18 +791,18 @@ function PartidosWeb({ onTeam }) {
         </div>
       ))}
 
-      <SectionHead title="Fase eliminatoria" />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-        {ko.map((k, i) => (
-          <Card key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Chip tone="gold">{k.stage}</Chip>
-              <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{k.fechas}</span>
+      {hasKO && Object.keys(byKO).map(stage => {
+        const matches = byKO[stage];
+        if (!matches.length) return null;
+        return (
+          <div key={stage} style={{ marginBottom: 26 }}>
+            <SectionHead title={KO_STAGE_NAMES[stage] || stage} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+              {matches.map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
             </div>
-            <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{k.partidos} {k.partidos === 1 ? 'partido' : 'partidos'} · {k.sedes}</div>
-          </Card>
-        ))}
-      </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
