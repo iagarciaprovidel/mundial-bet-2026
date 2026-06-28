@@ -42,13 +42,13 @@
   const getWinner = (m, od, allowProvisional) => {
     if (!m || !od) return null;
     if (od.finished) {
-      return od.winner === 'home'
-        ? { name: m.home, code: m.homeCode }
-        : { name: m.away, code: m.awayCode };
+      if (od.result === 'home') return { name: m.home, code: m.homeCode };
+      if (od.result === 'away') return { name: m.away, code: m.awayCode };
+      return null;
     }
-    if (allowProvisional && isLive(m, od) && od.homeScore != null && od.awayScore != null) {
-      if (od.homeScore > od.awayScore) return { name: m.home, code: m.homeCode, prov: true };
-      if (od.awayScore > od.homeScore) return { name: m.away, code: m.awayCode, prov: true };
+    if (allowProvisional && isLive(m, od) && od.gh != null && od.ga != null) {
+      if (od.gh > od.ga) return { name: m.home, code: m.homeCode, prov: true };
+      if (od.ga > od.gh) return { name: m.away, code: m.awayCode, prov: true };
     }
     return null;
   };
@@ -98,12 +98,12 @@
 
     const live     = isLive(m, od);
     const finished = !!(od && od.finished);
-    const homeWon  = finished && od.winner === 'home';
-    const awayWon  = finished && od.winner === 'away';
+    const homeWon  = finished && od.result === 'home';
+    const awayWon  = finished && od.result === 'away';
     const hCode    = m.homeCode, aCode = m.awayCode;
     const isChamp  = champCode && (hCode === champCode || aCode === champCode);
-    const hs = od && od.homeScore != null ? od.homeScore : null;
-    const as_ = od && od.awayScore != null ? od.awayScore : null;
+    const hs  = od && od.gh  != null ? od.gh  : null;
+    const as_ = od && od.ga  != null ? od.ga  : null;
     const openT = (n) => n && window.MB_openTeam && window.MB_openTeam(n);
 
     const Row = ({ name, code, won, score }) => {
@@ -154,7 +154,11 @@
           {live && (
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />
           )}
-          {live ? 'EN VIVO' : finished ? '✓ Finalizado' : fmtDate(m.kickoff)}
+          {live
+            ? 'EN VIVO'
+            : finished
+              ? <span>✓ <strong style={{ fontSize: 9.5, letterSpacing: 0.5 }}>{hs ?? '?'}–{as_ ?? '?'}</strong></span>
+              : fmtDate(m.kickoff)}
         </div>
 
         {/* Equipos */}
@@ -164,14 +168,13 @@
           <Row name={m.away} code={aCode} won={awayWon} score={as_} />
         </div>
 
-        {/* Footer: estadio + ciudad */}
+        {/* Footer: ciudad · hora (solo cuando no ha empezado) */}
         <div style={{
-          fontSize: 6.5, color: 'var(--muted-2)', paddingBottom: 3,
+          fontSize: 7, color: 'var(--muted-2)', paddingBottom: 3,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           lineHeight: 1.3,
-        }}>
-          {!live && !finished && <span>{fmtDate(m.kickoff)} · </span>}
-          <span>{cityOf(m.stadium)}</span>
+        }} title={m.stadium}>
+          {cityOf(m.stadium)}{!live && !finished ? ` · ${fmtDate(m.kickoff)}` : ''}
         </div>
       </div>
     );
@@ -542,10 +545,10 @@
 
       const live     = isLive(m, od);
       const finished = !!(od && od.finished);
-      const homeWon  = finished && od.winner === 'home';
-      const awayWon  = finished && od.winner === 'away';
-      const hs = (od && od.homeScore != null) ? od.homeScore : null;
-      const as_ = (od && od.awayScore != null) ? od.awayScore : null;
+      const homeWon  = finished && od.result === 'home';
+      const awayWon  = finished && od.result === 'away';
+      const hs  = (od && od.gh  != null) ? od.gh  : null;
+      const as_ = (od && od.ga  != null) ? od.ga  : null;
       const hCode = m.homeCode, aCode = m.awayCode;
       const isChamp = champCode && (hCode === champCode || aCode === champCode);
       const openT = (n) => n && window.MB_openTeam && window.MB_openTeam(n);
@@ -605,7 +608,11 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 14, paddingTop: 3, fontSize: 7.5, fontWeight: 800, letterSpacing: 0.4 }}>
             {live && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />}
             <span style={{ color: live ? '#ff5252' : finished ? 'var(--success)' : 'var(--muted-2)' }}>
-              {live ? 'EN VIVO' : finished ? '✓ Finalizado' : fmtDate(m.kickoff)}
+              {live
+                ? 'EN VIVO'
+                : finished
+                  ? <span>✓ <strong style={{ fontSize: 11, letterSpacing: 0.5 }}>{hs ?? '?'}–{as_ ?? '?'}</strong></span>
+                  : fmtDate(m.kickoff)}
             </span>
           </div>
           {/* Equipos */}
@@ -614,9 +621,9 @@
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '1px -6px' }} />
             <Row name={m.away} code={aCode} won={awayWon} score={as_} prov={winner && winner.prov} />
           </div>
-          {/* Footer: sede */}
-          <div style={{ fontSize: 6.5, color: 'var(--muted-2)', paddingBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {m.stadium}
+          {/* Footer: ciudad · fecha (próximos) */}
+          <div style={{ fontSize: 7.5, color: 'var(--muted-2)', paddingBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.stadium}>
+            {cityOf(m.stadium)}{!live && !finished ? ` · ${fmtDate(m.kickoff)}` : ''}
           </div>
         </div>
       );
@@ -626,8 +633,8 @@
     function WSlot({ m, x, y, champCode, od, label }) {
       const finished = !!(od && od.finished);
       const live_s   = m ? isLive(m, od) : false;
-      const t1 = m ? { name: m.home, code: m.homeCode, won: finished && od.winner === 'home' } : null;
-      const t2 = m ? { name: m.away, code: m.awayCode, won: finished && od.winner === 'away' } : null;
+      const t1 = m ? { name: m.home, code: m.homeCode, won: finished && od.result === 'home' } : null;
+      const t2 = m ? { name: m.away, code: m.awayCode, won: finished && od.result === 'away' } : null;
 
       const TeamRow = ({ t }) => {
         if (!t) return (
