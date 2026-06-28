@@ -36,6 +36,7 @@ jobs:
         working-directory: agent
         env:
           FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          BONUS_DRY_RUN: ${{ vars.BONUS_DRY_RUN }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           WC_COMP: ${{ vars.WC_COMP }}
         run: node index.js ${{ github.event.inputs.mode }}
