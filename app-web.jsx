@@ -948,47 +948,17 @@ function RankingWeb() {
   let cur = 0, best = 0;
   chron.forEach(b => { if (b.status === 'won') { cur++; if (cur > best) best = cur; } else { cur = 0; } });
   const bonusStats = { bets: bets.length, settled: settled.length, accuracy: aciertos, bestStreak: best };
-  const [rankTab, setRankTab] = useStateW('bracket');
-  const rankTabs = [
-    { id: 'bracket', label: '🏆 Bracket' },
-    { id: 'ranking', label: '🏅 Ranking' },
-  ];
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
-      {/* Sub-tabs */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {rankTabs.map(t => (
-          <button key={t.id} onClick={() => setRankTab(t.id)} className="mb-press" style={{
-            padding: '8px 20px', borderRadius: 'var(--r-pill)',
-            border: rankTab === t.id ? '1px solid var(--info)' : '1px solid var(--border-2)',
-            background: rankTab === t.id ? 'rgba(74,144,226,0.15)' : 'var(--surface-2)',
-            color: rankTab === t.id ? 'var(--info)' : 'var(--text)',
-            fontFamily: 'var(--font-body)', fontWeight: rankTab === t.id ? 800 : 600,
-            fontSize: 'var(--t-sm)', cursor: 'pointer',
-          }}>{t.label}</button>
-        ))}
-      </div>
-
-      {rankTab === 'bracket' && (
-        <Card style={{ padding: '16px 18px' }}>
-          <h3 className="display" style={{ margin: '0 0 14px', fontSize: 'var(--t-xl)' }}>🏆 Cuadro eliminatorio</h3>
-          {window.MB_BracketScreen ? React.createElement(window.MB_BracketScreen) : null}
-        </Card>
+      {window.MB_ChampLadder && (
+        <div>{React.createElement(window.MB_ChampLadder, { stats: bonusStats, me: meRec })}</div>
       )}
-
-      {rankTab === 'ranking' && (
-        <>
-          {window.MB_ChampLadder && (
-            <div>{React.createElement(window.MB_ChampLadder, { stats: bonusStats, me: meRec })}</div>
-          )}
-          <Card title="🏅 Ranking de apostadores" style={{ padding: '14px 16px' }}>
-            {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
-          </Card>
-          <Card title="👥 Ranking de equipos" style={{ padding: '14px 16px' }}>
-            {window.MB_TeamsReal ? React.createElement(window.MB_TeamsReal, {}) : null}
-          </Card>
-        </>
-      )}
+      <Card title="🏅 Ranking de apostadores" style={{ padding: '14px 16px' }}>
+        {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
+      </Card>
+      <Card title="👥 Ranking de equipos" style={{ padding: '14px 16px' }}>
+        {window.MB_TeamsReal ? React.createElement(window.MB_TeamsReal, {}) : null}
+      </Card>
     </div>
   );
 }
