@@ -614,6 +614,9 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             })()}
           </p>
         </div>
+        {/* Banners de acción: elegir campeón + reclamar premios */}
+        {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
+        {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
         {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
         {window.MB_LiveNow && React.createElement(window.MB_LiveNow)}
         {(() => {
