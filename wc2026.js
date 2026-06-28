@@ -53,6 +53,13 @@
     kickoff, stadium: STADIUM[city] || city,
   });
 
+  // K(id, etapa, local, visita, kickoffUTC, ciudad) — partidos eliminatorios
+  const K = (id, stage, home, away, kickoff, city) => ({
+    id, md: null, group: null, stage,
+    home, homeCode: CODE[home], away, awayCode: CODE[away],
+    kickoff, stadium: STADIUM[city] || city,
+  });
+
   const FIXTURES = [
     // ── Jornada 1 ──
     F('m01', 1, 'A', 'México', 'Sudáfrica', '2026-06-11T19:00:00Z', 'Ciudad de México'),
@@ -131,6 +138,24 @@
     F('m70', 3, 'K', 'Congo RD', 'Uzbekistán', '2026-06-27T23:30:00Z', 'Atlanta'),
     F('m71', 3, 'J', 'Argelia', 'Austria', '2026-06-28T02:00:00Z', 'Kansas City'),
     F('m72', 3, 'J', 'Jordania', 'Argentina', '2026-06-28T02:00:00Z', 'Dallas'),
+
+    // ── Dieciseisavos de final (R32) ── equipos definidos tras la fase de grupos ──
+    K('m73', 'r32', 'Sudáfrica',          'Canadá',               '2026-06-28T19:00:00Z', 'Los Ángeles'),
+    K('m76', 'r32', 'Brasil',             'Japón',                '2026-06-29T17:00:00Z', 'Houston'),
+    K('m74', 'r32', 'Alemania',           'Paraguay',             '2026-06-29T20:30:00Z', 'Boston'),
+    K('m75', 'r32', 'Países Bajos',       'Marruecos',            '2026-06-29T21:00:00Z', 'Monterrey'),
+    K('m78', 'r32', 'Costa de Marfil',    'Noruega',              '2026-06-30T17:00:00Z', 'Dallas'),
+    K('m77', 'r32', 'Francia',            'Suecia',               '2026-06-30T21:00:00Z', 'Nueva Jersey'),
+    K('m79', 'r32', 'México',             'Ecuador',              '2026-06-30T21:00:00Z', 'Ciudad de México'),
+    K('m80', 'r32', 'Inglaterra',         'Congo RD',             '2026-07-01T16:00:00Z', 'Atlanta'),
+    K('m81', 'r32', 'Estados Unidos',     'Bosnia y Herzegovina', '2026-07-01T20:00:00Z', 'Santa Clara'),
+    K('m82', 'r32', 'Bélgica',            'Senegal',              '2026-07-01T20:00:00Z', 'Seattle'),
+    K('m84', 'r32', 'España',             'Austria',              '2026-07-02T19:00:00Z', 'Los Ángeles'),
+    K('m83', 'r32', 'Portugal',           'Croacia',              '2026-07-02T23:00:00Z', 'Toronto'),
+    K('m85', 'r32', 'Suiza',              'Argelia',              '2026-07-03T03:00:00Z', 'Vancouver'),
+    K('m88', 'r32', 'Australia',          'Egipto',               '2026-07-03T20:00:00Z', 'Dallas'),
+    K('m86', 'r32', 'Argentina',          'Cabo Verde',           '2026-07-03T22:00:00Z', 'Miami'),
+    K('m87', 'r32', 'Colombia',           'Ghana',                '2026-07-04T01:30:00Z', 'Kansas City'),
   ];
 
   // — Fase eliminatoria (equipos por definir; fechas/sedes/ronda fijos) —
