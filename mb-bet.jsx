@@ -806,7 +806,7 @@
       const fb = window.MBFirebase;
       if (!fb || !fb.claimGroupBonuses) return;
       setClaiming(true); setClaimErr('');
-      fb.claimGroupBonuses(bd)
+      fb.claimGroupBonuses({ ...bd, champBonus: champEarnedTotal, total: securedTotal })
         .then(() => { setClaimDone(true); setClaiming(false); })
         .catch((e) => { setClaimErr(e === 'ya-reclamado' ? 'Ya reclamaste estos premios.' : 'Error al reclamar. Intenta de nuevo.'); setClaiming(false); });
     };
@@ -894,16 +894,16 @@
         </div>
 
         {/* 🎁 Botón reclamar (solo si la fase cerró y hay algo que cobrar) */}
-        {groupsClosed && bd.total > 0 && (
+        {groupsClosed && securedTotal > 0 && (
           <div style={{ marginTop: 9 }}>
             {(alreadyClaimed || claimDone) ? (
               <div style={{ padding: '10px 11px', borderRadius: 'var(--r-md)', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)', textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800 }}>
-                ✅ Premios de grupos reclamados
+                ✅ Premios reclamados
               </div>
             ) : (
               <>
                 <button onClick={doClaim} disabled={claiming} className="mb-press" style={{ width: '100%', padding: '12px 0', borderRadius: 'var(--r-md)', border: 'none', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', cursor: claiming ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: claiming ? 0.7 : 1, transition: 'opacity var(--dur-base)' }}>
-                  {claiming ? 'Reclamando…' : `🎁 Reclamar +${fmt(bd.total)} pts`}
+                  {claiming ? 'Reclamando…' : `🎁 Reclamar +${fmt(securedTotal)} pts`}
                 </button>
                 {claimErr ? <div style={{ fontSize: 'var(--t-3xs)', color: '#f87171', marginTop: 5, textAlign: 'center' }}>{claimErr}</div> : null}
               </>
