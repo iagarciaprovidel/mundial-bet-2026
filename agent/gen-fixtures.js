@@ -15,14 +15,14 @@ new Function('window', code)(window);
 const FX = (window.MB_WC && window.MB_WC.FIXTURES) ||
            (window.MB && window.MB.WC_FIXTURES) || [];
 
-// Sólo partidos con equipos definidos (fase de grupos). Las eliminatorias
-// aún no tienen rivales, no se pueden mapear ni liquidar todavía.
+// Incluye fase de grupos y eliminatorias (si ya tienen equipos definidos).
 const out = FX
   .filter(f => f.homeCode && f.awayCode)
   .map(f => ({
     id: f.id, home: f.home, away: f.away,
     homeCode: f.homeCode, awayCode: f.awayCode,
-    kickoff: f.kickoff, md: f.md, group: f.group,
+    kickoff: f.kickoff, md: f.md || null,
+    group: f.group || null, stage: f.stage || 'Grupos',
   }));
 
 fs.writeFileSync(path.join(__dirname, 'our-fixtures.json'), JSON.stringify(out, null, 2));
