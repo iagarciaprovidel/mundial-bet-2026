@@ -231,6 +231,9 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Banner reclamar premios de fase de grupos */}
       {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
 
+      {/* Banner racha del apostador */}
+      {authUser && window.MB_TopTodayBanner && React.createElement(window.MB_TopTodayBanner)}
+
       {/* Cuenta regresiva al próximo partido */}
       {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
 
