@@ -134,8 +134,8 @@ function MobileFlagTicker({ onSelect }) {
           return (
             <button key={i} onClick={() => onSelect(tm)} title={eliminated ? tm.name + ' ❌' : tm.name} style={{
               background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0,
-              opacity: eliminated ? 0.25 : 1,
-              filter: eliminated ? 'grayscale(1)' : 'none',
+              opacity: eliminated ? 0.45 : 1,
+              filter: eliminated ? 'grayscale(0.7)' : 'none',
               transition: 'opacity 0.3s, filter 0.3s',
             }}>
               <img src={`https://flagcdn.com/h40/${code}.png`} alt={tm.name}
