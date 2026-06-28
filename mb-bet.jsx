@@ -589,6 +589,39 @@
     'sin-token': 'No se pudo obtener el token de notificaciones.',
     'no-auth': 'Inicia sesión primero.',
   };
+  function BellIcon({ variant, size }) {
+    size = size || 18;
+    var s = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round', style: { flexShrink: 0 } };
+    if (variant === 'granted') return (
+      React.createElement('svg', Object.assign({}, s, { stroke: 'var(--success)' }),
+        React.createElement('path', { d: 'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9' }),
+        React.createElement('path', { d: 'M13.73 21a2 2 0 01-3.46 0' }),
+        React.createElement('circle', { cx: '17', cy: '7', r: '4', fill: 'var(--success)', stroke: 'none' }),
+        React.createElement('polyline', { points: '15 7 16.5 8.5 19.5 5.5', stroke: '#fff', strokeWidth: '1.5' })
+      )
+    );
+    if (variant === 'denied') return (
+      React.createElement('svg', Object.assign({}, s, { stroke: 'var(--muted)' }),
+        React.createElement('path', { d: 'M13.73 21a2 2 0 01-3.46 0' }),
+        React.createElement('path', { d: 'M18.63 13A17.89 17.89 0 0118 8' }),
+        React.createElement('path', { d: 'M6.26 6.26A5.86 5.86 0 006 8c0 7-3 9-3 9h14' }),
+        React.createElement('path', { d: 'M18 8a6 6 0 00-9.33-4.98' }),
+        React.createElement('line', { x1: '1', y1: '1', x2: '23', y2: '23' })
+      )
+    );
+    if (variant === 'busy') return (
+      React.createElement('svg', Object.assign({}, s, { stroke: 'currentColor', style: { flexShrink: 0, animation: 'mb-spin 1s linear infinite' } }),
+        React.createElement('circle', { cx: '12', cy: '12', r: '9', strokeDasharray: '40', strokeDashoffset: '12' })
+      )
+    );
+    return (
+      React.createElement('svg', Object.assign({}, s, { stroke: 'currentColor' }),
+        React.createElement('path', { d: 'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9' }),
+        React.createElement('path', { d: 'M13.73 21a2 2 0 01-3.46 0' })
+      )
+    );
+  }
+
   function NotifButton() {
     const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
     const [perm, setPerm] = useState(() => (FB().notifPermission ? FB().notifPermission() : 'unsupported'));
@@ -596,7 +629,12 @@
     const [msg, setMsg] = useState('');
     if (!user || perm === 'unsupported') return null;
     if (perm === 'granted') {
-      return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '9px 12px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(46,160,67,0.45)', background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>🔔 Notificaciones activadas ✓</div>;
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(46,160,67,0.45)', background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>
+          <BellIcon variant="granted" size={17} />
+          Notificaciones activadas
+        </div>
+      );
     }
     const enable = () => {
       setBusy(true); setMsg('');
@@ -607,10 +645,11 @@
     };
     return (
       <div>
-        <button onClick={enable} disabled={busy || perm === 'denied'} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px', borderRadius: 'var(--r-pill)', cursor: perm === 'denied' ? 'not-allowed' : 'pointer', border: '1px solid rgba(74,144,226,0.5)', background: 'rgba(74,144,226,0.12)', color: 'var(--info)', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', opacity: perm === 'denied' ? 0.6 : 1 }}>
-          🔔 {busy ? 'Activando…' : 'Activar notificaciones'}
+        <button onClick={enable} disabled={busy || perm === 'denied'} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 'var(--r-pill)', cursor: perm === 'denied' ? 'not-allowed' : 'pointer', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: perm === 'denied' ? 'var(--muted)' : 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: perm === 'denied' ? 0.55 : 1 }}>
+          <BellIcon variant={busy ? 'busy' : perm === 'denied' ? 'denied' : 'default'} size={17} />
+          {busy ? 'Activando…' : perm === 'denied' ? 'Notificaciones bloqueadas' : 'Activar notificaciones'}
         </button>
-        {(msg || perm === 'denied') && <div style={{ marginTop: 6, fontSize: 9, color: 'var(--muted-2)', textAlign: 'center' }}>{perm === 'denied' ? 'Están bloqueadas en el navegador; actívalas en los ajustes del sitio.' : msg}</div>}
+        {(msg || perm === 'denied') && <div style={{ marginTop: 6, fontSize: 10, color: 'var(--muted)', textAlign: 'center' }}>{perm === 'denied' ? 'Bloqueadas en el navegador — actívalas en los ajustes del sitio.' : msg}</div>}
       </div>
     );
   }
