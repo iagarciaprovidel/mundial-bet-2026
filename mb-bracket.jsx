@@ -146,20 +146,19 @@
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         boxShadow: live ? '0 0 8px rgba(255,82,82,0.15)' : isChamp ? '0 0 8px rgba(212,175,55,0.12)' : 'none',
       }}>
-        {/* Header: badge live/finalizado */}
+        {/* Header: sede + indicador live */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 4, height: 13, paddingTop: 3,
-          fontSize: 7, fontWeight: 800, letterSpacing: 0.3,
+          fontSize: 7, fontWeight: 700, letterSpacing: 0.2,
           color: live ? '#ff5252' : finished ? 'var(--success)' : 'var(--muted-2)',
+          overflow: 'hidden',
         }}>
           {live && (
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />
           )}
-          {live
-            ? 'EN VIVO'
-            : finished
-              ? <span>✓ <strong style={{ fontSize: 9.5, letterSpacing: 0.5 }}>{hs ?? '?'}–{as_ ?? '?'}</strong></span>
-              : fmtDate(m.kickoff)}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {live ? 'EN VIVO · ' : finished ? '✓ ' : ''}{cityOf(m.stadium)}
+          </span>
         </div>
 
         {/* Equipos */}
@@ -169,13 +168,12 @@
           <Row name={m.away} code={aCode} won={awayWon} score={as_} />
         </div>
 
-        {/* Footer: ciudad · hora (solo cuando no ha empezado) */}
+        {/* Footer: fecha (solo partidos futuros) */}
         <div style={{
           fontSize: 7, color: 'var(--muted-2)', paddingBottom: 3,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          lineHeight: 1.3,
         }} title={m.stadium}>
-          {cityOf(m.stadium)}{!live && !finished ? ` · ${fmtDate(m.kickoff)}` : ''}
+          {!live && !finished ? fmtDate(m.kickoff) : ''}
         </div>
       </div>
     );
@@ -605,15 +603,11 @@
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
           boxShadow: live ? '0 0 10px rgba(255,82,82,0.12)' : isChamp ? '0 0 10px rgba(212,175,55,0.12)' : 'none',
         }}>
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 14, paddingTop: 3, fontSize: 7.5, fontWeight: 800, letterSpacing: 0.4 }}>
+          {/* Header: sede + indicador live */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 14, paddingTop: 3, fontSize: 7.5, fontWeight: 700, letterSpacing: 0.3, overflow: 'hidden' }}>
             {live && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />}
-            <span style={{ color: live ? '#ff5252' : finished ? 'var(--success)' : 'var(--muted-2)' }}>
-              {live
-                ? 'EN VIVO'
-                : finished
-                  ? <span>✓ <strong style={{ fontSize: 11, letterSpacing: 0.5 }}>{hs ?? '?'}–{as_ ?? '?'}</strong></span>
-                  : fmtDate(m.kickoff)}
+            <span style={{ color: live ? '#ff5252' : finished ? 'var(--success)' : 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {live ? 'EN VIVO · ' : finished ? '✓ ' : ''}{cityOf(m.stadium)}
             </span>
           </div>
           {/* Equipos */}
@@ -622,9 +616,9 @@
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '1px -6px' }} />
             <Row name={m.away} code={aCode} won={awayWon} score={as_} prov={winner && winner.prov} />
           </div>
-          {/* Footer: ciudad · fecha (próximos) */}
+          {/* Footer: fecha (solo partidos futuros) */}
           <div style={{ fontSize: 7.5, color: 'var(--muted-2)', paddingBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.stadium}>
-            {cityOf(m.stadium)}{!live && !finished ? ` · ${fmtDate(m.kickoff)}` : ''}
+            {!live && !finished ? fmtDate(m.kickoff) : ''}
           </div>
         </div>
       );
