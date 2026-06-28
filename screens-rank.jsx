@@ -195,24 +195,25 @@ function Perfil() {
 
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ textAlign: 'center', marginBottom: 10 }}>
-        <div style={{ width: 56, height: 56, borderRadius: '50%', margin: '0 auto 5px', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-xl)', padding: '18px 16px 14px', marginBottom: 12, textAlign: 'center', boxShadow: 'var(--sh-2)' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 10px', background: 'var(--surface-2)', border: '2.5px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {(meRec && meRec.championCode)
             ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Campeón: ' + (meRec.champion || '')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ fontWeight: 800, fontSize: 22, color: 'var(--gold-light)' }}>{ini}</span>}
+            : <span style={{ fontWeight: 800, fontSize: 24, color: 'var(--gold-light)' }}>{ini}</span>}
         </div>
-        <h2 className="display" style={{ margin: '2px 0 3px', fontSize: 'var(--t-xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
-        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2 }}>{authUser.email || ''} · {teamName}</div>
+        <h2 className="display" style={{ margin: '0 0 4px', fontSize: 'var(--t-xl)', color: 'var(--text)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>
+        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginBottom: 2 }}>{authUser.email || ''}</div>
+        <div style={{ fontSize: 'var(--t-sm)', fontWeight: 700, color: 'var(--gold-light)', marginBottom: 8 }}>{teamName}</div>
         {(() => {
           const nb = bets.length;
           if (nb < 10) return null;
           const icons = '🥉' + (nb >= 25 ? '🥈' : '') + (nb >= 50 ? '🥇' : '');
           const label = nb >= 50 ? 'Apostador experto' : nb >= 25 ? 'Apostador frecuente' : 'Apostador activo';
-          return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6, padding: '3px 11px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', fontSize: 'var(--t-3xs)', fontWeight: 800, color: 'var(--gold-light)' }}><span style={{ fontSize: 12 }}>{icons}</span><span className="num">{nb}</span> apuestas · {label}</div>;
+          return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 10, padding: '4px 12px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', fontSize: 'var(--t-2xs)', fontWeight: 800, color: 'var(--gold-light)' }}><span style={{ fontSize: 13 }}>{icons}</span><span className="num">{nb}</span> apuestas · {label}</div>;
         })()}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
           {window.MB_openTeamPicker && (
-            <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ padding: '7px 14px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(74,144,226,0.5)', background: 'rgba(74,144,226,0.12)', color: 'var(--info)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)' }}>
+            <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ padding: '10px 18px', borderRadius: 'var(--r-pill)', border: 'none', background: 'var(--info)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', boxShadow: '0 2px 8px rgba(74,144,226,0.4)' }}>
               {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
             </button>
           )}
