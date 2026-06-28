@@ -171,15 +171,17 @@ function App() {
     root.dataset.anim = t.anim;
   }, [t.anim]);
 
-  // Puente: abrir la ficha de una selección tocada en el splash
+  // Puente: abrir la ficha de una selección tocada en el splash o el ranking
   useEffectA(() => {
-    window.__mbOpenTeamByName = (name) => {
+    const openByName = (name) => {
       const list = window.MB_ALL_TEAMS || [];
       const found = list.find(x => x.name === name);
       if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(true); }
     };
-    if (window.__mbPendingTeam) window.__mbOpenTeamByName(window.__mbPendingTeam);
-    return () => { window.__mbOpenTeamByName = null; };
+    window.__mbOpenTeamByName = openByName;
+    window.MB_openTeam = openByName;
+    if (window.__mbPendingTeam) openByName(window.__mbPendingTeam);
+    return () => { window.__mbOpenTeamByName = null; window.MB_openTeam = null; };
   }, []);
 
   // loaders por sección (primera visita)
