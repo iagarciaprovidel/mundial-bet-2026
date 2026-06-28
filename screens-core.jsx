@@ -155,6 +155,63 @@ function NextMatchCard({ m, featured, daysLeft, onPredict }) {
   );
 }
 
+function EliminatedBanner() {
+  const [dismissed, setDismissed] = useStateC(() => !!localStorage.getItem('mb-elim-dismissed'));
+  if (dismissed) return null;
+
+  const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+  const groupFx = fx.filter(m => !m.stage || m.stage === 'Grupos');
+  const r32Fx   = fx.filter(m => m.stage === 'r32');
+  if (!r32Fx.length) return null; // aún no hay datos de R32 → grupos no terminaron
+
+  // Detectar si todos los partidos de grupos terminaron
+  const lastKO = groupFx.length ? Math.max.apply(null, groupFx.map(f => new Date(f.kickoff).getTime())) : 0;
+  const groupsClosed = lastKO > 0 && Date.now() >= lastKO + 2 * 60 * 60 * 1000;
+  if (!groupsClosed) return null;
+
+  // Equipos que avanzaron a R32
+  const r32Codes = new Set(r32Fx.flatMap(m => [m.homeCode, m.awayCode]).filter(Boolean));
+
+  // Equipos eliminados: en grupos pero NO en R32
+  const gs = (window.MB_standings ? window.MB_standings({}) : (window.MB && window.MB.GROUP_STANDINGS)) || {};
+  const eliminated = [];
+  Object.values(gs).forEach(teams => {
+    (teams || []).forEach(t => {
+      if (t.code && !r32Codes.has(t.code)) eliminated.push(t);
+    });
+  });
+  if (!eliminated.length) return null;
+
+  const dismiss = () => { localStorage.setItem('mb-elim-dismissed', '1'); setDismissed(true); };
+
+  return (
+    <div style={{ borderRadius: 'var(--r-lg)', border: '1px solid rgba(232,64,64,0.35)', background: 'rgba(232,64,64,0.07)', padding: '12px 14px', position: 'relative' }}>
+      <button onClick={dismiss} title="Cerrar" style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', color: 'var(--muted-2)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 2 }}>✕</button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 16 }}>🚫</span>
+        <div>
+          <div style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: '#e98b8b' }}>
+            {eliminated.length} selecciones eliminadas en fase de grupos
+          </div>
+          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginTop: 1 }}>
+            Ya no participan en el torneo
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {eliminated.map(t => (
+          <div key={t.code} onClick={() => window.__mbOpenTeamByName && window.__mbOpenTeamByName(t.name)}
+            title={t.name} className="mb-press"
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 'var(--r-pill)', background: 'rgba(232,64,64,0.1)', border: '1px solid rgba(232,64,64,0.25)', cursor: 'pointer', filter: 'grayscale(0.6)', opacity: 0.7 }}>
+            {t.code && <img src={`https://flagcdn.com/h20/${t.code}.png`} alt="" style={{ height: 12, width: 'auto', borderRadius: 1 }} />}
+            <span style={{ fontSize: 'var(--t-3xs)', fontWeight: 700, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{t.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ user, onNav, onPredict }) {
   const me = user;
   const top3 = Dc.USERS.slice(0, 3);
@@ -230,6 +287,9 @@ function Dashboard({ user, onNav, onPredict }) {
 
       {/* Banner reclamar premios de fase de grupos */}
       {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
+
+      {/* Banner equipos eliminados (solo cuando fase de grupos cerró) */}
+      {React.createElement(EliminatedBanner)}
 
       {/* Banner racha del apostador */}
       {authUser && window.MB_TopTodayBanner && React.createElement(window.MB_TopTodayBanner)}
