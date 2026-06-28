@@ -811,11 +811,33 @@
         .catch((e) => { setClaimErr(e === 'ya-reclamado' ? 'Ya reclamaste estos premios.' : 'Error al reclamar. Intenta de nuevo.'); setClaiming(false); });
     };
 
+    // ── Avance del campeón elegido ──
+    const champCode = me ? me.championCode : null;
+    const codesOf = (stage) => new Set(fx.filter(f => f.stage === stage).flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+    const r32Set = codesOf('r32');
+    const r16Set = codesOf('r16');
+    const qfSet  = codesOf('qf');
+    const sfSet  = codesOf('sf');
+    const finalSet = codesOf('final');
+    // Índices de CHAMP_LADDER: 0=Pasa de fase, 1=Octavos, 2=Cuartos, 3=Semifinal, 4=Final, 5=Campeón
+    const champEarned = []; // índices ya ganados
+    if (groupsClosed && champCode && r32Set.has(champCode))  champEarned.push(0);
+    if (champCode && r16Set.has(champCode))  champEarned.push(1);
+    if (champCode && qfSet.has(champCode))   champEarned.push(2);
+    if (champCode && sfSet.has(champCode))   champEarned.push(3);
+    if (champCode && finalSet.has(champCode)) champEarned.push(4);
+    // Campeón (índice 5): cuando finalSet tiene solo 1 equipo y es el campeón, ya no hay más partidos
+    const champEarnedTotal = champEarned.reduce((s, idx) => s + CHAMP_LADDER[idx][1], 0);
+
     // ── Desglose: lo ASEGURADO (ya bloqueado) y lo PENDIENTE (aún sumable) ──
     const secured = [];
     if (bd.recarga > 0) secured.push(['🎟️', 'Recarga · ' + bets + ' apuestas', bd.recarga]);
     if (bd.precision > 0) secured.push(['🎯', 'Precisión · ' + acc + '% de aciertos', bd.precision]);
     if (bd.streak > 0) secured.push(['🔥', 'Racha · ' + streak + ' seguidas', bd.streak]);
+    // Bonos del campeón ya ganados
+    champEarned.forEach((idx) => secured.push(['🏆', CHAMP_LADDER[idx][0] + (me && me.champion ? ' · ' + me.champion : ''), CHAMP_LADDER[idx][1]]));
+
+    const securedTotal = bd.total + champEarnedTotal;
 
     const pending = [];
     // Recarga: siempre hay un próximo escalón de +2.000.
@@ -829,8 +851,10 @@
     }
     // Racha: próximos tramos no alcanzados (son acumulables).
     STREAK_TIERS.forEach((t) => { if (streak < t[0]) pending.push(['🔥', t[0] + ' aciertos seguidos', t[1]]); });
-    // Campeón: depende del torneo (no se puede asegurar todavía).
-    pending.push(['🏆', 'Que tu selección pase de fase', CHAMP_LADDER[0][1], 'hasta +' + fmt(CHAMP_TOTAL) + ' si es campeona']);
+    // Campeón: mostrar antes de que cierren grupos, o las rondas aún no alcanzadas
+    if (!groupsClosed) {
+      pending.push(['🏆', 'Que tu selección pase de fase', CHAMP_LADDER[0][1], 'hasta +' + fmt(CHAMP_TOTAL) + ' si es campeona']);
+    }
 
     const line = (it, i, tone) => (
       <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 0', borderTop: i ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
@@ -839,8 +863,10 @@
       </div>
     );
 
-    // Premios del campeón por ronda (para mostrar en eliminatorias).
-    const champPending = groupsClosed ? CHAMP_LADDER.slice(1).map((x, i) => ['🏆', x[0], x[1]]) : [];
+    // Premios del campeón pendientes: solo los no ganados aún
+    const champPending = groupsClosed
+      ? CHAMP_LADDER.filter((_, idx) => !champEarned.includes(idx) && idx <= 5).map((x) => ['🏆', x[0], x[1]])
+      : [];
 
     return (
       <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid var(--gold)', borderRadius: 'var(--r-lg)', padding: '13px 15px', boxShadow: 'var(--sh-1)' }}>
@@ -859,12 +885,12 @@
         {/* ✅ Asegurado */}
         <div style={{ padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'var(--coin-bg)', border: '1px solid rgba(212,175,55,0.4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 800 }}>✅ {groupsClosed ? 'Recibiste de la fase de grupos' : 'Llevas asegurado'}</span>
-            <span className="num" style={{ fontSize: 'var(--t-lg)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(bd.total)}</span>
+            <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 800 }}>✅ {groupsClosed ? 'Llevas asegurado' : 'Llevas asegurado'}</span>
+            <span className="num" style={{ fontSize: 'var(--t-lg)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(securedTotal)}</span>
           </div>
           {secured.length
             ? <div style={{ marginTop: 4 }}>{secured.map((it, i) => line(it, i, 'var(--gold-light)'))}</div>
-            : <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 4 }}>{groupsClosed ? 'No sumaste puntos en la fase de grupos.' : 'Aún no aseguras puntos. Apuesta para empezar a sumar.'}</div>}
+            : <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 4 }}>{groupsClosed ? 'Apuesta más y sube tu precisión para ganar bonos.' : 'Aún no aseguras puntos. Apuesta para empezar a sumar.'}</div>}
         </div>
 
         {/* 🎁 Botón reclamar (solo si la fase cerró y hay algo que cobrar) */}
