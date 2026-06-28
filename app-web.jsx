@@ -895,14 +895,14 @@ function EquiposWeb({ highlight, onTeam }) {
       <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
         Los <strong>12 grupos</strong> del Mundial 2026 · 48 selecciones con su <strong>DT</strong>. Toca una bandera (arriba) o cualquier selección para ver su ficha completa.
       </p>
-      {window.MB_GroupClassificationMap && (
-        <div style={{ marginBottom: 20 }}>{React.createElement(window.MB_GroupClassificationMap, { onTeam })}</div>
-      )}
       {window.MB_BracketScreen && (
         <div style={{ marginBottom: 24 }}>
           <h3 className="display" style={{ margin: '0 0 12px', fontSize: 'var(--t-xl)' }}>🏆 Cuadro eliminatorio</h3>
           {React.createElement(window.MB_BracketScreen)}
         </div>
+      )}
+      {window.MB_GroupClassificationMap && (
+        <div style={{ marginBottom: 20 }}>{React.createElement(window.MB_GroupClassificationMap, { onTeam })}</div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(370px, 1fr))', gap: 16 }}>
         {Object.keys(gs).map(letter => <GroupTableWeb key={letter} letter={letter} rows={gs[letter]} highlighted={letter === highlight} onTeam={onTeam} />)}
