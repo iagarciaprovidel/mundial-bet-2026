@@ -55,14 +55,47 @@ function RankRow({ u, highlight }) {
 }
 
 function Ranking() {
+  const [tab, setTab] = useStateR('bracket');
+  const tabs = [
+    { id: 'bracket', label: '🏆 Bracket' },
+    { id: 'ranking', label: '🏅 Ranking' },
+  ];
   return (
-    <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Card title="🏅 Ranking de apostadores" style={{ padding: '12px 14px' }}>
-        {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
-      </Card>
-      <Card title="👥 Ranking de equipos" style={{ padding: '12px 14px' }}>
-        {window.MB_TeamsReal ? React.createElement(window.MB_TeamsReal, {}) : null}
-      </Card>
+    <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Sub-tabs */}
+      <div style={{ display: 'flex', gap: 6 }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} className="mb-press" style={{
+            flex: 1, padding: '8px 0', borderRadius: 'var(--r-pill)',
+            border: tab === t.id ? '1px solid var(--info)' : '1px solid var(--border-2)',
+            background: tab === t.id ? 'rgba(74,144,226,0.15)' : 'var(--surface-2)',
+            color: tab === t.id ? 'var(--info)' : 'var(--text)',
+            fontFamily: 'var(--font-body)', fontWeight: tab === t.id ? 800 : 600,
+            fontSize: 'var(--t-sm)', cursor: 'pointer',
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {tab === 'bracket' && (
+        <Card style={{ padding: '12px 14px' }}>
+          <div style={{ marginBottom: 10 }}>
+            <h3 className="display" style={{ margin: '0 0 2px', fontSize: 'var(--t-lg)' }}>🏆 Cuadro eliminatorio</h3>
+            <p style={{ margin: 0, fontSize: 'var(--t-xs)', color: 'var(--muted)' }}>Sigue el avance de tu selección campeona</p>
+          </div>
+          {window.MB_BracketScreen ? React.createElement(window.MB_BracketScreen) : null}
+        </Card>
+      )}
+
+      {tab === 'ranking' && (
+        <>
+          <Card title="🏅 Ranking de apostadores" style={{ padding: '12px 14px' }}>
+            {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
+          </Card>
+          <Card title="👥 Ranking de equipos" style={{ padding: '12px 14px' }}>
+            {window.MB_TeamsReal ? React.createElement(window.MB_TeamsReal, {}) : null}
+          </Card>
+        </>
+      )}
     </div>
   );
 }
@@ -244,6 +277,11 @@ function Perfil() {
           <span style={{ color: 'var(--muted-2)' }}>·</span>
           <span style={{ color: 'var(--muted)' }}>🎟️ En juego <span className="num" style={{ color: 'var(--info)', fontWeight: 800 }}>{fmt(enJuego)}</span></span>
         </div>
+      )}
+
+      {/* Gráfico evolución del saldo */}
+      {window.MB_SaldoSparkline && settled.length >= 2 && (
+        <div style={{ marginBottom: 12 }}>{React.createElement(window.MB_SaldoSparkline, { bets })}</div>
       )}
 
       {/* Premios al terminar la 3ª fecha: campeón (2ª fase) + recarga + precisión + racha */}
