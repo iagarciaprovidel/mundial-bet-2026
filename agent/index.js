@@ -28,6 +28,8 @@ const ODDS_WINDOW_H = parseInt(process.env.ODDS_WINDOW_H || '120', 10);
 const ODDS_MARGIN = parseFloat(process.env.ODDS_MARGIN || '1.06'); // overround (~6%)
 const DISCOVER = process.argv.includes('discover');
 const DIAG = process.argv.includes('diag');
+const NOTIFY_NO_TEAM  = process.argv.includes('notify-no-team');
+const NOTIFY_NO_CLAIM = process.argv.includes('notify-no-claim');
 const SALDO_INICIAL = 90000;
 
 // ── Esquema de premios que paga el motor de cierre de fase (espejo de
@@ -561,7 +563,46 @@ async function payChampionRoundBonus(stage, winnerCodes) {
   return paid;
 }
 
+// ── Notificación masiva: usuarios sin equipo ──
+async function sendNotifyNoTeam() {
+  const snap = await db.collection('users').get();
+  let sent = 0, skipped = 0;
+  for (const doc of snap.docs) {
+    const u = doc.data();
+    if (u.groupId || u.noGroup) { skipped++; continue; }
+    await notify(doc.id, '👥 ¡Únete a un equipo!', 'Aún no perteneces a ningún equipo. Entra a MundialBet y elige uno para competir en grupo durante el Mundial.');
+    sent++;
+  }
+  console.log(`Notificación "sin equipo": ${sent} enviada(s), ${skipped} omitida(s).`);
+}
+
+// ── Notificación masiva: usuarios con puntos sin reclamar ──
+async function sendNotifyNoClaim() {
+  const hasR32 = OURS.some((f) => f.stage === 'r32');
+  if (!hasR32) {
+    console.log('No hay fixtures r32: la fase de grupos aún no cerró. No se envía notificación.');
+    return;
+  }
+  const snap = await db.collection('users').get();
+  let sent = 0, skipped = 0;
+  for (const doc of snap.docs) {
+    const u = doc.data();
+    if (u.rewards && u.rewards.groupsClosed) { skipped++; continue; }
+    await notify(doc.id, '🎁 ¡Tienes puntos sin reclamar!', 'La fase de grupos terminó. Abre MundialBet → Perfil y reclama tus premios antes de que empiece la fase eliminatoria.');
+    sent++;
+  }
+  console.log(`Notificación "sin reclamar": ${sent} enviada(s), ${skipped} omitida(s).`);
+}
+
 async function main() {
+  if (NOTIFY_NO_TEAM || NOTIFY_NO_CLAIM) {
+    console.log(`Agente MundialBet · notify · ${new Date().toISOString()}`);
+    initFirebase();
+    if (NOTIFY_NO_TEAM)  await sendNotifyNoTeam();
+    if (NOTIFY_NO_CLAIM) await sendNotifyNoClaim();
+    return;
+  }
+
   if (!TOKEN) throw new Error('Falta FOOTBALL_DATA_TOKEN');
   console.log(`Agente MundialBet (football-data.org · ${COMP}) · ${new Date().toISOString()}`);
 
