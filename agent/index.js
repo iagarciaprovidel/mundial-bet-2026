@@ -38,6 +38,9 @@ const BONUS = {
   precisionTiers: [[80, 25000], [65, 12000], [50, 5000]], // %acierto → bono (solo el mayor)
   streakTiers: [[3, 2000], [5, 5000], [7, 10000]], // racha de aciertos → bono (acumulable)
   champPassPhase: 5000,                            // campeón pasó a 2ª fase ("Pasa de fase" de CHAMP_LADDER)
+  // Escalera del campeón por avance en eliminatorias (espejo de CHAMP_LADDER en mb-bet.jsx).
+  // Clave = stage del partido (r32/r16/qf/sf/final), valor = puntos que gana quien eligió al equipo ganador.
+  champRounds: { r32: 7000, r16: 10000, qf: 15000, sf: 20000, final: 30000 },
 };
 // SEGURIDAD: por defecto SIMULA (no escribe saldos). Para pagar de verdad,
 // define la variable de entorno BONUS_DRY_RUN=0 en el workflow del agente.
@@ -491,6 +494,51 @@ async function payGroupStageBonuses() {
   return paid;
 }
 
+// ── Premios del campeón por avance en la fase eliminatoria (CHAMP_LADDER) ──
+//    Después de cada ronda (r32/r16/qf/sf/final), paga el bonus a quienes
+//    eligieron al equipo ganador. Se llama con los códigos ISO de los equipos
+//    que avanzaron (ganaron su partido de esa ronda).
+//    Idempotente vía meta/bonuses.champ_{stage} y users/{uid}.rewards.champ_{stage}.
+//    DRY_RUN simula sin escribir. ──
+async function payChampionRoundBonus(stage, winnerCodes) {
+  const bonus = BONUS.champRounds[stage];
+  if (!bonus || !winnerCodes || !winnerCodes.length) return 0;
+  const metaKey = `champ_${stage}`;
+  if (!BONUS_DRY_RUN) {
+    const meta = await db.collection('meta').doc('bonuses').get();
+    if (meta.exists && meta.data()[metaKey]) return 0;
+  }
+  const winners = new Set(winnerCodes);
+  const usersSnap = await db.collection('users').get();
+  let paid = 0;
+  for (const ud of usersSnap.docs) {
+    const u = ud.data() || {};
+    if (!u.championCode || !winners.has(u.championCode)) continue;
+    if (u.rewards && u.rewards[metaKey]) continue;
+    if (BONUS_DRY_RUN) {
+      console.log(`  [DRY] Campeón ${stage} ${u.nombre || ud.id} (${u.championCode}): +${bonus}`);
+    } else {
+      await db.runTransaction(async (tx) => {
+        const ref = db.collection('users').doc(ud.id);
+        const cur = await tx.get(ref); const data = cur.exists ? cur.data() : {};
+        if (data.rewards && data.rewards[metaKey]) return;
+        const saldo = (typeof data.saldo === 'number') ? data.saldo : SALDO_INICIAL;
+        tx.set(ref, {
+          prevSaldo: saldo, saldo: saldo + bonus,
+          rewards: Object.assign({}, data.rewards, { [metaKey]: true }),
+        }, { merge: true });
+      });
+      await notify(ud.id, '🏆 ¡Tu selección avanza!', `Tu campeón siguió adelante → +${bonus} puntos. ¡Sigue jugando!`);
+    }
+    paid++;
+  }
+  if (!BONUS_DRY_RUN && paid > 0) {
+    await db.collection('meta').doc('bonuses').set({ [metaKey]: true, [`${metaKey}At`]: admin.firestore.FieldValue.serverTimestamp(), [`${metaKey}Winners`]: Array.from(winners) }, { merge: true });
+  }
+  console.log(`  Campeón ${stage}: ${BONUS_DRY_RUN ? 'SIMULADO' : 'PAGADO'} a ${paid} jugador(es), +${bonus} c/u. Ganadores: ${[...winners].join(',')}`);
+  return paid;
+}
+
 async function main() {
   if (!TOKEN) throw new Error('Falta FOOTBALL_DATA_TOKEN');
   console.log(`Agente MundialBet (football-data.org · ${COMP}) · ${new Date().toISOString()}`);
@@ -570,9 +618,10 @@ async function main() {
     if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
     const gone = await cleanupEmptyGroups();
     if (gone) console.log(`Equipos vacíos borrados: ${gone}.`);
-    // Motor de cierre de fase: paga los premios al terminar la fase de grupos.
-    // DRY_RUN por defecto (simula). Tolerante a fallos (no debe tumbar la corrida).
+    // Motor de cierre de fase de grupos: bonuses de precisión/racha/recarga/campeón.
     try { await payGroupStageBonuses(); } catch (e) { console.warn('Cierre de grupos falló:', (e && e.message) || e); }
+    // Premio del campeón por avance: se delega a payChampionRoundBonus(stage, winnerCodes)
+    // que se llama desde el bucle de partidos terminados (ver abajo, en el bloque ESPN).
   }
 
   const alertN = await matchAlerts();
@@ -680,6 +729,23 @@ async function main() {
     }
     const n = await settle(mm.our, ourResult);
     if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} → ${ourResult}): ${n} apuesta(s).`); }
+
+    // Premio del campeón por avance: cuando terminan TODOS los partidos de una ronda knockout,
+    // paga el bonus de CHAMP_LADDER a quienes eligieron al equipo ganador de ese enfrentamiento.
+    if (mm.our.stage && mm.our.stage !== 'Grupos' && BONUS.champRounds[mm.our.stage]) {
+      const stageFixtures = OURS.filter((f) => f.stage === mm.our.stage);
+      if (stageFixtures.length) {
+        const stageDocs = await Promise.all(stageFixtures.map((f) => db.collection('odds').doc(f.id).get()));
+        const allFinished = stageDocs.every((d) => d.exists && d.data().finished && d.data().result);
+        if (allFinished) {
+          const winnerCodes = stageFixtures.map((f, i) => {
+            const res = stageDocs[i].data().result;
+            return res === 'home' ? f.homeCode : f.awayCode;
+          });
+          try { await payChampionRoundBonus(mm.our.stage, winnerCodes); } catch (e) { console.warn(`Campeón ${mm.our.stage} falló:`, (e && e.message) || e); }
+        }
+      }
+    }
   }
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s).`);
