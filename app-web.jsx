@@ -895,6 +895,9 @@ function EquiposWeb({ highlight, onTeam }) {
       <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>
         Los <strong>12 grupos</strong> del Mundial 2026 · 48 selecciones con su <strong>DT</strong>. Toca una bandera (arriba) o cualquier selección para ver su ficha completa.
       </p>
+      {window.MB_GroupClassificationMap && (
+        <div style={{ marginBottom: 20 }}>{React.createElement(window.MB_GroupClassificationMap, { onTeam })}</div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(370px, 1fr))', gap: 16 }}>
         {Object.keys(gs).map(letter => <GroupTableWeb key={letter} letter={letter} rows={gs[letter]} highlighted={letter === highlight} onTeam={onTeam} />)}
       </div>
@@ -947,7 +950,7 @@ function RankingWeb() {
   const bonusStats = { bets: bets.length, settled: settled.length, accuracy: aciertos, bestStreak: best };
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
-      {window.MB_ChampLadder && authUser && (
+      {window.MB_ChampLadder && (
         <div>{React.createElement(window.MB_ChampLadder, { stats: bonusStats, me: meRec })}</div>
       )}
       <Card title="🏅 Ranking de apostadores" style={{ padding: '14px 16px' }}>
@@ -1180,14 +1183,16 @@ function AppWeb() {
   const accent = t.accent || '#4A90E2';
   useEffectW(() => { document.documentElement.style.setProperty('--accent', accent); }, [accent]);
 
-  // Puente: abrir la ficha de una selección tocada en el splash
+  // Puente: abrir la ficha de una selección tocada en el splash o el ranking
   useEffectW(() => {
-    window.__mbOpenTeamByName = (name) => {
+    const openByName = (name) => {
       const found = (window.MB_ALL_TEAMS || []).find(x => x.name === name);
       if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(); }
     };
-    if (window.__mbPendingTeam) window.__mbOpenTeamByName(window.__mbPendingTeam);
-    return () => { window.__mbOpenTeamByName = null; };
+    window.__mbOpenTeamByName = openByName;
+    window.MB_openTeam = openByName;
+    if (window.__mbPendingTeam) openByName(window.__mbPendingTeam);
+    return () => { window.__mbOpenTeamByName = null; window.MB_openTeam = null; };
   }, []);
 
   const goTab = (id) => { setTab(id); if (mainRef.current) mainRef.current.scrollTop = 0; };
