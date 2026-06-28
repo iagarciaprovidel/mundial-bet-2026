@@ -913,8 +913,23 @@ function PodiumWeb({ top3 }) {
 }
 
 function RankingWeb() {
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const authUser = store ? store.authUser : null;
+  const users = (store && store.users) || [];
+  const meRec = authUser ? (users.find(u => u.uid === authUser.uid) || null) : null;
+  const bets = store ? Object.values(store.bets || {}) : [];
+  const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
+  const wonN = settled.filter(b => b.status === 'won').length;
+  const aciertos = settled.length ? Math.round(wonN * 100 / settled.length) : 0;
+  const chron = bets.slice().sort((a, b) => (a.creado && b.creado) ? (a.creado.seconds || 0) - (b.creado.seconds || 0) : 0);
+  let cur = 0, best = 0;
+  chron.forEach(b => { if (b.status === 'won') { cur++; if (cur > best) best = cur; } else { cur = 0; } });
+  const bonusStats = { bets: bets.length, settled: settled.length, accuracy: aciertos, bestStreak: best };
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)', maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {window.MB_ChampLadder && authUser && (
+        <div>{React.createElement(window.MB_ChampLadder, { stats: bonusStats, me: meRec })}</div>
+      )}
       <Card title="🏅 Ranking de apostadores" style={{ padding: '14px 16px' }}>
         {window.MB_RankingReal ? React.createElement(window.MB_RankingReal, {}) : null}
       </Card>
