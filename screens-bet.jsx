@@ -279,7 +279,6 @@ function Partidos() {
   };
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <BetHowTo />
       <div style={{ marginBottom: 16 }}>
         <SegTabs accent="var(--info)" value={tab} onChange={setTab}
           options={[{ v: 'J1', label: jLabel(1) }, { v: 'J2', label: jLabel(2) }, { v: 'J3', label: jLabel(3) }, { v: 'KO', label: 'Elim.' }]} />
