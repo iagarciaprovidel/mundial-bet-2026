@@ -1027,6 +1027,10 @@ function PerfilWeb() {
   const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
   const wonN = settled.filter(b => b.status === 'won').length;
   const aciertos = settled.length ? Math.round((wonN / settled.length) * 100) : 0;
+  let curP = 0, bestStreakP = 0;
+  bets.slice().sort((a, b) => ms(a.creado) - ms(b.creado))
+    .forEach(b => { if (b.status === 'won') { curP++; if (curP > bestStreakP) bestStreakP = curP; } else { curP = 0; } });
+  const bonusStatsP = { bets: bets.length, settled: settled.length, accuracy: aciertos, bestStreak: bestStreakP };
   const PICK = (b) => (b.pick === 'home' ? b.home : b.pick === 'away' ? b.away : 'Empate');
   const FX = (window.MB_WC && window.MB_WC.FIXTURES) || [];
   const koOf = (id) => { const f = FX.find(x => x.id === id); return f ? new Date(f.kickoff).getTime() : 0; };
@@ -1065,6 +1069,7 @@ function PerfilWeb() {
             </div>
           )}
         </Card>
+        {window.MB_ChampLadder && React.createElement(window.MB_ChampLadder, { stats: bonusStatsP, me: meRec })}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
