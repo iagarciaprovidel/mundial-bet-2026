@@ -141,6 +141,12 @@ function espnToFd(e) {
     const t = (x.type && x.type.text) || '';
     return { side: side, name: ath ? (ath.displayName || ath.shortName || '') : '', minute: (x.clock && x.clock.displayValue) || '', red: /red|roja|second yellow|segunda amarilla/i.test(t) };
   }).filter((g) => g.side && g.name);
+  // Detectar prórroga/penales desde la descripción del estado (ESPN: "Final - AET", "Final - Pen", etc.)
+  const statusDesc = st.shortDetail || st.description || '';
+  const extraTime  = /AET|after extra|overtime|\bOT\b|prorrog/i.test(statusDesc);
+  const penalties  = /pen|PKs|penalty|penalties/i.test(statusDesc);
+  // Ganador final (útil para penales donde el marcador queda igualado)
+  const espnWinner = home.winner === true ? 'home' : away.winner === true ? 'away' : null;
   return {
     status: status,
     minute: (e.status && (e.status.displayClock || e.status.period)) || null,
@@ -149,7 +155,10 @@ function espnToFd(e) {
     awayTeam: { name: (away.team && (away.team.displayName || away.team.name)) || '' },
     goals: goals,
     cards: cards,
-    espnId: e.id, espnHomeId: hid, espnAwayId: aid, // para pedir tarjetas al endpoint summary
+    espnId: e.id, espnHomeId: hid, espnAwayId: aid,
+    extraTime: extraTime || penalties, // fue a prórroga o penales
+    penalties: penalties,              // fue específicamente a penales
+    espnWinner: espnWinner,            // ganador según ESPN (sirve para penales)
   };
 }
 
@@ -306,19 +315,33 @@ async function matchAlerts() {
 }
 
 // ── Liquida las apuestas abiertas de un partido terminado ──
-async function settle(our, ourResult) {
+// extraTime: true si el partido fue a prórroga o penales (solo fase KO)
+// penWinner: 'home'|'away'|null — ganador final en caso de penales
+async function settle(our, ourResult, extraTime, penWinner) {
   const snap = await db.collection('bets').where('matchId', '==', our.id).where('status', '==', 'open').get();
   if (snap.empty) return 0;
+  const isKO = our.stage && our.stage !== 'Grupos';
+
+  // En fase KO: 'draw' gana si hubo prórroga; home/away según ganador final
+  const evalWin = (pick) => {
+    if (isKO) {
+      if (pick === 'draw') return !!extraTime;
+      // Para penales el marcador queda igualado; usamos penWinner (ganador ESPN)
+      if (penWinner) return pick === penWinner;
+    }
+    return pick === ourResult;
+  };
+
   let n = 0;
   for (const doc of snap.docs) {
     const bet0 = doc.data();
-    const won = bet0.pick === ourResult;
+    const won = evalWin(bet0.pick);
     const payout = won ? Math.round((bet0.stake || 0) * (bet0.odd || 0)) : 0;
     await db.runTransaction(async (tx) => {
       const bs = await tx.get(doc.ref);
       if (!bs.exists || bs.data().status !== 'open') return;
       const bet = bs.data();
-      const w = bet.pick === ourResult;
+      const w = evalWin(bet.pick);
       const pay = w ? Math.round((bet.stake || 0) * (bet.odd || 0)) : 0;
       const userRef = db.collection('users').doc(bet.uid);
       const us = await tx.get(userRef);
@@ -327,7 +350,6 @@ async function settle(our, ourResult) {
       tx.set(userRef, { prevSaldo: saldo, saldo: saldo + pay, staked: Math.max(0, staked0 - (bet.stake || 0)) }, { merge: true });
       tx.set(doc.ref, { status: w ? 'won' : 'lost', result: ourResult, payout: pay, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     });
-    // Notifica el resultado al apostador.
     await notify(bet0.uid, won ? '¡Ganaste! 🎉' : 'Apuesta perdida 😕',
       our.home + ' vs ' + our.away + ': ' + (won ? '+' + payout : '−' + (bet0.stake || 0)) + ' puntos');
     n++;
@@ -711,24 +733,34 @@ async function main() {
     let apiResult = gh > ga ? 'home' : (gh < ga ? 'away' : 'draw');
     let ourResult = apiResult;
     if (!mm.sameOrient && apiResult !== 'draw') ourResult = apiResult === 'home' ? 'away' : 'home';
+
+    // Prórroga / penales: relevante para fase KO (la apuesta 'draw' se convierte en "Prórr./Pen.")
+    const isKO = mm.our.stage && mm.our.stage !== 'Grupos';
+    const extraTime = isKO && !!(m.extraTime);
+    // Ganador final en caso de penales (marcador queda igualado; ESPN indica el ganador)
+    let penWinner = null;
+    if (isKO && extraTime && ourResult === 'draw' && m.espnWinner) {
+      penWinner = mm.sameOrient ? m.espnWinner : (m.espnWinner === 'home' ? 'away' : 'home');
+    }
+
     const odoc = await db.collection('odds').doc(mm.our.id).get();
     const wasFinished = odoc.exists && odoc.data().finished;
-    // Siempre refresca resultado + goleadores (aunque ya estuviera marcado finished).
     await db.collection('odds').doc(mm.our.id).set(Object.assign(
-      { finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: scorers, cards: cards },
+      { finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: scorers, cards: cards,
+        ...(isKO && { extraTime: extraTime, penWinner: penWinner || null }) },
       wasFinished ? {} : { finishedAt: admin.firestore.FieldValue.serverTimestamp() }
     ), { merge: true });
     if (!wasFinished) results++;
-    // Avisa el RESULTADO FINAL a los seguidores (una sola vez).
     const nt = (odoc.exists && odoc.data().notified) || {};
     if (!nt.final) {
-      const c = await notifyWatchers(mm.our.id, '🏁 Resultado final', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}`);
+      const suffix = extraTime ? (penWinner ? ' (penales)' : ' (prórroga)') : '';
+      const c = await notifyWatchers(mm.our.id, '🏁 Resultado final', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${suffix}`);
       nt.final = true; nt.closed = true; nt.soon = true;
       await db.collection('odds').doc(mm.our.id).set({ notified: nt }, { merge: true });
       if (c) console.log(`  AVISO final ${mm.our.id} → ${c} seguidor(es)`);
     }
-    const n = await settle(mm.our, ourResult);
-    if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} → ${ourResult}): ${n} apuesta(s).`); }
+    const n = await settle(mm.our, ourResult, extraTime, penWinner);
+    if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} → ${ourResult}${extraTime ? ' ET' : ''}${penWinner ? '/Pen:'+penWinner : ''}): ${n} apuesta(s).`); }
 
     // Premio del campeón por avance: cuando terminan TODOS los partidos de una ronda knockout,
     // paga el bonus de CHAMP_LADDER a quienes eligieron al equipo ganador de ese enfrentamiento.
