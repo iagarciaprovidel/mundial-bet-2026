@@ -34,7 +34,7 @@
       subscribeOdds(cb) { if (typeof cb === 'function') cb({}); return () => {}; },
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
-      notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, watchMatch: noFB,
+      notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, claimGroupBonuses: noFB, watchMatch: noFB,
       subscribeTeamAlbum(gid, cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       teamOwnerUid() { return Promise.resolve(null); }, albumMark: noFB, albumAddMany: noFB, setAlbumLock: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
@@ -283,6 +283,29 @@
       const u = auth.currentUser; if (!u) { cb(null); return function () {}; }
       return db.collection('users').doc(u.uid)
         .onSnapshot(function (d) { cb(d.exists ? Object.assign({ id: d.id }, d.data()) : null); }, function () { cb(null); });
+    },
+
+    // ── Reclamo manual de premios de fase de grupos ──
+    async claimGroupBonuses(bd) {
+      const u = auth.currentUser;
+      if (!u) return Promise.reject('no-auth');
+      if (!bd || !bd.total) return Promise.resolve();
+      const ref = db.collection('users').doc(u.uid);
+      return db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        const data = snap.exists ? snap.data() : {};
+        if (data.rewards && data.rewards.groupsClosed) throw 'ya-reclamado';
+        const saldo = typeof data.saldo === 'number' ? data.saldo : 90000;
+        tx.set(ref, {
+          saldo: saldo + bd.total,
+          rewards: Object.assign({}, data.rewards || {}, {
+            groupsClosed: true,
+            recarga: bd.recarga || 0,
+            precision: bd.precision || 0,
+            streak: bd.streak || 0,
+          }),
+        }, { merge: true });
+      });
     },
 
     // ── Pronóstico del campeón (gratis, se guarda en el doc del usuario) ──
