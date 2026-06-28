@@ -287,16 +287,38 @@ function Partidos() {
         </>
       ) : (
         <>
-          <SectionHead title="Fase eliminatoria" />
-          {ko.map((k, i) => (
-            <Card key={i} style={{ marginBottom: 10, padding: '12px 14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Chip tone="gold">{k.stage}</Chip>
-                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{k.fechas}</span>
-              </div>
-              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{k.partidos} {k.partidos === 1 ? 'partido' : 'partidos'} · {k.sedes}</div>
-            </Card>
-          ))}
+          {/* Partidos de eliminatorias ya conocidos (tienen equipos definidos) */}
+          {(() => {
+            const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
+            const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', final: 'Final' };
+            const koFx = fx.filter((m) => m.stage && m.stage !== 'Grupos');
+            const byStage = {};
+            koFx.forEach((m) => { (byStage[m.stage] = byStage[m.stage] || []).push(m); });
+            const hasKoFx = koFx.length > 0;
+            return (
+              <>
+                {hasKoFx && stageOrder.filter((s) => byStage[s]).map((s) => (
+                  <React.Fragment key={s}>
+                    <SectionHead title={stageLabel[s] || s} />
+                    {byStage[s].map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  </React.Fragment>
+                ))}
+                {/* Rondas aún sin equipos definidos */}
+                {ko.filter((k) => {
+                  const key = k.stage === 'Dieciseisavos (R32)' ? 'r32' : k.stage === 'Octavos de final' ? 'r16' : k.stage === 'Cuartos de final' ? 'qf' : k.stage === 'Semifinales' ? 'sf' : k.stage === 'FINAL' ? 'final' : null;
+                  return !key || !byStage[key];
+                }).map((k, i) => (
+                  <Card key={i} style={{ marginBottom: 10, padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <Chip tone="gold">{k.stage}</Chip>
+                      <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{k.fechas}</span>
+                    </div>
+                    <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{k.partidos} {k.partidos === 1 ? 'partido' : 'partidos'} · {k.sedes}</div>
+                  </Card>
+                ))}
+              </>
+            );
+          })()}
         </>
       )}
     </div>
