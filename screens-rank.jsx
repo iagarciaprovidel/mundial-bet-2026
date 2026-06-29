@@ -195,8 +195,8 @@ function Perfil() {
 
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-xl)', padding: '18px 16px 14px', marginBottom: 12, textAlign: 'center', boxShadow: 'var(--sh-2)' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 10px', background: 'var(--surface-2)', border: '2.5px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--r-xl)', padding: '18px 16px 14px', marginBottom: 12, textAlign: 'center', boxShadow: 'var(--sh-2)' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 10px', background: 'rgba(0,0,0,0.4)', border: '2.5px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {(meRec && meRec.championCode)
             ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Campeón: ' + (meRec.champion || '')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : <span style={{ fontWeight: 800, fontSize: 24, color: 'var(--gold-light)' }}>{ini}</span>}
@@ -213,7 +213,7 @@ function Perfil() {
         })()}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
           {window.MB_openTeamPicker && (
-            <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ padding: '10px 18px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>
+            <button onClick={() => window.MB_openTeamPicker()} className="mb-press" style={{ padding: '10px 18px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>
               {(meRec && meRec.groupName) ? '👥 Cambiar de equipo' : '👥 Unirme a un equipo'}
             </button>
           )}
