@@ -94,6 +94,19 @@ function FlagWall({ vertical = false, size = 34, opacity = 0.1, repeat = 4 }) {
 
 // Todos los equipos del Mundial con su grupo (para el ticker y el modal)
 const ALL_TEAMS = (function () {
+  // Usar datos reales wc2026.js (tienen código ISO y nombres correctos)
+  if (window.MB_WC && window.MB_WC.GROUPS) {
+    const out = [];
+    Object.keys(window.MB_WC.GROUPS).forEach(g => {
+      (window.MB_WC.GROUPS[g] || []).forEach(([name, code]) => {
+        // Enriquecer con datos de GROUP_STANDINGS si el nombre coincide
+        const std = Object.values(Dw.GROUP_STANDINGS).flat().find(t => t.name === name);
+        out.push(Object.assign({ group: g, code }, std || { name, flag: '' }));
+      });
+    });
+    return out;
+  }
+  // Fallback: datos de data.js (sin código ISO)
   const out = [];
   Object.keys(Dw.GROUP_STANDINGS).forEach(letter => {
     Dw.GROUP_STANDINGS[letter].forEach(t => out.push(Object.assign({}, t, { group: letter })));
