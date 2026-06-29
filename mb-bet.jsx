@@ -645,7 +645,7 @@
     };
     return (
       <div>
-        <button onClick={enable} disabled={busy || perm === 'denied'} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 'var(--r-pill)', cursor: perm === 'denied' ? 'not-allowed' : 'pointer', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: perm === 'denied' ? 'var(--muted)' : 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: perm === 'denied' ? 0.55 : 1 }}>
+        <button onClick={enable} disabled={busy || perm === 'denied'} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 'var(--r-pill)', cursor: perm === 'denied' ? 'not-allowed' : 'pointer', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: perm === 'denied' ? 'var(--muted)' : 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: perm === 'denied' ? 0.55 : 1 }}>
           <BellIcon variant={busy ? 'busy' : perm === 'denied' ? 'denied' : 'default'} size={17} />
           {busy ? 'Activando…' : perm === 'denied' ? 'Notificaciones bloqueadas' : 'Activar notificaciones'}
         </button>
