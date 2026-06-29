@@ -204,7 +204,7 @@ function Perfil() {
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: -44 }}>
           <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'rgba(6,11,10,0.9)', border: '3px solid var(--gold)', boxShadow: '0 0 0 4px rgba(13,20,15,0.95), var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {(meRec && meRec.championCode)
-              ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Campeón: ' + (meRec.champion || '')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Ver ficha de ' + (meRec.champion || '')} onClick={() => { if (window.__mbOpenTeamByCode) window.__mbOpenTeamByCode(meRec.championCode); else if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(meRec.champion); }} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} />
               : <span style={{ fontWeight: 800, fontSize: 26, color: 'var(--gold-light)' }}>{ini}</span>}
           </div>
         </div>
