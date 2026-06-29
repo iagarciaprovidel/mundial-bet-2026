@@ -5,1285 +5,617 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Arquitectura · MundialBet Club 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800;12..96,900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
-:root {
-  --bg: #07100a;
-  --surface: rgba(13,24,16,0.95);
-  --surface-2: rgba(20,36,22,0.9);
-  --border: rgba(255,255,255,0.07);
-  --gold: #FFB81C;
-  --gold-dim: rgba(255,184,28,0.15);
-  --green: #00D466;
-  --green-dim: rgba(0,212,102,0.12);
-  --blue: #4A90E2;
-  --blue-dim: rgba(74,144,226,0.12);
-  --red: #F77F88;
-  --red-dim: rgba(247,127,136,0.12);
-  --purple: #9B6DFF;
-  --purple-dim: rgba(155,109,255,0.12);
-  --orange: #FF8A4A;
-  --orange-dim: rgba(255,138,74,0.12);
-  --teal: #00C2A8;
-  --teal-dim: rgba(0,194,168,0.12);
-  --text: #fff;
-  --muted: #8fb8a0;
-  --muted-2: #567a62;
-  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
-  --font-body: 'Manrope', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  min-height:100vh;
+  font-family:'Manrope',system-ui,sans-serif;
+  color:#fff;
+  -webkit-font-smoothing:antialiased;
+  background-color:#0c2114;
   background-image:
-    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(0,180,80,0.07) 0%, transparent 70%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    linear-gradient(180deg,rgba(6,14,9,.72) 0%,rgba(6,14,9,.38) 30%,rgba(6,14,9,.22) 60%,rgba(5,11,7,.55) 100%),
+    url(stadium.jpg);
+  background-size:cover;
+  background-position:center 58%;
+  background-attachment:fixed;
 }
 
-/* ── Layout ── */
-.wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+/* Nav */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(6,14,9,.88);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;gap:6px;
+  padding:0 32px;height:54px;
+}
+.nav-brand{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:900;font-style:italic;
+  font-size:1.05rem;letter-spacing:2px;text-transform:uppercase;
+  color:#fff;margin-right:10px;
+}
+.nav-brand span{color:#FFB81C;}
+.nav a{
+  text-decoration:none;color:rgba(255,255,255,.48);font-size:.8rem;font-weight:600;
+  padding:5px 11px;border-radius:5px;transition:all .15s;white-space:nowrap;
+}
+.nav a:hover{color:#fff;background:rgba(255,255,255,.07);}
 
-/* ── Hero ── */
-.hero {
-  text-align: center;
-  padding: 80px 24px 60px;
-  position: relative;
-}
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--green-dim); border: 1px solid rgba(0,212,102,0.25);
-  border-radius: 9999px; padding: 4px 14px;
-  font-size: 11px; font-weight: 800; letter-spacing: 0.14em; color: var(--green);
-  text-transform: uppercase; margin-bottom: 20px;
-}
-.hero h1 {
-  font-family: var(--font-display);
-  font-size: clamp(32px, 5vw, 56px);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  margin-bottom: 16px;
-}
-.hero h1 span { color: var(--gold); }
-.hero-sub {
-  font-size: clamp(15px, 2vw, 18px);
-  color: var(--muted);
-  max-width: 600px;
-  margin: 0 auto 32px;
-  font-weight: 500;
-}
-.hero-meta {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;
-  font-size: 13px; color: var(--muted-2);
-}
-.hero-meta span { display: flex; align-items: center; gap: 6px; }
-.hero-meta strong { color: var(--muted); }
-
-/* ── Sección ── */
-section { padding: 60px 0; }
-.section-label {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 11px; font-weight: 800; letter-spacing: 0.16em;
-  text-transform: uppercase; margin-bottom: 14px;
-}
-.section-label::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
-.section-title {
-  font-family: var(--font-display);
-  font-size: clamp(22px, 3vw, 32px);
-  font-weight: 800; letter-spacing: -0.02em;
-  margin-bottom: 10px;
-}
-.section-desc {
-  font-size: 15px; color: var(--muted);
-  max-width: 680px; margin-bottom: 36px;
+/* Page layout */
+.page{
+  min-height:calc(100vh - 54px);
+  padding:36px 32px 72px;
+  display:flex;flex-direction:column;align-items:center;gap:32px;
 }
 
-/* ── Diagrama de flujo principal ── */
-.flow-diagram {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 32px;
-  margin-bottom: 48px;
-  overflow-x: auto;
+/* Volver */
+.volver{
+  align-self:flex-start;
+  background:transparent;border:1px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.55);padding:7px 18px;border-radius:4px;
+  font-size:.8rem;cursor:pointer;transition:all .18s;
+  font-family:inherit;font-weight:600;
 }
-.flow-row {
-  display: flex; align-items: center; justify-content: center;
-  flex-wrap: wrap; gap: 0;
-  margin-bottom: 0;
-}
-.flow-node {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 14px 18px;
-  border-radius: 14px;
-  border: 1.5px solid;
-  min-width: 110px;
-  text-align: center;
-  position: relative;
-  transition: transform 0.2s;
-  cursor: default;
-}
-.flow-node:hover { transform: translateY(-2px); }
-.flow-node .icon { font-size: 22px; }
-.flow-node .label {
-  font-size: 11px; font-weight: 800;
-  text-transform: uppercase; letter-spacing: 0.08em;
-}
-.flow-node .sublabel { font-size: 10px; color: var(--muted-2); font-weight: 500; }
+.volver:hover{background:#FFB81C;color:#07100a;border-color:#FFB81C;}
 
-.flow-arrow {
-  width: 40px; height: 2px;
-  position: relative; flex-shrink: 0;
+/* Header */
+.header{text-align:center;}
+.title{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-size:clamp(1.8rem,5vw,3rem);font-weight:900;font-style:italic;
+  letter-spacing:4px;text-transform:uppercase;color:#fff;margin:0 0 8px;
+  text-shadow:0 2px 20px rgba(0,0,0,.6);
 }
-.flow-arrow::after {
-  content: ''; position: absolute; right: -6px; top: -4px;
-  border: 5px solid transparent;
-}
-.flow-arrow.right::after { border-left-color: currentColor; }
-.flow-arrow.down {
-  width: 2px; height: 32px;
-  margin: 0 auto;
-}
-.flow-arrow.down::after {
-  right: auto; left: -4px; top: auto; bottom: -6px;
-  border-top-color: currentColor;
-  border-left-color: transparent;
+.title span{color:#FFB81C;}
+.tagline{
+  color:rgba(255,255,255,.4);font-size:.78rem;
+  letter-spacing:2.5px;text-transform:uppercase;font-weight:700;
 }
 
-.flow-cols {
-  display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;
-  justify-content: center;
-}
-.flow-col {
-  display: flex; flex-direction: column; align-items: center; gap: 0;
-}
+/* Main 2 cols */
+.main{display:flex;gap:24px;align-items:flex-start;width:100%;max-width:1120px;flex-wrap:wrap;justify-content:center;}
 
-/* colores de nodos */
-.fn-user { background: rgba(74,144,226,0.1); border-color: rgba(74,144,226,0.35); color: var(--blue); }
-.fn-sw   { background: rgba(255,184,28,0.1); border-color: rgba(255,184,28,0.3); color: var(--gold); }
-.fn-react{ background: rgba(0,212,102,0.1); border-color: rgba(0,212,102,0.3); color: var(--green); }
-.fn-fb   { background: rgba(255,138,74,0.1); border-color: rgba(255,138,74,0.3); color: var(--orange); }
-.fn-fs   { background: rgba(255,138,74,0.1); border-color: rgba(255,138,74,0.3); color: var(--orange); }
-.fn-agent{ background: rgba(155,109,255,0.1); border-color: rgba(155,109,255,0.3); color: var(--purple); }
-.fn-api  { background: rgba(0,194,168,0.1); border-color: rgba(0,194,168,0.3); color: var(--teal); }
-.fn-gh   { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: var(--muted); }
-.fn-notif{ background: rgba(247,127,136,0.1); border-color: rgba(247,127,136,0.3); color: var(--red); }
+/* === Carta izquierda === */
+.char-card{
+  background:rgba(8,18,12,.82);
+  border-radius:8px;border-left:4px solid #00D466;
+  box-shadow:0 2px 8px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:32px 24px 28px;
+  display:flex;flex-direction:column;align-items:center;
+  min-width:268px;max-width:300px;flex-shrink:0;
+}
+.char-logo{
+  font-size:72px;line-height:1;
+  animation:float 3.6s ease-in-out infinite;
+  filter:drop-shadow(0 10px 22px rgba(0,212,102,.28)) drop-shadow(0 2px 6px rgba(0,0,0,.5));
+}
+@keyframes float{0%,to{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.char-name-block{display:flex;align-items:baseline;gap:10px;margin-top:14px;}
+.char-name{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-size:2.1rem;font-weight:900;font-style:italic;
+  letter-spacing:5px;color:#FFB81C;
+}
+.char-version{
+  font-size:.65rem;background:rgba(255,184,28,.15);color:#FFB81C;
+  border:1px solid rgba(255,184,28,.3);padding:2px 9px;
+  border-radius:99px;font-weight:700;letter-spacing:1px;
+}
+.char-desc{
+  color:rgba(255,255,255,.45);font-size:.78rem;text-align:center;
+  margin:10px 0 22px;line-height:1.6;text-transform:uppercase;letter-spacing:.5px;
+}
+.badges{display:flex;flex-direction:column;gap:13px;width:100%;}
+.badge{display:flex;align-items:center;gap:13px;}
+.badge-pent{
+  width:40px;height:40px;flex-shrink:0;
+  clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%);
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+}
+.badge-label{
+  color:#fff;font-size:.82rem;font-weight:800;font-style:italic;
+  letter-spacing:.3px;line-height:1.25;text-transform:uppercase;
+}
+.badge-sub{color:rgba(255,255,255,.38);font-size:.67rem;margin-top:1px;}
 
-/* ── Capas de arquitectura ── */
-.layers { display: flex; flex-direction: column; gap: 16px; }
-.layer {
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  overflow: hidden;
+/* === Sección de engranajes === */
+.gear-section{
+  flex:1;
+  background:rgba(8,18,12,.78);
+  border-radius:8px;border-left:4px solid #FFB81C;
+  box-shadow:0 2px 8px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:24px 20px 20px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  min-width:300px;
 }
-.layer-header {
-  display: flex; align-items: center; gap: 14px;
-  padding: 18px 22px;
-  cursor: pointer;
-  user-select: none;
+.gear-hint{
+  color:rgba(255,255,255,.38);font-size:.76rem;font-style:italic;
+  letter-spacing:.3px;min-height:1.2em;transition:color .2s;
+  text-align:center;
 }
-.layer-num {
-  width: 28px; height: 28px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: 13px; font-weight: 800;
-  flex-shrink: 0;
+.gear-svg{width:100%;max-width:540px;height:auto;overflow:visible;cursor:default;}
+.gear-desc-card{
+  width:100%;min-height:72px;
+  padding:14px 16px 14px 18px;
+  border-left:4px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+  border-radius:0 6px 6px 0;
+  transition:border-color .3s,opacity .2s;
+  opacity:.4;
 }
-.layer-title-group { flex: 1; min-width: 0; }
-.layer-name {
-  font-family: var(--font-display); font-weight: 800;
-  font-size: 17px; letter-spacing: -0.01em;
+.gear-desc-card.visible{opacity:1;}
+.gear-desc-nombre{
+  display:flex;align-items:baseline;gap:8px;
+  font-weight:900;font-style:italic;font-size:.95rem;
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;
+  font-family:'Bricolage Grotesque',sans-serif;
 }
-.layer-tagline { font-size: 12px; color: var(--muted-2); margin-top: 1px; }
-.layer-toggle {
-  font-size: 12px; color: var(--muted-2);
-  transition: transform 0.25s;
+.gear-desc-version{
+  font-size:.66rem;font-style:normal;font-weight:600;
+  color:rgba(255,255,255,.45);background:rgba(255,255,255,.08);
+  padding:1px 7px;border-radius:99px;letter-spacing:.5px;
 }
-.layer.open .layer-toggle { transform: rotate(180deg); }
-.layer-body {
-  display: none;
-  padding: 0 22px 22px;
-  border-top: 1px solid var(--border);
-}
-.layer.open .layer-body { display: block; }
+.gear-desc-text{color:rgba(255,255,255,.58);font-size:.82rem;line-height:1.65;margin:0;}
+.gear-desc-placeholder{color:rgba(255,255,255,.2);font-size:.8rem;font-style:italic;margin:0;line-height:72px;}
 
-.layer-intro {
-  padding: 16px 0 20px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+/* === Sección Cloud / Flujos === */
+.flow-section{
+  width:100%;max-width:1120px;
+  background:rgba(8,18,12,.78);
+  border-radius:8px;border-left:4px solid #9B6DFF;
+  box-shadow:0 2px 8px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:28px 28px 28px;
 }
-@media (max-width: 620px) { .layer-intro { grid-template-columns: 1fr; } }
-.layer-intro-simple, .layer-intro-tech {
-  padding: 14px 16px;
-  border-radius: 10px;
-  font-size: 13px; line-height: 1.6;
+.flow-section-label{
+  font-size:.7rem;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin-bottom:8px;
 }
-.layer-intro-simple {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+.flow-section-title{
+  font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(1.1rem,3vw,1.5rem);
+  font-weight:900;font-style:italic;letter-spacing:1px;text-transform:uppercase;
+  color:#fff;margin-bottom:6px;
 }
-.layer-intro-tech {
-  background: rgba(0,0,0,0.2);
-  border: 1px solid var(--border);
+.flow-section-sub{
+  color:rgba(255,255,255,.4);font-size:.82rem;line-height:1.65;margin-bottom:24px;
 }
-.layer-intro-simple strong, .layer-intro-tech strong {
-  display: block; font-size: 10px; font-weight: 800;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  margin-bottom: 8px; color: var(--muted-2);
+.flow-row{display:flex;flex-wrap:wrap;align-items:center;gap:0;justify-content:center;}
+.flow-node{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:14px 16px;border-radius:7px;border-top:3px solid;
+  background:rgba(255,255,255,.04);cursor:pointer;
+  min-width:110px;text-align:center;
+  transition:background .18s,transform .18s;
+  font-size:.75rem;
 }
-.layer-intro-simple p, .layer-intro-tech p { color: var(--muted); }
+.flow-node:hover{background:rgba(255,255,255,.09);transform:translateY(-2px);}
+.flow-node .fn-icon{font-size:1.3rem;}
+.flow-node .fn-label{font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.4px;font-size:.72rem;}
+.flow-node .fn-sub{color:rgba(255,255,255,.38);font-size:.66rem;}
+.flow-arrow{color:rgba(255,255,255,.2);font-size:1.1rem;padding:0 4px;align-self:center;}
+.flow-steps{margin-top:22px;display:flex;flex-direction:column;gap:10px;}
+.flow-step{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 14px;border-radius:6px;background:rgba(255,255,255,.04);
+  border-left:3px solid rgba(255,255,255,.1);
+}
+.step-num{
+  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:800;font-family:'Bricolage Grotesque',sans-serif;
+}
+.step-title{font-weight:800;font-style:italic;font-size:.82rem;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;}
+.step-desc{color:rgba(255,255,255,.45);font-size:.77rem;line-height:1.5;}
 
-.components { display: flex; flex-wrap: wrap; gap: 10px; }
-.comp {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border);
-  min-width: 200px; flex: 1;
-  transition: background 0.2s;
+/* Stack */
+.stack-section{
+  width:100%;max-width:1120px;
+  background:rgba(8,18,12,.78);
+  border-radius:8px;border-left:4px solid #00C2A8;
+  box-shadow:0 2px 8px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:28px 28px;
 }
-.comp:hover { background: rgba(255,255,255,0.055); }
-.comp-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-.comp-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-.comp-desc { font-size: 11px; color: var(--muted-2); line-height: 1.4; }
-.comp-code { font-family: var(--font-mono); font-size: 10px; color: var(--muted-2); margin-top: 4px; }
+.stack-title{
+  font-family:'Bricolage Grotesque',sans-serif;font-size:1.1rem;
+  font-weight:900;font-style:italic;letter-spacing:1px;text-transform:uppercase;
+  color:#fff;margin-bottom:16px;
+}
+.stack-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.stack-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:99px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  font-size:.78rem;font-weight:700;color:rgba(255,255,255,.75);
+  transition:background .15s;
+}
+.stack-chip:hover{background:rgba(255,255,255,.1);}
+.chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 
-/* ── Tabla de tecnologías ── */
-.tech-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.tech-table th {
-  text-align: left; padding: 8px 12px;
-  font-size: 10px; font-weight: 800; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--muted-2);
-  border-bottom: 1px solid var(--border);
+@media(max-width:680px){
+  .page{padding:24px 16px 48px;}
+  .main{flex-direction:column;align-items:center;}
+  .char-card{max-width:100%;width:100%;}
+  .flow-row{gap:4px;}
+  .flow-node{min-width:80px;padding:10px 8px;}
 }
-.tech-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  vertical-align: top;
-}
-.tech-table tr:last-child td { border-bottom: none; }
-.tech-table td:first-child { font-family: var(--font-mono); font-size: 12px; color: var(--green); }
-.tech-table td:nth-child(2) { color: var(--muted); }
-.tech-table td:nth-child(3) { color: var(--muted-2); font-size: 12px; }
-
-/* ── Flujo de datos ── */
-.data-flows { display: flex; flex-direction: column; gap: 16px; }
-.data-flow {
-  display: flex; gap: 16px; align-items: flex-start;
-  padding: 16px;
-  border-radius: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-.flow-num {
-  width: 28px; height: 28px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; flex-shrink: 0;
-  font-family: var(--font-display);
-}
-.flow-content { flex: 1; }
-.flow-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
-.flow-steps {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
-  font-size: 11px;
-}
-.flow-step {
-  padding: 3px 8px; border-radius: 5px;
-  font-weight: 700; font-size: 11px;
-  font-family: var(--font-mono);
-}
-.flow-sep { color: var(--muted-2); font-size: 14px; }
-
-/* ── Stack completo ── */
-.stack-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-.stack-card {
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-.stack-card-head {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
-}
-.stack-icon { font-size: 18px; }
-.stack-name { font-weight: 700; font-size: 14px; }
-.stack-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
-.stack-list li {
-  font-size: 12px; color: var(--muted);
-  padding-left: 14px; position: relative;
-}
-.stack-list li::before {
-  content: '›'; position: absolute; left: 0; color: var(--muted-2);
-}
-
-/* ── Glosario ── */
-.glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-.glos-item {
-  padding: 14px 16px;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-.glos-term { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
-.glos-def { font-size: 12px; color: var(--muted); line-height: 1.5; }
-.glos-code { font-family: var(--font-mono); font-size: 10px; color: var(--muted-2); margin-top: 4px; }
-
-/* ── Divider ── */
-.divider { height: 1px; background: var(--border); margin: 0; }
-
-/* ── Footer ── */
-footer {
-  text-align: center;
-  padding: 40px 24px;
-  font-size: 12px;
-  color: var(--muted-2);
-}
-footer a { color: var(--green); text-decoration: none; }
-
-/* ── Pill badge ── */
-.pill {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px; border-radius: 99px;
-  font-size: 10px; font-weight: 800;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-/* ── Nav ── */
-.topnav {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(7,16,10,0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-}
-.topnav-inner {
-  max-width: 1100px; margin: 0 auto;
-  display: flex; align-items: center; gap: 6px;
-  height: 52px; overflow-x: auto;
-}
-.topnav a {
-  text-decoration: none;
-  color: var(--muted-2);
-  font-size: 13px; font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 8px;
-  white-space: nowrap;
-  transition: color 0.15s, background 0.15s;
-}
-.topnav a:hover { color: var(--text); background: rgba(255,255,255,0.06); }
-.topnav .brand {
-  font-family: var(--font-display); font-weight: 800; font-size: 14px;
-  color: var(--text); margin-right: 8px; flex-shrink: 0;
-}
-.topnav .brand span { color: var(--gold); }
-
-@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-.anim { animation: fadeUp 0.5s ease-out both; }
 </style>
 </head>
 <body>
 
-<!-- Nav -->
-<nav class="topnav">
-  <div class="topnav-inner">
-    <span class="brand">MundialBet <span>Club</span></span>
-    <a href="#que-es">¿Qué es?</a>
-    <a href="#arquitectura">Arquitectura</a>
-    <a href="#capas">Capas</a>
-    <a href="#flujos">Flujos de datos</a>
-    <a href="#stack">Stack completo</a>
-    <a href="#glosario">Glosario</a>
-  </div>
+<nav class="nav">
+  <span class="nav-brand">Mundial<span>Bet</span></span>
+  <a href="index.html">← App</a>
+  <a href="#engranajes">Engranajes</a>
+  <a href="#flujos">Flujos</a>
+  <a href="#stack">Stack</a>
 </nav>
 
-<!-- Hero -->
-<div class="hero anim" id="que-es">
-  <div class="hero-badge">📐 Documentación técnica</div>
-  <h1>Arquitectura de<br /><span>MundialBet Club 2026</span></h1>
-  <p class="hero-sub">
-    Una app de pronósticos del Mundial 2026 construida sin servidores propios,
-    sin proceso de compilación, desplegable en minutos — y que funciona sin
-    internet una vez instalada.
-  </p>
-  <div class="hero-meta">
-    <span>🌐 <strong>PWA</strong> instalable en cualquier dispositivo</span>
-    <span>🔥 <strong>Firebase</strong> como backend completo</span>
-    <span>⚡ <strong>Sin build</strong> — JSX transpilado en el navegador</span>
-    <span>🤖 <strong>Agente automático</strong> cada 5 minutos</span>
+<div class="page">
+  <button class="volver" onclick="history.back()">← Volver</button>
+
+  <div class="header">
+    <h1 class="title">Arquitectura de <span>MundialBet</span></h1>
+    <p class="tagline">PWA · Firebase · GitHub Actions · Sin servidor propio · Mundial 2026</p>
+  </div>
+
+  <!-- 2 columnas -->
+  <div class="main" id="engranajes">
+
+    <!-- Carta izquierda -->
+    <div class="char-card">
+      <div class="char-logo">🏆</div>
+      <div class="char-name-block">
+        <span class="char-name">MB26</span>
+        <span class="char-version">v171</span>
+      </div>
+      <p class="char-desc">Sistema de pronósticos<br>del Mundial 2026</p>
+      <div class="badges" id="badges-list"></div>
+    </div>
+
+    <!-- Sección de engranajes -->
+    <div class="gear-section">
+      <p class="gear-hint" id="gear-hint">Pasa el cursor sobre un engranaje para explorar</p>
+      <svg id="gear-svg" class="gear-svg" viewBox="-240 -200 480 430" role="img" aria-label="Arquitectura MundialBet">
+        <!-- Líneas de conexión (se generan por JS) -->
+        <g id="gear-lines"></g>
+        <!-- Engranajes (se generan por JS) -->
+        <g id="gear-gears"></g>
+      </svg>
+      <div class="gear-desc-card" id="gear-desc">
+        <p class="gear-desc-placeholder">Selecciona un engranaje para ver su descripción</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flujos de datos -->
+  <div class="flow-section" id="flujos">
+    <div class="flow-section-label">🔄 Cómo fluyen los datos</div>
+    <h2 class="flow-section-title">Flujo completo: del usuario al resultado</h2>
+    <p class="flow-section-sub">
+      Desde que un jugador abre la app hasta que recibe la notificación de que ganó su apuesta —
+      sin servidores propios, todo orquestado por servicios cloud y un agente automático.
+    </p>
+    <div class="flow-row" id="flow-row"></div>
+    <div class="flow-steps" id="flow-steps"></div>
+  </div>
+
+  <!-- Stack completo -->
+  <div class="stack-section" id="stack">
+    <div class="stack-title">🛠️ Stack completo</div>
+    <div class="stack-grid" id="stack-grid"></div>
   </div>
 </div>
 
-<div class="wrap">
-
-  <!-- ¿Qué hace esta app? -->
-  <section>
-    <div class="section-label" style="color:var(--green)">🏆 Para entender el contexto</div>
-    <h2 class="section-title">¿Qué hace MundialBet?</h2>
-    <p class="section-desc">
-      Permite a grupos de amigos competir pronosticando resultados del Mundial de Fútbol 2026.
-      Cada jugador empieza con 90.000 puntos virtuales y apuesta en cada partido.
-      Un motor automático liquida las apuestas apenas termina cada juego.
-    </p>
-
-    <div class="stack-grid">
-      <div class="stack-card">
-        <div class="stack-card-head">
-          <span class="stack-icon">👤</span>
-          <span class="stack-name">El jugador hace...</span>
-        </div>
-        <ul class="stack-list">
-          <li>Ingresa con su cuenta Google</li>
-          <li>Elige un equipo favorito del Mundial</li>
-          <li>Apuesta puntos en partidos (1-X-2)</li>
-          <li>Sigue el ranking en tiempo real</li>
-          <li>Recibe notificaciones de resultados</li>
-          <li>Comparte álbum de figuritas digitales</li>
-        </ul>
-      </div>
-      <div class="stack-card">
-        <div class="stack-card-head">
-          <span class="stack-icon">🤖</span>
-          <span class="stack-name">La app hace sola...</span>
-        </div>
-        <ul class="stack-list">
-          <li>Actualiza marcadores cada 5 minutos</li>
-          <li>Liquida apuestas automáticamente</li>
-          <li>Calcula y paga bonos por precisión</li>
-          <li>Genera cuotas (sin fuente externa)</li>
-          <li>Envía notificaciones push masivas</li>
-          <li>Se actualiza sin reinstalar (SW)</li>
-        </ul>
-      </div>
-      <div class="stack-card">
-        <div class="stack-card-head">
-          <span class="stack-icon">🛡️</span>
-          <span class="stack-name">El administrador puede...</span>
-        </div>
-        <ul class="stack-list">
-          <li>Ver todos los usuarios y saldos</li>
-          <li>Ajustar cuotas manualmente</li>
-          <li>Cerrar o abrir grupos</li>
-          <li>Activar el cierre de fase de grupos</li>
-          <li>Lanzar notificaciones push globales</li>
-          <li>Ver panel de diagnóstico en vivo</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- Diagrama de flujo principal -->
-  <section id="arquitectura">
-    <div class="section-label" style="color:var(--blue)">🗺️ Vista de pájaro</div>
-    <h2 class="section-title">Arquitectura de alto nivel</h2>
-    <p class="section-desc">
-      Cómo se conectan todas las piezas: desde el dispositivo del usuario hasta los datos
-      en la nube y el agente que actualiza resultados.
-    </p>
-
-    <div class="flow-diagram">
-      <!-- Fila 1: Actor usuario -->
-      <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:0;">
-        <div class="flow-col">
-          <div class="flow-node fn-user" style="width:130px;">
-            <span class="icon">📱</span>
-            <span class="label">Usuario</span>
-            <span class="sublabel">Navegador / PWA instalada</span>
-          </div>
-          <div style="display:flex;justify-content:center;"><div class="flow-arrow down" style="color:rgba(74,144,226,0.4);"></div></div>
-          <div class="flow-node fn-sw" style="width:130px;">
-            <span class="icon">⚙️</span>
-            <span class="label">Service Worker</span>
-            <span class="sublabel">Cache offline · sw.js</span>
-          </div>
-          <div style="display:flex;justify-content:center;"><div class="flow-arrow down" style="color:rgba(255,184,28,0.4);"></div></div>
-          <div class="flow-node fn-react" style="width:130px;">
-            <span class="icon">⚛️</span>
-            <span class="label">React App</span>
-            <span class="sublabel">app.jsx / app-web.jsx</span>
-          </div>
-        </div>
-
-        <!-- Conector -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding:0 8px;">
-          <div style="height:90px;"></div>
-          <div style="display:flex;align-items:center;">
-            <div class="flow-arrow right" style="color:rgba(255,138,74,0.4);width:50px;"></div>
-          </div>
-          <div style="height:90px;"></div>
-        </div>
-
-        <!-- Firebase -->
-        <div class="flow-col" style="gap:10px;">
-          <div class="flow-node fn-fb" style="width:140px;">
-            <span class="icon">🔑</span>
-            <span class="label">Firebase Auth</span>
-            <span class="sublabel">Google / Email login</span>
-          </div>
-          <div style="display:flex;justify-content:center;"><div class="flow-arrow down" style="color:rgba(255,138,74,0.35);height:16px;"></div></div>
-          <div class="flow-node fn-fs" style="width:140px;">
-            <span class="icon">🗄️</span>
-            <span class="label">Firestore DB</span>
-            <span class="sublabel">Tiempo real · NoSQL</span>
-          </div>
-          <div style="display:flex;justify-content:center;"><div class="flow-arrow down" style="color:rgba(255,138,74,0.35);height:16px;"></div></div>
-          <div class="flow-node fn-notif" style="width:140px;">
-            <span class="icon">🔔</span>
-            <span class="label">FCM Notif.</span>
-            <span class="sublabel">Push a dispositivos</span>
-          </div>
-        </div>
-
-        <!-- Conector derecho -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding:0 8px;">
-          <div style="height:40px;"></div>
-          <div style="display:flex;align-items:center;flex-direction:column;gap:10px;">
-            <div class="flow-arrow right" style="color:rgba(155,109,255,0.4);width:50px;"></div>
-          </div>
-          <div style="height:40px;"></div>
-        </div>
-
-        <!-- GitHub Actions / Agente -->
-        <div class="flow-col" style="gap:10px;">
-          <div class="flow-node fn-gh" style="width:140px;">
-            <span class="icon">🐙</span>
-            <span class="label">GitHub Actions</span>
-            <span class="sublabel">CI/CD · cron 5 min</span>
-          </div>
-          <div style="display:flex;justify-content:center;"><div class="flow-arrow down" style="color:rgba(255,255,255,0.25);height:16px;"></div></div>
-          <div class="flow-node fn-agent" style="width:140px;">
-            <span class="icon">🤖</span>
-            <span class="label">Agente Node.js</span>
-            <span class="sublabel">agent/index.js</span>
-          </div>
-          <div style="display:flex;justify-content:center;"><div class="flow-arrow down" style="color:rgba(155,109,255,0.35);height:16px;"></div></div>
-          <div class="flow-node fn-api" style="width:140px;">
-            <span class="icon">⚽</span>
-            <span class="label">football-data.org</span>
-            <span class="sublabel">API gratis de resultados</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Leyenda -->
-      <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:16px;justify-content:center;font-size:11px;color:var(--muted-2);">
-        <span>⟶ llamadas HTTP / WebSocket</span>
-        <span style="color:var(--orange)">⟶ Firebase SDK</span>
-        <span style="color:var(--purple)">⟶ Firebase Admin SDK</span>
-        <span style="color:var(--teal)">⟶ API REST externa</span>
-      </div>
-    </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- Capas de arquitectura (acordeón) -->
-  <section id="capas">
-    <div class="section-label" style="color:var(--purple)">🔬 En detalle</div>
-    <h2 class="section-title">Las 5 capas del sistema</h2>
-    <p class="section-desc">
-      Cada capa tiene una responsabilidad clara y puede entenderse independientemente.
-      Haz clic en cada una para ver más detalles.
-    </p>
-
-    <div class="layers">
-
-      <!-- Capa 1: Frontend -->
-      <div class="layer open" style="background:rgba(74,144,226,0.04);">
-        <div class="layer-header" onclick="toggle(this)">
-          <div class="layer-num" style="background:var(--blue-dim);color:var(--blue);">1</div>
-          <div class="layer-title-group">
-            <div class="layer-name">Frontend — Lo que ve el usuario</div>
-            <div class="layer-tagline">React 18 · Babel standalone · CSS Variables · PWA</div>
-          </div>
-          <span class="pill" style="background:var(--blue-dim);color:var(--blue);">Cliente</span>
-          <span class="layer-toggle">▼</span>
-        </div>
-        <div class="layer-body">
-          <div class="layer-intro">
-            <div class="layer-intro-simple">
-              <strong>🧑 Para no técnicos</strong>
-              <p>Es toda la interfaz visual que el usuario toca: botones, pantallas, animaciones.
-              La novedad es que esta parte funciona <em>sin instalar nada en el servidor</em> —
-              el navegador mismo "compila" el código cuando abre la página.
-              Además funciona sin internet si ya visitaste la app antes.</p>
-            </div>
-            <div class="layer-intro-tech">
-              <strong>⚙️ Para técnicos</strong>
-              <p>SPA con React 18 UMD cargado desde CDN sin npm/Node local.
-              Los archivos <code>.jsx</code> son transpilados por Babel Standalone en el browser.
-              El Service Worker implementa Network-First con fallback a cache.
-              Responsive: <code>App</code> (móvil &lt;1024px) / <code>AppWeb</code> (desktop ≥1024px).
-              El bootstrap detecta ancho con <code>window.matchMedia</code>.</p>
-            </div>
-          </div>
-          <div class="components">
-            <div class="comp">
-              <span class="comp-icon">📱</span>
-              <div>
-                <div class="comp-name">App móvil</div>
-                <div class="comp-desc">Simulador iOS (IOSDevice), navegación por pestañas, header con mascota y monedas</div>
-                <div class="comp-code">app.jsx · ios-frame.jsx</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🖥️</span>
-              <div>
-                <div class="comp-name">App escritorio</div>
-                <div class="comp-desc">Layout 3 columnas: sidebar izquierdo + área principal + sidebar derecho. Sin simulador iOS</div>
-                <div class="comp-code">app-web.jsx</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">⚙️</span>
-              <div>
-                <div class="comp-name">Service Worker</div>
-                <div class="comp-desc">Cache offline de toda la app. Auto-actualiza cuando detecta versión nueva. Versión en CACHE = 'mundialbet-vN'</div>
-                <div class="comp-code">sw.js</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🎨</span>
-              <div>
-                <div class="comp-name">Design Tokens</div>
-                <div class="comp-desc">Variables CSS globales: colores, tipografía, espaciado, radios, sombras, animaciones. Un único lugar de verdad</div>
-                <div class="comp-code">index.html (:root)</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🧩</span>
-              <div>
-                <div class="comp-name">Componentes compartidos</div>
-                <div class="comp-desc">Card, Button, Modal, SectionHead, CoinBadge, MascotAvatar — usados tanto en móvil como desktop</div>
-                <div class="comp-code">components.jsx</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🌐</span>
-              <div>
-                <div class="comp-name">i18n (3 idiomas)</div>
-                <div class="comp-desc">Detección automática del idioma del navegador. Soporta ES, PT, EN sin ninguna librería externa</div>
-                <div class="comp-code">i18n.js</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Capa 2: Datos estáticos -->
-      <div class="layer" style="background:rgba(0,212,102,0.03);">
-        <div class="layer-header" onclick="toggle(this)">
-          <div class="layer-num" style="background:var(--green-dim);color:var(--green);">2</div>
-          <div class="layer-title-group">
-            <div class="layer-name">Datos estáticos — La base de todo</div>
-            <div class="layer-tagline">Archivos JS planos · Sin base de datos para datos base · Sin API propia</div>
-          </div>
-          <span class="pill" style="background:var(--green-dim);color:var(--green);">Estático</span>
-          <span class="layer-toggle">▼</span>
-        </div>
-        <div class="layer-body">
-          <div class="layer-intro">
-            <div class="layer-intro-simple">
-              <strong>🧑 Para no técnicos</strong>
-              <p>Los datos que no cambian — como los equipos del Mundial, el calendario de partidos,
-              los jugadores famosos o las figuritas — se guardan en archivos de texto simples
-              que el navegador descarga una vez y guarda en caché. Es como tener la enciclopedia
-              impresa: siempre disponible, nunca necesita conectarse a un servidor para consultarla.</p>
-            </div>
-            <div class="layer-intro-tech">
-              <strong>⚙️ Para técnicos</strong>
-              <p>Archivos <code>.js</code> planos que asignan a <code>window.MB</code> o similares.
-              Ninguno depende de Node.js — se cargan como <code>&lt;script src="..."&gt;</code> en <code>index.html</code>.
-              El agente puede sobreescribir <code>data.js</code> via GitHub API para actualizar resultados.
-              Los fixtures del agente se generan desde <code>wc2026.js</code> via <code>gen-fixtures.js</code>.</p>
-            </div>
-          </div>
-          <div class="components">
-            <div class="comp">
-              <span class="comp-icon">⚽</span>
-              <div>
-                <div class="comp-name">Partidos y resultados</div>
-                <div class="comp-desc">Todos los partidos del Mundial, marcadores, fases (grupos, R32, R16, QF, SF, Final)</div>
-                <div class="comp-code">data.js · wc2026.js</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🌍</span>
-              <div>
-                <div class="comp-name">48 selecciones</div>
-                <div class="comp-desc">Grupos, estadísticas, DT, banderas, colores. Incluye tabla de clasificación actualizable</div>
-                <div class="comp-code">data.js (MB.GROUP_STANDINGS)</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">⭐</span>
-              <div>
-                <div class="comp-name">Jugadores famosos</div>
-                <div class="comp-desc">Lista de estrellas del Mundial por selección. Usado en pantallas de equipo y álbum</div>
-                <div class="comp-code">players.js</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🃏</span>
-              <div>
-                <div class="comp-name">Álbum de figuritas</div>
-                <div class="comp-desc">168 figuritas digitales: jugadores + mascotas + estadios. Con sistema QR de intercambio</div>
-                <div class="comp-code">figuritas-2026.js · figuritas-codec.js</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Capa 3: Firebase (BaaS) -->
-      <div class="layer" style="background:rgba(255,138,74,0.03);">
-        <div class="layer-header" onclick="toggle(this)">
-          <div class="layer-num" style="background:var(--orange-dim);color:var(--orange);">3</div>
-          <div class="layer-title-group">
-            <div class="layer-name">Firebase — El backend en la nube</div>
-            <div class="layer-tagline">Auth · Firestore · Cloud Messaging · Hosting · Sin servidor propio</div>
-          </div>
-          <span class="pill" style="background:var(--orange-dim);color:var(--orange);">BaaS</span>
-          <span class="layer-toggle">▼</span>
-        </div>
-        <div class="layer-body">
-          <div class="layer-intro">
-            <div class="layer-intro-simple">
-              <strong>🧑 Para no técnicos</strong>
-              <p>Firebase es el "servidor" de la app, pero sin que nosotros tengamos que administrar
-              ningún servidor. Google lo gestiona todo. Cuando un usuario apuesta, ese dato se guarda
-              en la nube de Firebase y al instante aparece en el celular de todos sus compañeros
-              de grupo — sin recargar la página.</p>
-            </div>
-            <div class="layer-intro-tech">
-              <strong>⚙️ Para técnicos</strong>
-              <p>Firebase JS SDK v10 (modo compat) cargado via <code>&lt;script&gt;</code> desde gstatic.com.
-              Auth con persistencia LOCAL (IndexedDB). Firestore con listeners en tiempo real
-              (<code>onSnapshot</code>) y reintentos automáticos. FCM para push web/PWA.
-              Hosting como CDN con SPA rewrite (<code>** → /index.html</code>).
-              El estado de auth se expone via <code>window.MBFirebase.onAuth(cb)</code>.</p>
-            </div>
-          </div>
-          <div class="components">
-            <div class="comp">
-              <span class="comp-icon">🔑</span>
-              <div>
-                <div class="comp-name">Firebase Auth</div>
-                <div class="comp-desc">Login con Google, Facebook y email-link (sin contraseña). Sesión persiste al cerrar el navegador</div>
-                <div class="comp-code">mb-firebase.js · mb-auth-ui.jsx</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🗄️</span>
-              <div>
-                <div class="comp-name">Cloud Firestore</div>
-                <div class="comp-desc">Base de datos NoSQL en tiempo real. Colecciones: users, bets, odds, groups, joinRequests, predictions</div>
-                <div class="comp-code">mb-firebase.js</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🔔</span>
-              <div>
-                <div class="comp-name">Cloud Messaging (FCM)</div>
-                <div class="comp-desc">Notificaciones push a dispositivos aunque la app esté cerrada. Soporta web PWA, Android e iOS</div>
-                <div class="comp-code">firebase-messaging-sw.js · mb-bet.jsx</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🌐</span>
-              <div>
-                <div class="comp-name">Firebase Hosting</div>
-                <div class="comp-desc">CDN global para todos los archivos estáticos. URL principal: mundialbet-club.web.app. Respaldo: GitHub Pages</div>
-                <div class="comp-code">firebase.json</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Estructura de Firestore -->
-          <div style="margin-top:20px;">
-            <div style="font-size:11px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted-2);margin-bottom:10px;">Estructura de Firestore</div>
-            <div style="font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:16px;color:var(--muted);line-height:1.8;overflow-x:auto;">
-<span style="color:var(--orange)">users/</span>{uid} → nombre, email, saldo, groupId, foto, rewards…<br>
-<span style="color:var(--orange)">bets/</span>{uid_matchId} → monto, pick (1/X/2), settled, won, payout…<br>
-<span style="color:var(--orange)">odds/</span>{matchId} → home, draw, away, updated…<br>
-<span style="color:var(--orange)">groups/</span>{groupId} → name, open, adminUid, teamAlbum…<br>
-<span style="color:var(--orange)">joinRequests/</span>{uid_groupId} → uid, groupId, status…<br>
-<span style="color:var(--orange)">predictions/</span>{uid} → champion, scores por partido…
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Capa 4: Agente automático -->
-      <div class="layer" style="background:rgba(155,109,255,0.03);">
-        <div class="layer-header" onclick="toggle(this)">
-          <div class="layer-num" style="background:var(--purple-dim);color:var(--purple);">4</div>
-          <div class="layer-title-group">
-            <div class="layer-name">Agente automático — El motor de resultados</div>
-            <div class="layer-tagline">Node.js · GitHub Actions cron · football-data.org · Firebase Admin SDK</div>
-          </div>
-          <span class="pill" style="background:var(--purple-dim);color:var(--purple);">Backend</span>
-          <span class="layer-toggle">▼</span>
-        </div>
-        <div class="layer-body">
-          <div class="layer-intro">
-            <div class="layer-intro-simple">
-              <strong>🧑 Para no técnicos</strong>
-              <p>Cada 5 minutos, GitHub ejecuta automáticamente un pequeño programa robot.
-              Este robot consulta una API de resultados de fútbol, detecta si algún partido terminó,
-              y si es así: paga las apuestas ganadas, actualiza los saldos de cada jugador y
-              envía una notificación a todos los teléfonos. Funciona aunque el creador de la app
-              esté dormido.</p>
-            </div>
-            <div class="layer-intro-tech">
-              <strong>⚙️ Para técnicos</strong>
-              <p>Script Node.js 20 que corre en GitHub Actions con cron <code>*/5 * * * *</code>.
-              Usa Firebase Admin SDK con Service Account para escribir en Firestore con privilegios.
-              Consulta <code>football-data.org v4</code> (plan gratis, competición WC).
-              Las cuotas se generan algorítmicamente (modelo de ranking), no se depende de ninguna
-              fuente externa de odds. Soporta modo <code>BONUS_DRY_RUN=1</code> para simular sin escribir.</p>
-            </div>
-          </div>
-          <div class="components">
-            <div class="comp">
-              <span class="comp-icon">⚽</span>
-              <div>
-                <div class="comp-name">Liquidador de apuestas</div>
-                <div class="comp-desc">Busca partidos terminados, verifica picks ganadores y paga saldo×cuota a cada jugador</div>
-                <div class="comp-code">agent/index.js (settle)</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">📊</span>
-              <div>
-                <div class="comp-name">Generador de cuotas</div>
-                <div class="comp-desc">Calcula cuotas 1-X-2 basadas en ranking FIFA, con margen del 6% (overround). Sin fuente externa</div>
-                <div class="comp-code">agent/index.js (generateOdds)</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🎁</span>
-              <div>
-                <div class="comp-name">Motor de bonos</div>
-                <div class="comp-desc">Paga bonos por precisión, rachas y avance del campeón elegido. Escalera por ronda eliminatoria</div>
-                <div class="comp-code">agent/index.js (BONUS)</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🔔</span>
-              <div>
-                <div class="comp-name">Notificador masivo</div>
-                <div class="comp-desc">Envía push a grupos de usuarios: sin equipo (notify-no-team), sin reclamar bonos (notify-no-claim)</div>
-                <div class="comp-code">agent/index.js (notify-*)</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Flujo del agente -->
-          <div style="margin-top:20px;">
-            <div style="font-size:11px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted-2);margin-bottom:10px;">Qué hace el agente en cada corrida</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;">
-              <div style="background:var(--purple-dim);border:1px solid rgba(155,109,255,0.3);padding:6px 12px;border-radius:8px;color:var(--purple);font-weight:700;">1. Lee fixtures locales</div>
-              <span style="color:var(--muted-2)">→</span>
-              <div style="background:var(--purple-dim);border:1px solid rgba(155,109,255,0.3);padding:6px 12px;border-radius:8px;color:var(--purple);font-weight:700;">2. Genera cuotas faltantes</div>
-              <span style="color:var(--muted-2)">→</span>
-              <div style="background:var(--teal-dim);border:1px solid rgba(0,194,168,0.3);padding:6px 12px;border-radius:8px;color:var(--teal);font-weight:700;">3. Consulta football-data.org</div>
-              <span style="color:var(--muted-2)">→</span>
-              <div style="background:var(--orange-dim);border:1px solid rgba(255,138,74,0.3);padding:6px 12px;border-radius:8px;color:var(--orange);font-weight:700;">4. Liquida bets en Firestore</div>
-              <span style="color:var(--muted-2)">→</span>
-              <div style="background:var(--red-dim);border:1px solid rgba(247,127,136,0.3);padding:6px 12px;border-radius:8px;color:var(--red);font-weight:700;">5. Envía push FCM</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Capa 5: CI/CD -->
-      <div class="layer" style="background:rgba(255,255,255,0.02);">
-        <div class="layer-header" onclick="toggle(this)">
-          <div class="layer-num" style="background:rgba(255,255,255,0.07);color:var(--muted);">5</div>
-          <div class="layer-title-group">
-            <div class="layer-name">GitHub — El repositorio y las automatizaciones</div>
-            <div class="layer-tagline">Source control · CI/CD · Cron Agent · GitHub Pages (respaldo)</div>
-          </div>
-          <span class="pill" style="background:rgba(255,255,255,0.06);color:var(--muted);">DevOps</span>
-          <span class="layer-toggle">▼</span>
-        </div>
-        <div class="layer-body">
-          <div class="layer-intro">
-            <div class="layer-intro-simple">
-              <strong>🧑 Para no técnicos</strong>
-              <p>GitHub es donde vive el código fuente. Cada vez que el desarrollador sube un cambio,
-              GitHub automáticamente publica la nueva versión de la app en internet en segundos —
-              sin que nadie tenga que hacer nada manualmente. También es quien "despierta" al agente
-              robot cada 5 minutos para que revise resultados.</p>
-            </div>
-            <div class="layer-intro-tech">
-              <strong>⚙️ Para técnicos</strong>
-              <p>Repositorio: <code>iagarciaprovidel/mundial-bet-2026</code>.
-              Dos workflows: <code>deploy.yml</code> (push a main → Firebase Hosting via action-hosting-deploy)
-              y <code>agent.yml</code> (cron <code>*/5 * * * *</code> → Node.js agent).
-              Secretos en GitHub Secrets: <code>FIREBASE_SERVICE_ACCOUNT</code>, <code>FOOTBALL_DATA_TOKEN</code>.
-              Sin git/gh en local — los pushes se hacen via GitHub REST API (GET SHA → base64 → PUT).</p>
-            </div>
-          </div>
-          <div class="components">
-            <div class="comp">
-              <span class="comp-icon">🚀</span>
-              <div>
-                <div class="comp-name">deploy.yml</div>
-                <div class="comp-desc">Cada push a main dispara un deploy automático a Firebase Hosting. La app actualizada en ~30 segundos</div>
-                <div class="comp-code">.github/workflows/deploy.yml</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🤖</span>
-              <div>
-                <div class="comp-name">agent.yml</div>
-                <div class="comp-desc">Cron cada 5 minutos. Instala dependencias, genera fixtures y ejecuta el agente de resultados</div>
-                <div class="comp-code">.github/workflows/agent.yml</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">🔐</span>
-              <div>
-                <div class="comp-name">GitHub Secrets</div>
-                <div class="comp-desc">Credenciales sensibles: Service Account de Firebase, token de football-data.org, flags de configuración</div>
-                <div class="comp-code">Settings → Secrets & Variables</div>
-              </div>
-            </div>
-            <div class="comp">
-              <span class="comp-icon">📄</span>
-              <div>
-                <div class="comp-name">GitHub Pages</div>
-                <div class="comp-desc">Respaldo de hosting automático desde la rama main. URL alternativa si Firebase Hosting falla</div>
-                <div class="comp-code">iagarciaprovidel.github.io/mundial-bet-2026</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- Flujos de datos -->
-  <section id="flujos">
-    <div class="section-label" style="color:var(--teal)">🔄 Cómo fluyen los datos</div>
-    <h2 class="section-title">Los 5 flujos principales</h2>
-    <p class="section-desc">
-      Desde que el usuario abre la app hasta que recibe la notificación de un resultado,
-      estos son los caminos que recorre la información.
-    </p>
-    <div class="data-flows">
-
-      <div class="data-flow">
-        <div class="flow-num" style="background:var(--blue-dim);color:var(--blue);">1</div>
-        <div class="flow-content">
-          <div class="flow-title">Apertura de la app y login automático</div>
-          <div class="flow-steps">
-            <span class="flow-step" style="background:rgba(255,184,28,0.12);color:var(--gold);">Splash</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--blue-dim);color:var(--blue);">React mount</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--orange-dim);color:var(--orange);">Firebase.onAuth()</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--green-dim);color:var(--green);">Usuario logueado ✓</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:rgba(255,184,28,0.12);color:var(--gold);">Splash oculto</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted-2);margin-top:6px;">El splash espera el evento <code>mb-auth-ready</code> antes de ocultarse → el usuario nunca ve el estado "no logueado"</div>
-        </div>
-      </div>
-
-      <div class="data-flow">
-        <div class="flow-num" style="background:var(--green-dim);color:var(--green);">2</div>
-        <div class="flow-content">
-          <div class="flow-title">El usuario hace una apuesta</div>
-          <div class="flow-steps">
-            <span class="flow-step" style="background:var(--blue-dim);color:var(--blue);">UI apuesta</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--blue-dim);color:var(--blue);">MB.placeBet()</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--orange-dim);color:var(--orange);">Firestore: bets/{uid_matchId}</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--orange-dim);color:var(--orange);">Firestore: users/{uid}.saldo -=</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--green-dim);color:var(--green);">onSnapshot actualiza UI</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted-2);margin-top:6px;">Transacción atómica: el saldo se descuenta y la apuesta se registra en la misma operación</div>
-        </div>
-      </div>
-
-      <div class="data-flow">
-        <div class="flow-num" style="background:var(--purple-dim);color:var(--purple);">3</div>
-        <div class="flow-content">
-          <div class="flow-title">Liquidación automática de un partido</div>
-          <div class="flow-steps">
-            <span class="flow-step" style="background:var(--purple-dim);color:var(--purple);">GitHub Actions cron</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--teal-dim);color:var(--teal);">football-data.org API</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--purple-dim);color:var(--purple);">Partido FINISHED</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--orange-dim);color:var(--orange);">Firestore: bets settled</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--orange-dim);color:var(--orange);">users.saldo += payout</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--red-dim);color:var(--red);">FCM push 🔔</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted-2);margin-top:6px;">Si un jugador apostó 5.000 puntos a cuota 2.1 y ganó → recibe 10.500 puntos automáticamente</div>
-        </div>
-      </div>
-
-      <div class="data-flow">
-        <div class="flow-num" style="background:var(--orange-dim);color:var(--orange);">4</div>
-        <div class="flow-content">
-          <div class="flow-title">Ranking en tiempo real</div>
-          <div class="flow-steps">
-            <span class="flow-step" style="background:var(--orange-dim);color:var(--orange);">Firestore.onSnapshot(users)</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--blue-dim);color:var(--blue);">sort por saldo desc</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--green-dim);color:var(--green);">Render ranking UI</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted-2);margin-top:6px;">Cada cambio en Firestore (saldo de cualquier jugador) dispara automáticamente el re-render del ranking para todos</div>
-        </div>
-      </div>
-
-      <div class="data-flow">
-        <div class="flow-num" style="background:var(--teal-dim);color:var(--teal);">5</div>
-        <div class="flow-content">
-          <div class="flow-title">Actualización de la app (Service Worker)</div>
-          <div class="flow-steps">
-            <span class="flow-step" style="background:rgba(255,255,255,0.06);color:var(--muted);">Dev sube cambio a GitHub</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:rgba(255,255,255,0.06);color:var(--muted);">GitHub Actions deploy</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:rgba(255,184,28,0.12);color:var(--gold);">SW detecta CACHE nuevo</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:rgba(255,184,28,0.12);color:var(--gold);">controllerchange</span>
-            <span class="flow-sep">→</span>
-            <span class="flow-step" style="background:var(--green-dim);color:var(--green);">window.reload() automático</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted-2);margin-top:6px;">Los usuarios siempre tienen la versión más nueva. Sin App Store, sin reinstalar, sin intervención del usuario</div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- Stack completo -->
-  <section id="stack">
-    <div class="section-label" style="color:var(--gold)">🛠️ Tecnologías</div>
-    <h2 class="section-title">Stack completo</h2>
-    <p class="section-desc">
-      Todas las tecnologías usadas en el proyecto, organizadas por categoría.
-      La decisión central: <strong>cero proceso de build</strong> → cualquier editor de texto alcanza para contribuir.
-    </p>
-
-    <table class="tech-table" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
-      <thead>
-        <tr>
-          <th>Tecnología</th>
-          <th>¿Para qué sirve?</th>
-          <th>¿Por qué esta y no otra?</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>React 18 (UMD)</td>
-          <td>Interfaz reactiva, componentes, estado global</td>
-          <td>Carga desde CDN, no requiere npm ni webpack</td>
-        </tr>
-        <tr>
-          <td>Babel Standalone</td>
-          <td>Transforma JSX a JS válido en el navegador</td>
-          <td>Permite usar JSX sin ningún paso de compilación</td>
-        </tr>
-        <tr>
-          <td>Firebase Auth</td>
-          <td>Login con Google, Facebook, email-link</td>
-          <td>Gratis hasta 10k usuarios/mes, OAuth listo</td>
-        </tr>
-        <tr>
-          <td>Cloud Firestore</td>
-          <td>Base de datos en tiempo real NoSQL</td>
-          <td>onSnapshot = actualización automática en todos los clientes</td>
-        </tr>
-        <tr>
-          <td>Firebase Cloud Messaging</td>
-          <td>Notificaciones push web/PWA</td>
-          <td>Gratis ilimitado, integrado con Firebase</td>
-        </tr>
-        <tr>
-          <td>Firebase Hosting</td>
-          <td>CDN global para los archivos estáticos</td>
-          <td>Deploy automático con GitHub Action, SSL incluido</td>
-        </tr>
-        <tr>
-          <td>Service Worker API</td>
-          <td>Cache offline, auto-actualización, PWA</td>
-          <td>Estándar web nativo, sin librería extra</td>
-        </tr>
-        <tr>
-          <td>GitHub Actions</td>
-          <td>CI/CD + cron del agente cada 5 minutos</td>
-          <td>Gratis para repos públicos, ~2.000 min/mes gratis privados</td>
-        </tr>
-        <tr>
-          <td>Node.js 20 (agent)</td>
-          <td>Runtime del agente de resultados</td>
-          <td>Solo en Actions, no requiere servidor permanente</td>
-        </tr>
-        <tr>
-          <td>football-data.org</td>
-          <td>API de resultados del Mundial en tiempo real</td>
-          <td>Plan gratuito incluye competición WC (FIFA World Cup)</td>
-        </tr>
-        <tr>
-          <td>Google Fonts (CDN)</td>
-          <td>Bricolage Grotesque · Manrope · JetBrains Mono</td>
-          <td>3 fuentes especializadas: display, texto, monoespaciada</td>
-        </tr>
-        <tr>
-          <td>flagcdn.com</td>
-          <td>Banderas de todos los países vía código ISO</td>
-          <td>CDN gratuito, imágenes optimizadas por tamaño</td>
-        </tr>
-        <tr>
-          <td>qrcode-generator + jsQR</td>
-          <td>Generar y leer QR para intercambio de figuritas</td>
-          <td>Librerías ligeras, funcionan offline desde caché</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- Glosario -->
-  <section id="glosario">
-    <div class="section-label" style="color:var(--red)">📖 Glosario</div>
-    <h2 class="section-title">Términos para entender la arquitectura</h2>
-    <p class="section-desc">
-      Si algo en este documento no quedó claro, aquí están las definiciones simples de los términos técnicos más usados.
-    </p>
-    <div class="glossary">
-      <div class="glos-item">
-        <div class="glos-term">PWA (Progressive Web App)</div>
-        <div class="glos-def">Una página web que se puede "instalar" en el teléfono o computador como si fuera una app normal, funciona sin internet y recibe notificaciones push.</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">Service Worker</div>
-        <div class="glos-def">Un programa que vive en el navegador en segundo plano. Guarda una copia de la app y la sirve cuando no hay internet. También detecta versiones nuevas.</div>
-        <div class="glos-code">sw.js</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">Firebase</div>
-        <div class="glos-def">Plataforma de Google que provee base de datos, login de usuarios, notificaciones y hosting, todo sin que tengamos que administrar ningún servidor.</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">Firestore</div>
-        <div class="glos-def">La base de datos de Firebase. Guarda datos en "colecciones" (como carpetas) y "documentos" (como archivos). Cuando algo cambia, todos los dispositivos conectados se actualizan al instante.</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">React</div>
-        <div class="glos-def">Librería de JavaScript para construir interfaces de usuario. Permite que la pantalla se actualice automáticamente cuando cambian los datos, sin recargar la página.</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">JSX</div>
-        <div class="glos-def">Una extensión de JavaScript que permite escribir código que parece HTML dentro de un archivo JS. El navegador no lo entiende solo — Babel lo transforma primero.</div>
-        <div class="glos-code">*.jsx</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">GitHub Actions</div>
-        <div class="glos-def">Sistema de automatización de GitHub. Permite ejecutar programas automáticamente cuando alguien sube código, a cierta hora, o manualmente.</div>
-        <div class="glos-code">.github/workflows/</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">BaaS (Backend as a Service)</div>
-        <div class="glos-def">Un "backend en la nube" listo para usar. En vez de programar un servidor propio, usas servicios de terceros (como Firebase) que ya hacen todo eso.</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">CDN (Content Delivery Network)</div>
-        <div class="glos-def">Red de servidores distribuidos por el mundo. Sirve los archivos de la app desde el servidor más cercano al usuario, haciendo que cargue más rápido.</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">onSnapshot</div>
-        <div class="glos-def">Función de Firestore que "escucha" una colección en tiempo real. Cada vez que un dato cambia en la base de datos, esta función avisa automáticamente a la app.</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">FCM (Firebase Cloud Messaging)</div>
-        <div class="glos-def">Sistema de Google para enviar notificaciones push a teléfonos y navegadores. Funciona aunque la app esté cerrada.</div>
-      </div>
-      <div class="glos-item">
-        <div class="glos-term">NoSQL</div>
-        <div class="glos-def">Tipo de base de datos que no usa tablas tradicionales (como Excel). Firestore usa documentos JSON anidados, más flexibles para datos que cambian de forma.</div>
-      </div>
-    </div>
-  </section>
-
-</div><!-- /wrap -->
-
-<footer>
-  <div class="wrap">
-    <p style="margin-bottom:8px;">
-      <strong style="color:var(--text)">MundialBet Club 2026</strong> — Arquitectura documentada automáticamente
-    </p>
-    <p>
-      Repositorio: <a href="https://github.com/iagarciaprovidel/mundial-bet-2026">iagarciaprovidel/mundial-bet-2026</a>
-      · Hosting: <a href="https://mundialbet-club.web.app">mundialbet-club.web.app</a>
-    </p>
-  </div>
-</footer>
-
 <script>
-function toggle(header) {
-  const layer = header.parentElement;
-  layer.classList.toggle('open');
+// ── Datos de componentes ──────────────────────────────────────────
+const COMPS = [
+  {
+    id:"react",nombre:"React App",version:"v18.3",icon:"⚛️",color:"#00D466",
+    gear:{cx:0,cy:0,teeth:14,outer:52,inner:37,speed:9,cw:true},
+    descripcion:"Interfaz de usuario reactiva. Carga desde CDN sin npm ni build. Archivos .jsx transpilados por Babel en el navegador. Dos versiones: App (móvil) y AppWeb (escritorio ≥1024px)."
+  },
+  {
+    id:"sw",nombre:"Service Worker",version:"v171",icon:"⚙️",color:"#FFB81C",
+    gear:{cx:-107,cy:-82,teeth:10,outer:37,inner:26,speed:12,cw:false},
+    descripcion:"Cache offline de toda la app. Estrategia Network-First: intenta la red, cae a caché si falla. Detecta versión nueva por CACHE='mundialbet-vN' y recarga automáticamente."
+  },
+  {
+    id:"auth",nombre:"Firebase Auth",version:"10.12",icon:"🔑",color:"#FF8A4A",
+    gear:{cx:112,cy:-74,teeth:9,outer:33,inner:23,speed:14,cw:false},
+    descripcion:"Login con Google, Facebook y email sin contraseña (magic link). Sesión persiste al cerrar el navegador gracias a IndexedDB. El splash espera el evento mb-auth-ready antes de cerrarse."
+  },
+  {
+    id:"firestore",nombre:"Firestore DB",version:"NoSQL",icon:"🗄️",color:"#FF8A4A",
+    gear:{cx:152,cy:28,teeth:8,outer:27,inner:19,speed:17,cw:true},
+    descripcion:"Base de datos en tiempo real. onSnapshot actualiza el ranking en todos los dispositivos al instante. Colecciones: users, bets, odds, groups, joinRequests, predictions."
+  },
+  {
+    id:"fcm",nombre:"FCM Push",version:"Cloud",icon:"🔔",color:"#F77F88",
+    gear:{cx:96,cy:108,teeth:8,outer:26,inner:18,speed:16,cw:false},
+    descripcion:"Notificaciones push a dispositivos aunque la app esté cerrada. Funciona en web PWA, Android e iOS. El agente envía push masivo al liquidar partidos."
+  },
+  {
+    id:"agent",nombre:"Agente Auto.",version:"Node 20",icon:"🤖",color:"#9B6DFF",
+    gear:{cx:-108,cy:88,teeth:11,outer:41,inner:29,speed:10,cw:false},
+    descripcion:"Script Node.js que GitHub ejecuta cada 5 min. Consulta football-data.org, detecta partidos terminados, liquida apuestas, paga bonos y envía notificaciones push."
+  },
+  {
+    id:"github",nombre:"GitHub Actions",version:"CI/CD",icon:"🐙",color:"#A8C5E0",
+    gear:{cx:-152,cy:-18,teeth:8,outer:27,inner:19,speed:21,cw:true},
+    descripcion:"CI/CD automático: cada push a main dispara deploy a Firebase Hosting en ~30s. Cron cada 5 minutos para el agente. Sin servidores permanentes, sin costo fijo."
+  },
+  {
+    id:"fdorg",nombre:"football-data",version:"API v4",icon:"⚽",color:"#00C2A8",
+    gear:{cx:0,cy:155,teeth:7,outer:23,inner:16,speed:19,cw:true},
+    descripcion:"API gratuita de resultados del Mundial (football-data.org). Plan gratis incluye competición WC. El agente consulta esta API para detectar partidos finalizados."
+  }
+];
+
+// ── Función para generar path de engranaje ────────────────────────
+function gearPath(teeth, outer, inner) {
+  const step = Math.PI * 2 / teeth;
+  const half = step * 0.42;
+  let d = "";
+  for (let i = 0; i < teeth; i++) {
+    const a = i * step - Math.PI / 2;
+    const b = a + half;
+    const p1 = [outer * Math.cos(a), outer * Math.sin(a)];
+    const p2 = [inner * Math.cos(a + 0.07), inner * Math.sin(a + 0.07)];
+    const p3 = [inner * Math.cos(b - 0.07), inner * Math.sin(b - 0.07)];
+    const p4 = [outer * Math.cos(b), outer * Math.sin(b)];
+    const fmt = n => n.toFixed(2);
+    if (i === 0) d += `M ${fmt(p1[0])} ${fmt(p1[1])}`;
+    else d += ` A ${outer} ${outer} 0 0 1 ${fmt(p1[0])} ${fmt(p1[1])}`;
+    d += ` L ${fmt(p2[0])} ${fmt(p2[1])} L ${fmt(p3[0])} ${fmt(p3[1])} L ${fmt(p4[0])} ${fmt(p4[1])}`;
+  }
+  const sx = (outer * Math.cos(-Math.PI / 2)).toFixed(2);
+  const sy = (outer * Math.sin(-Math.PI / 2)).toFixed(2);
+  return d + ` A ${outer} ${outer} 0 0 1 ${sx} ${sy} Z`;
 }
 
-// Abrir capa al hacer scroll hacia ella
-const layers = document.querySelectorAll('.layer');
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting && !e.target.classList.contains('open')) {
-      e.target.classList.add('open');
-    }
-  });
-}, { threshold: 0.15 });
-layers.forEach(l => observer.observe(l));
+// ── Renderizar SVG ────────────────────────────────────────────────
+const NS = "http://www.w3.org/2000/svg";
+const linesG = document.getElementById("gear-lines");
+const gearsG = document.getElementById("gear-gears");
 
-// Highlight nav activo
-const sections = document.querySelectorAll('section[id], div[id]');
-const navLinks = document.querySelectorAll('.topnav a');
-window.addEventListener('scroll', () => {
-  let current = '';
-  sections.forEach(s => {
-    if (window.scrollY >= s.offsetTop - 80) current = s.id;
+COMPS.forEach(c => {
+  if (c.gear.cx !== 0 || c.gear.cy !== 0) {
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", 0); line.setAttribute("y1", 0);
+    line.setAttribute("x2", c.gear.cx); line.setAttribute("y2", c.gear.cy);
+    line.setAttribute("stroke", "rgba(255,255,255,0.07)");
+    line.setAttribute("stroke-width", "1.5");
+    line.setAttribute("stroke-dasharray", "4 6");
+    linesG.appendChild(line);
+  }
+});
+
+COMPS.forEach(c => {
+  const g = document.createElementNS(NS, "g");
+  g.setAttribute("transform", `translate(${c.gear.cx},${c.gear.cy})`);
+  g.style.cursor = "pointer";
+
+  // Fondo circular suave
+  const circle = document.createElementNS(NS, "circle");
+  circle.setAttribute("r", c.gear.outer + 4);
+  circle.setAttribute("fill", c.color);
+  circle.setAttribute("fill-opacity", "0.07");
+  g.appendChild(circle);
+
+  // Engranaje con animación
+  const path = document.createElementNS(NS, "path");
+  path.setAttribute("d", gearPath(c.gear.teeth, c.gear.outer, c.gear.inner));
+  path.setAttribute("fill", c.color);
+  path.setAttribute("fill-opacity", "0.82");
+  path.setAttribute("stroke", c.color);
+  path.setAttribute("stroke-width", "0.8");
+  path.setAttribute("stroke-opacity", "1");
+
+  const anim = document.createElementNS(NS, "animateTransform");
+  anim.setAttribute("attributeName", "transform");
+  anim.setAttribute("attributeType", "XML");
+  anim.setAttribute("type", "rotate");
+  anim.setAttribute("from", "0 0 0");
+  anim.setAttribute("to", c.gear.cw ? "360 0 0" : "-360 0 0");
+  anim.setAttribute("dur", `${c.gear.speed}s`);
+  anim.setAttribute("repeatCount", "indefinite");
+  path.appendChild(anim);
+  g.appendChild(path);
+
+  // Agujero central
+  const hole = document.createElementNS(NS, "circle");
+  hole.setAttribute("r", Math.round(c.gear.inner * 0.42));
+  hole.setAttribute("fill", "rgba(8,18,12,0.88)");
+  hole.setAttribute("stroke", c.color);
+  hole.setAttribute("stroke-width", "1.5");
+  hole.setAttribute("stroke-opacity", "0.6");
+  g.appendChild(hole);
+
+  // Icono (texto)
+  const txt = document.createElementNS(NS, "text");
+  txt.setAttribute("text-anchor", "middle");
+  txt.setAttribute("dominant-baseline", "central");
+  txt.setAttribute("font-size", Math.round(c.gear.inner * 0.54));
+  txt.setAttribute("y", "1");
+  txt.textContent = c.icon;
+  g.appendChild(txt);
+
+  // Etiqueta debajo
+  const lbl = document.createElementNS(NS, "text");
+  lbl.setAttribute("text-anchor", "middle");
+  lbl.setAttribute("y", c.gear.outer + 14);
+  lbl.setAttribute("fill", c.color);
+  lbl.setAttribute("font-size", "9");
+  lbl.setAttribute("font-family", "Manrope, sans-serif");
+  lbl.setAttribute("font-weight", "800");
+  lbl.setAttribute("letter-spacing", "0.5");
+  lbl.textContent = c.nombre.toUpperCase();
+  g.appendChild(lbl);
+
+  // Interacción
+  g.addEventListener("mouseenter", () => {
+    document.getElementById("gear-hint").textContent = `${c.nombre} — ${c.version}`;
+    circle.setAttribute("fill-opacity", "0.18");
+    path.setAttribute("fill-opacity", "1");
   });
-  navLinks.forEach(a => {
-    a.style.color = a.getAttribute('href') === '#' + current ? 'var(--green)' : '';
+  g.addEventListener("mouseleave", () => {
+    document.getElementById("gear-hint").textContent = "Pasa el cursor sobre un engranaje para explorar";
+    circle.setAttribute("fill-opacity", "0.07");
+    path.setAttribute("fill-opacity", "0.82");
   });
-}, { passive: true });
+  g.addEventListener("click", () => {
+    const card = document.getElementById("gear-desc");
+    card.classList.add("visible");
+    card.style.borderLeftColor = c.color;
+    card.innerHTML = `
+      <span class="gear-desc-nombre" style="color:${c.color}">
+        ${c.nombre} <span class="gear-desc-version">${c.version}</span>
+      </span>
+      <p class="gear-desc-text">${c.descripcion}</p>
+    `;
+  });
+
+  gearsG.appendChild(g);
+});
+
+// ── Badges izquierda ─────────────────────────────────────────────
+const BADGES = [
+  {icon:"⚛️",color:"#00D466",label:"Sin proceso de build",sub:"Babel transpila en el navegador"},
+  {icon:"🔥",color:"#FF8A4A",label:"Firebase Backend",sub:"Auth · Firestore · FCM · Hosting"},
+  {icon:"🤖",color:"#9B6DFF",label:"Agente automático",sub:"GitHub Actions · cron 5 min"},
+  {icon:"📱",color:"#FFB81C",label:"PWA instalable",sub:"Offline · Auto-actualizable"},
+];
+const badgesList = document.getElementById("badges-list");
+BADGES.forEach(b => {
+  badgesList.innerHTML += `
+    <div class="badge">
+      <div class="badge-pent" style="background:${b.color}22;">
+        <span style="font-size:1rem">${b.icon}</span>
+      </div>
+      <div>
+        <div class="badge-label">${b.label}</div>
+        <div class="badge-sub">${b.sub}</div>
+      </div>
+    </div>
+  `;
+});
+
+// ── Flujo de datos ────────────────────────────────────────────────
+const FLOW_NODES = [
+  {icon:"📱",label:"Usuario",sub:"PWA / Browser",color:"#00D466"},
+  {arrow:true},
+  {icon:"⚙️",label:"Service Worker",sub:"Cache offline",color:"#FFB81C"},
+  {arrow:true},
+  {icon:"⚛️",label:"React App",sub:"app.jsx",color:"#00D466"},
+  {arrow:true},
+  {icon:"🔑",label:"Firebase Auth",sub:"Google login",color:"#FF8A4A"},
+  {arrow:true},
+  {icon:"🗄️",label:"Firestore",sub:"Tiempo real",color:"#FF8A4A"},
+];
+
+const flowRow = document.getElementById("flow-row");
+FLOW_NODES.forEach(n => {
+  if (n.arrow) {
+    const a = document.createElement("span");
+    a.className = "flow-arrow";
+    a.textContent = "→";
+    flowRow.appendChild(a);
+  } else {
+    const el = document.createElement("div");
+    el.className = "flow-node";
+    el.style.borderTopColor = n.color;
+    el.innerHTML = `<div class="fn-icon">${n.icon}</div><div class="fn-label">${n.label}</div><div class="fn-sub">${n.sub}</div>`;
+    flowRow.appendChild(el);
+  }
+});
+
+// Segunda fila de flujo
+const flowRow2 = document.createElement("div");
+flowRow2.className = "flow-row";
+flowRow2.style.marginTop = "8px";
+[
+  {icon:"🐙",label:"GitHub Actions",sub:"push → deploy",color:"#A8C5E0"},
+  {arrow:true},
+  {icon:"🤖",label:"Agente Node.js",sub:"agent/index.js",color:"#9B6DFF"},
+  {arrow:true},
+  {icon:"⚽",label:"football-data",sub:"API gratis",color:"#00C2A8"},
+  {arrow:true},
+  {icon:"💰",label:"Liquida apuestas",sub:"Firestore write",color:"#FF8A4A"},
+  {arrow:true},
+  {icon:"🔔",label:"FCM push",sub:"Notificación",color:"#F77F88"},
+].forEach(n => {
+  if (n.arrow) {
+    const a = document.createElement("span");
+    a.className = "flow-arrow";
+    a.textContent = "→";
+    flowRow2.appendChild(a);
+  } else {
+    const el = document.createElement("div");
+    el.className = "flow-node";
+    el.style.borderTopColor = n.color;
+    el.innerHTML = `<div class="fn-icon">${n.icon}</div><div class="fn-label">${n.label}</div><div class="fn-sub">${n.sub}</div>`;
+    flowRow2.appendChild(el);
+  }
+});
+document.getElementById("flow-steps").before(flowRow2);
+
+const STEPS = [
+  {n:"1",color:"#00D466",title:"Usuario abre la app",desc:"El Service Worker sirve la app desde caché (funciona offline). Firebase Auth verifica la sesión en ~300ms. El splash espera al evento mb-auth-ready antes de ocultarse — el usuario nunca ve el estado «no logueado»."},
+  {n:"2",color:"#FFB81C",title:"Jugador hace una apuesta",desc:"La UI llama a MBFirebase.placeBet(). Firestore descuenta el saldo y registra la apuesta en una transacción atómica. El ranking se actualiza en tiempo real para todos los jugadores vía onSnapshot."},
+  {n:"3",color:"#9B6DFF",title:"GitHub Actions despierta al agente (cada 5 min)",desc:"El agente Node.js consulta football-data.org. Si detecta un partido FINISHED, liquida las apuestas: paga saldo × cuota a ganadores, registra historial y actualiza prevSaldo para las flechas ↑↓ del ranking."},
+  {n:"4",color:"#F77F88",title:"Notificación push instantánea",desc:"Tras liquidar, el agente envía push FCM a todos los dispositivos suscritos aunque la app esté cerrada. En móvil aparece como notificación del sistema; en desktop como notificación web."},
+  {n:"5",color:"#A8C5E0",title:"Deploy automático tras cada cambio de código",desc:"Un push a la rama main dispara el workflow deploy.yml. Firebase Hosting actualiza el CDN en ~30s. El Service Worker detecta la nueva versión (CACHE='mundialbet-vN') y recarga automáticamente todos los clientes."},
+];
+const stepsEl = document.getElementById("flow-steps");
+STEPS.forEach(s => {
+  stepsEl.innerHTML += `
+    <div class="flow-step" style="border-left-color:${s.color}22">
+      <div class="step-num" style="background:${s.color}22;color:${s.color}">${s.n}</div>
+      <div>
+        <div class="step-title" style="color:${s.color}">${s.title}</div>
+        <div class="step-desc">${s.desc}</div>
+      </div>
+    </div>
+  `;
+});
+
+// ── Stack chips ───────────────────────────────────────────────────
+const STACK = [
+  {dot:"#00D466",label:"React 18 (UMD)"},
+  {dot:"#FFB81C",label:"Babel Standalone"},
+  {dot:"#FF8A4A",label:"Firebase Auth"},
+  {dot:"#FF8A4A",label:"Cloud Firestore"},
+  {dot:"#F77F88",label:"Firebase Cloud Messaging"},
+  {dot:"#FF8A4A",label:"Firebase Hosting"},
+  {dot:"#FFB81C",label:"Service Worker API"},
+  {dot:"#9B6DFF",label:"GitHub Actions"},
+  {dot:"#9B6DFF",label:"Node.js 20"},
+  {dot:"#00C2A8",label:"football-data.org API"},
+  {dot:"#A8C5E0",label:"GitHub Pages (respaldo)"},
+  {dot:"#00D466",label:"Bricolage Grotesque"},
+  {dot:"#00D466",label:"Manrope"},
+  {dot:"#A8C5E0",label:"JetBrains Mono"},
+  {dot:"#00C2A8",label:"flagcdn.com"},
+  {dot:"#A8C5E0",label:"qrcode-generator"},
+  {dot:"#A8C5E0",label:"jsQR"},
+  {dot:"#00D466",label:"PWA Manifest"},
+  {dot:"#FFB81C",label:"IndexedDB (Auth persist.)"},
+  {dot:"#FF8A4A",label:"Firebase Admin SDK"},
+];
+const stackGrid = document.getElementById("stack-grid");
+STACK.forEach(s => {
+  stackGrid.innerHTML += `
+    <div class="stack-chip">
+      <span class="chip-dot" style="background:${s.dot}"></span>
+      ${s.label}
+    </div>
+  `;
+});
 </script>
 </body>
 </html>
