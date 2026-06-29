@@ -28,6 +28,27 @@
     const up = cur > prev;
     return <span style={{ color: up ? 'var(--success)' : 'var(--danger)', fontSize: 11, marginLeft: 4 }}>{up ? '▲' : '▼'}</span>;
   }
+
+  // Racha ACTUAL de aciertos: contar wins consecutivos desde el último partido terminado
+  function currentStreak(bets) {
+    const settled = Object.values(bets || {}).filter((b) => b.status === 'won' || b.status === 'lost');
+    if (!settled.length) return 0;
+    settled.sort((a, b) => {
+      const ta = (a.creado && a.creado.seconds) ? a.creado.seconds : 0;
+      const tb = (b.creado && b.creado.seconds) ? b.creado.seconds : 0;
+      return tb - ta; // más reciente primero
+    });
+    let s = 0;
+    for (const b of settled) { if (b.status === 'won') s++; else break; }
+    return s;
+  }
+
+  function StreakBadge({ n }) {
+    if (!n || n < 2) return null;
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 5, padding: '1px 6px', borderRadius: 99, background: 'rgba(255,120,30,0.18)', border: '1px solid rgba(255,120,30,0.35)', fontSize: 9.5, fontWeight: 800, color: '#FF8C42', flexShrink: 0, lineHeight: 1.5 }}>🔥{n}</span>
+    );
+  }
   // Mensaje uniforme de "inicia sesión" (mismo candado/tamaño en toda la app).
   const signIn = (text, card) => window.MB_SignInNote
     ? React.createElement(window.MB_SignInNote, { text: text, card: card })
@@ -51,7 +72,9 @@
     // Mi monto apostado y mi nº de apuestas, al instante desde el store.
     const myStaked = (store && store.bets) ? Object.keys(store.bets).reduce((s, k) => { const b = store.bets[k]; return s + (b && b.status === 'open' ? (b.stake || 0) : 0); }, 0) : 0;
     const myCount = (store && store.bets) ? Object.keys(store.bets).length : 0;
+    const myStreak = (store && store.bets) ? currentStreak(store.bets) : 0;
     const countOf = (u) => (u && u.uid === user.uid) ? myCount : ((u && typeof u.betsCount === 'number') ? u.betsCount : 0);
+    const streakOf = (u) => (u && u.uid === user.uid) ? myStreak : (typeof u.currentStreak === 'number' ? u.currentStreak : 0);
     // Un solo ranking, ordenado por PUNTOS (patrimonio); la participación se ve en cada fila.
     const list = users.slice().sort((a, b) => (saldoOf(b) - saldoOf(a)) || tsMillis(a.creado) - tsMillis(b.creado));
     const shown = limit ? list.slice(0, limit) : list;
@@ -69,7 +92,7 @@
                   {window.MB_champAvatar ? window.MB_champAvatar(u.championCode, u.champion, u.nombre, 30) : <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6 }}>· tú</span>}</div>
+                  <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 0 }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}<StreakBadge n={streakOf(u)} />{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6, flexShrink: 0 }}>· tú</span>}</div>
                   <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.groupName ? '👥 ' + u.groupName : (u.noGroup ? 'Individual' : 'Sin equipo')}{betText(countOf(u))}</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
