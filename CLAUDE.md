@@ -1,8 +1,17 @@
-## Instrucciones de trabajo
-- Trabaja de forma autónoma: implementa los cambios directamente sin pedir confirmación
-- Haz push a GitHub después de cada cambio sin preguntar
-- Si algo es ambiguo, elige la opción más razonable y avísame qué elegiste al final
-- Solo pregunta si hay riesgo real de perder datos o romper algo crítico
+## Instrucciones de trabajo — LEER PRIMERO
+- **Actúa directamente. Nunca narres lo que vas a hacer antes de hacerlo.**
+- **Nunca pidas confirmación antes de ningún cambio de código, diseño o push.**
+- Si algo es ambiguo: elige la opción más razonable y menciónala en UNA línea al final, solo si es relevante.
+- Solo pregunta si hay riesgo irreversible real (borrar datos de producción, etc.).
+
+## Decisiones que tomas solo — NUNCA preguntar sobre esto
+- Qué archivo editar o crear
+- Nombre de archivos, clases, IDs o variables
+- Qué diseño/estilo elegir (elige el que más encaje con el proyecto)
+- Si hacer push o no (siempre hacer push después de cada cambio)
+- Si actualizar también `todio/index.html` cuando editas `todio.html` (sí, siempre)
+- Si bumpar `sw.js` (sí, siempre con cualquier push)
+- Si los cambios son "suficientes" o si agregar algo más
 
 ## GitHub (sin git instalado — usar API REST)
 - Repo: `iagarciaprovidel/mundial-bet-2026`
