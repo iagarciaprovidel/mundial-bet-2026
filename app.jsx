@@ -173,16 +173,29 @@ function App() {
 
   // Puente: abrir la ficha de una selección tocada en el splash o el ranking
   useEffectA(() => {
-    const openByName = (name) => {
-      const list = window.MB_ALL_TEAMS || [];
-      const found = list.find(x => x.name === name);
-      if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(true); }
-    };
     const openByCode = (code) => {
       if (!code) return;
       const list = window.MB_ALL_TEAMS || [];
-      const found = list.find(x => x.code === code);
+      let found = list.find(x => x.code === code);
+      // Fallback: buscar en MB_WC.GROUPS si ALL_TEAMS no tiene el código
+      if (!found && window.MB_WC && window.MB_WC.GROUPS) {
+        const G = window.MB_WC.GROUPS;
+        Object.keys(G).forEach(g => {
+          G[g].forEach(([name, c]) => { if (c === code && !found) found = { name, code: c, group: g }; });
+        });
+      }
       if (found) { setTeam(found); if (window.__mbHideSplash) window.__mbHideSplash(true); }
+    };
+    const openByName = (name) => {
+      const list = window.MB_ALL_TEAMS || [];
+      let found = list.find(x => x.name === name);
+      if (!found && window.MB_WC && window.MB_WC.GROUPS) {
+        const G = window.MB_WC.GROUPS;
+        Object.keys(G).forEach(g => {
+          G[g].forEach(([n, c]) => { if (n === name && !found) found = { name: n, code: c, group: g }; });
+        });
+      }
+      if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(true); }
     };
     window.__mbOpenTeamByName = openByName;
     window.__mbOpenTeamByCode = openByCode;
