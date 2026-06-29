@@ -158,13 +158,38 @@ function Admin({ onCloseTournament }) {
 function TournamentClose({ onExit }) {
   const [declared, setDeclared] = useStateS(false);
   const [fire, setFire] = useStateS(0);
+  const [users, setUsers] = useStateS([]);
+  const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
   useEffectS(() => { setFire(Date.now()); }, []);
-  const podium = Ds.LEAGUE.distribution.map(d => ({ ...d, u: Ds.userById(d.userId) }));
+  useEffectS(() => {
+    if (!window.MBFirebase || !window.MBFirebase.subscribeUsers) return;
+    const un = window.MBFirebase.subscribeUsers(setUsers);
+    return () => { if (typeof un === 'function') un(); };
+  }, []);
+
+  const SAL = 90000;
+  const fmtN = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
+  const worthOf = (u) => window.MB_worth ? window.MB_worth(u) : ((u && typeof u.saldo === 'number') ? u.saldo : SAL);
+  const sorted = users.slice().sort((a, b) => worthOf(b) - worthOf(a));
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  const COLORS = [
+    { bg: 'linear-gradient(150deg, rgba(212,175,55,0.2), var(--surface-1))', bd: 'rgba(212,175,55,0.55)', glow: true },
+    { bg: 'rgba(13,20,15,0.92)', bd: 'rgba(200,200,200,0.3)', glow: false },
+    { bg: 'rgba(13,20,15,0.92)', bd: 'rgba(180,100,20,0.3)', glow: false },
+  ];
+
+  // Stats del grupo
+  const totalBets = users.reduce((s, u) => s + (u.betsCount || 0), 0);
+  const mostBets = users.slice().sort((a, b) => (b.betsCount || 0) - (a.betsCount || 0))[0];
+  const champion = sorted[0];
+  const prophets = users.filter(u => u.championCode && champion && u.championCode === champion.championCode);
+
+  const isAdmin = authUser && window.MBFirebase && window.MBFirebase.isAdmin && window.MBFirebase.isAdmin(authUser);
 
   return (
     <div style={{ height: '100%', overflow: 'auto', position: 'relative', background: 'radial-gradient(120% 70% at 50% 0%, rgba(212,175,55,0.18), transparent 55%), var(--bg)' }}>
       <Confetti fire={fire} />
-      <div style={{ padding: '64px 20px 30px', textAlign: 'center' }}>
+      <div style={{ padding: '64px 20px 40px', textAlign: 'center' }}>
         <div style={{ animation: 'mb-bounce 1.6s var(--ease-spring) infinite', display: 'inline-block', marginBottom: 8 }}>
           <MascotAvatar mascot="clutch" size={110} glow jersey />
         </div>
@@ -172,47 +197,77 @@ function TournamentClose({ onExit }) {
         <h1 className="display" style={{ fontSize: 'var(--t-3xl)', margin: '4px 0 6px', textWrap: 'balance' }}>¡MundialBet Club 2026 ha terminado!</h1>
         <p style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', margin: '0 0 24px' }}>Ranking final definitivo · {Ds.LEAGUE.name}</p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
-          {podium.map((p, i) => (
-            <div key={p.place} style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 'var(--r-lg)',
-              background: i === 0 ? 'linear-gradient(150deg, rgba(212,175,55,0.18), var(--surface-1))' : 'var(--surface-1)',
-              border: i === 0 ? '1.5px solid rgba(212,175,55,0.5)' : '1px solid var(--border)',
-              boxShadow: i === 0 ? 'var(--glow-gold)' : 'var(--sh-1)',
-              animation: `mb-pop var(--dur-slow) var(--ease-spring) ${0.2 + i * 0.12}s both`,
-            }}>
-              <span style={{ fontSize: 24 }}>{p.medal}</span>
-              <MascotAvatar mascot={p.u.mascot} size={46} glow={i === 0} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 'var(--t-md)' }}>{p.u.name}</div>
-                <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{p.u.pts} pts · {Ms[p.u.mascot].emoji} {Ms[p.u.mascot].name}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div className="num" style={{ color: 'var(--gold-light)', fontSize: 'var(--t-lg)' }}>${Ds.fmt(p.amount)}</div>
-                <div style={{ fontSize: 9, color: 'var(--muted-2)' }}>CLP</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {!declared ? (
-          <div style={{ marginTop: 24 }}>
-            <GoldButton onClick={() => { setDeclared(true); setFire(Date.now()); }}>✅ Declarar ganadores oficiales</GoldButton>
-            <p style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 8 }}>Solo visible para el Admin · Sergio G.</p>
+        {/* ── Podio REAL desde Firestore ── */}
+        {sorted.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left', marginBottom: 20 }}>
+            {sorted.slice(0, 3).map((u, i) => {
+              const c = COLORS[i] || COLORS[2];
+              const initials = (() => { const p = String(u.nombre || '?').trim().split(/\s+/); return (((p[0] || '')[0] || '?') + ((p[1] || '')[0] || '')).toUpperCase(); })();
+              return (
+                <div key={u.uid} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 'var(--r-lg)',
+                  background: c.bg, border: '1.5px solid ' + c.bd, boxShadow: c.glow ? 'var(--glow-gold)' : 'var(--sh-1)',
+                  animation: `mb-pop var(--dur-slow) var(--ease-spring) ${0.15 + i * 0.12}s both`,
+                }}>
+                  <span style={{ fontSize: 24, flexShrink: 0 }}>{MEDALS[i] || '#' + (i + 1)}</span>
+                  <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'var(--surface-2)', border: '2px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                    {u.championCode
+                      ? <img src={`https://flagcdn.com/h80/${u.championCode}.png`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--gold-light)' }}>{initials}</span>}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: 'var(--t-md)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}</div>
+                    <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{u.groupName ? '👥 ' + u.groupName : 'Individual'}{u.champion ? ' · 🏆 ' + u.champion : ''}</div>
+                  </div>
+                  <div className="num" style={{ color: 'var(--gold-light)', fontSize: 'var(--t-lg)', fontWeight: 800, flexShrink: 0 }}>{fmtN(worthOf(u))}</div>
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div style={{ marginTop: 24, padding: '16px', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', textAlign: 'left', animation: 'mb-pop var(--dur-base) var(--ease-spring)' }}>
+          <div style={{ padding: '20px', color: 'var(--muted)', marginBottom: 20 }}>Cargando resultados…</div>
+        )}
+
+        {/* ── Hall of Fame: stats del grupo ── */}
+        {users.length > 0 && (
+          <div style={{ textAlign: 'left', marginBottom: 20 }}>
+            <h3 className="display" style={{ fontSize: 'var(--t-lg)', margin: '0 0 10px', color: 'var(--gold-light)' }}>🎖 Hall of Fame del grupo</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                { icon: '⚽', label: 'Total apuestas', value: fmtN(totalBets) },
+                { icon: '🎟️', label: 'Más participó', value: mostBets ? (mostBets.nombre || 'Jugador') + ' (' + (mostBets.betsCount || 0) + ')' : '—' },
+                { icon: '🔮', label: 'Profetas del campeón', value: prophets.length ? prophets.map(p => p.nombre || '?').join(', ') : '—' },
+                { icon: '👥', label: 'Jugadores', value: String(users.length) },
+              ].map((it) => (
+                <div key={it.label} style={{ padding: '10px 12px', borderRadius: 'var(--r-md)', background: 'rgba(212,175,55,0.07)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>{it.icon} {it.label}</div>
+                  <div style={{ fontWeight: 800, fontSize: 'var(--t-xs)', color: 'var(--gold-light)', lineHeight: 1.3 }}>{it.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!declared ? (
+          isAdmin ? (
+            <div style={{ marginTop: 16 }}>
+              <GoldButton onClick={() => { setDeclared(true); setFire(Date.now()); }}>✅ Declarar ganadores oficiales</GoldButton>
+              <p style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 8 }}>Solo visible para el Admin</p>
+            </div>
+          ) : null
+        ) : (
+          <div style={{ marginTop: 16, padding: '16px', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', textAlign: 'left', animation: 'mb-pop var(--dur-base) var(--ease-spring)' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <MascotAvatar mascot="clutch" size={40} />
               <p style={{ margin: 0, fontSize: 'var(--t-sm)', lineHeight: 1.5 }}>
-                <strong style={{ color: 'var(--info)' }}>Clutch:</strong> ¡{podium[0].u.name} es el Profeta del Mundial! El Tesorero {Ds.LEAGUE.treasurer} realizará las transferencias en los próximos 3 días. 🫎 Maple lo estará vigilando 👀
+                <strong style={{ color: 'var(--info)' }}>Clutch:</strong> ¡{champion ? (champion.nombre || 'El campeón') : '???'} es el Profeta del Mundial 2026! El Tesorero {Ds.LEAGUE.treasurer} realizará las transferencias en los próximos días. 🫎 Maple lo estará vigilando 👀
               </p>
             </div>
           </div>
         )}
 
         <button onClick={onExit} className="mb-press" style={{
-          marginTop: 18, background: 'none', border: '1px solid var(--border-2)', color: 'var(--muted)',
+          marginTop: 20, background: 'none', border: '1px solid var(--border-2)', color: 'var(--muted)',
           padding: '10px 20px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-xs)',
         }}>← Volver a la app</button>
       </div>
