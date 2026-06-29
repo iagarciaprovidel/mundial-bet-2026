@@ -240,6 +240,21 @@ body{
 .chip:hover{background:rgba(255,255,255,.1);}
 .chip-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 
+/* ── DB Diagram ── */
+.db-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px;margin-top:4px;}
+.db-col{border-radius:8px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-top:3px solid transparent;}
+.db-col-head{padding:11px 15px 9px;font-family:'Bricolage Grotesque',sans-serif;font-weight:900;font-style:italic;font-size:.88rem;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px;}
+.db-col-id{font-size:.62rem;font-style:normal;font-weight:700;background:rgba(255,255,255,.07);color:rgba(255,255,255,.35);padding:2px 8px;border-radius:99px;letter-spacing:.4px;margin-left:auto;white-space:nowrap;}
+.db-field{display:flex;align-items:baseline;gap:6px;padding:5px 15px;border-top:1px solid rgba(255,255,255,.04);font-size:.73rem;}
+.db-fname{color:rgba(255,255,255,.65);font-weight:600;flex-shrink:0;}
+.db-fnote{color:rgba(255,255,255,.28);font-size:.64rem;font-style:italic;}
+.db-ftype{color:rgba(255,255,255,.25);font-size:.64rem;margin-left:auto;}
+.db-fref{color:#FFB81C;font-size:.64rem;margin-left:auto;font-weight:700;}
+.db-desc{color:rgba(255,255,255,.32);font-size:.7rem;padding:5px 15px 9px;line-height:1.5;border-top:1px solid rgba(255,255,255,.05);}
+.db-rels{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;}
+.db-rel{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:.7rem;color:rgba(255,255,255,.42);}
+.db-rel b{color:rgba(255,184,28,.8);}
+
 @media(max-width:700px){
   .page{padding:22px 14px 56px;}
   .main-cols{flex-direction:column;align-items:center;}
@@ -257,6 +272,7 @@ body{
   <a href="#engranajes">Engranajes</a>
   <a href="#flujos">Flujos</a>
   <a href="#stack">Stack</a>
+  <a href="#base-datos">BD</a>
   <span class="nav-sep"></span>
   <a class="nav-cta" href="/todio.html">📐 Arquitectura</a>
 </nav>
@@ -312,6 +328,22 @@ body{
     <h2 class="sec-title">¿Quién hace qué?</h2>
     <p class="sec-desc">Comparativa entre lo que hace el jugador y lo que hace el sistema por sí solo.</p>
     <div class="compare" id="compare"></div>
+  </div>
+
+  <!-- Base de datos -->
+  <div class="section" id="base-datos" style="border-left:4px solid #FFAA55;">
+    <div class="sec-label">🗄️ Modelo de datos · Cloud Firestore</div>
+    <h2 class="sec-title">¿Cómo guarda todo la base de datos?</h2>
+    <p class="sec-desc">Firestore organiza los datos en <strong style="color:#FFB81C">colecciones</strong> (como tablas) de <strong style="color:#FFB81C">documentos</strong> (como filas). No hay JOINs — el agente y la app leen cada colección por separado. Las flechas <strong style="color:#FFB81C">→</strong> indican referencias entre colecciones.</p>
+    <div class="db-grid" id="db-grid"></div>
+    <div class="db-rels">
+      <div class="db-rel">🎰 bets <b>→</b> 👤 users <span style="opacity:.5">· uid</span></div>
+      <div class="db-rel">🎰 bets <b>→</b> 📊 odds <span style="opacity:.5">· matchId</span></div>
+      <div class="db-rel">👤 users <b>→</b> 👥 groups <span style="opacity:.5">· groupId</span></div>
+      <div class="db-rel">🤝 joinRequests <b>→</b> users + groups</div>
+      <div class="db-rel">🃏 figuritasAlbums <b>→</b> 👥 groups <span style="opacity:.5">· groupId</span></div>
+      <div class="db-rel">🔮 predictions <b>→</b> 👤 users <span style="opacity:.5">· uid</span></div>
+    </div>
   </div>
 
   <!-- Stack -->
@@ -511,6 +543,80 @@ const mkFa=()=>{const s=document.createElement("span");s.className="fa";s.textCo
   ["#FFAA55","Firebase Admin SDK"],["#C0D4E8","IndexedDB (sesión local)"],
 ].forEach(([c,l])=>{
   document.getElementById("chips").innerHTML+=`<div class="chip"><span class="chip-dot" style="background:${c}"></span>${l}</div>`;
+});
+
+/* ── Base de datos ── */
+const COLS=[
+  {id:"users",icon:"👤",color:"#00D466",docId:"{uid}",
+   desc:"Un documento por jugador. Centro del sistema — saldo, grupo, campeón y tokens FCM.",
+   fields:[
+    {n:"nombre",t:"string"},{n:"email",t:"string"},{n:"saldo",t:"number",note:"pts virtuales"},
+    {n:"staked",t:"number",note:"en juego ahora"},{n:"betsCount",t:"number"},
+    {n:"groupId",ref:true,t:"→ groups"},{n:"groupName",t:"string"},
+    {n:"champion / championCode",t:"string"},{n:"fcmTokens",t:"string[]"},
+    {n:"watchMatches",t:"string[]",note:"campanita"},{n:"rewards",t:"object",note:"bonos pagados"},
+    {n:"prevSaldo",t:"number",note:"flecha ↑↓"},
+  ]},
+  {id:"bets",icon:"🎰",color:"#FFB81C",docId:"{uid}_{matchId}",
+   desc:"Una apuesta por partido por usuario. ID compuesto garantiza unicidad automáticamente.",
+   fields:[
+    {n:"uid",ref:true,t:"→ users"},{n:"matchId",ref:true,t:"→ odds"},
+    {n:"pick",t:"home | draw | away"},{n:"stake",t:"number",note:"monto apostado"},
+    {n:"odd",t:"number",note:"cuota al apostar"},{n:"status",t:"open | won | lost"},
+    {n:"payout",t:"number",note:"cobrado si ganó"},{n:"home / away",t:"string",note:"nombre equipos"},
+  ]},
+  {id:"odds",icon:"📊",color:"#FFAA55",docId:"{matchId}",
+   desc:"Un doc por partido. El agente lo escribe; la app lo lee en tiempo real con onSnapshot.",
+   fields:[
+    {n:"home / draw / away",t:"number",note:"cuotas 1·X·2"},{n:"fuente",t:"modelo | manual"},
+    {n:"finished / live",t:"boolean"},{n:"gh / ga",t:"number",note:"goles local/visita"},
+    {n:"result",t:"home | draw | away"},{n:"minute",t:"string",note:"minuto en vivo"},
+    {n:"scorers / cards",t:"object[]",note:"goleadores y tarjetas"},
+    {n:"extraTime / penWinner",t:"KO only"},{n:"notified",t:"object",note:"anti-duplicado push"},
+  ]},
+  {id:"groups",icon:"👥",color:"#9B6DFF",docId:"{auto-ID}",
+   desc:"Equipos de jugadores. Cada usuario puede pertenecer a uno o a ninguno.",
+   fields:[
+    {n:"name",t:"string"},{n:"nameLower",t:"string",note:"unicidad sin mayúsculas"},
+    {n:"open",t:"boolean",note:"acceso libre o con solicitud"},
+    {n:"ownerUid",ref:true,t:"→ users"},{n:"adminEmails",t:"string[]"},{n:"creado",t:"timestamp"},
+  ]},
+  {id:"joinRequests",icon:"🤝",color:"#F77F88",docId:"{uid}_{groupId}",
+   desc:"Solicitudes de ingreso a equipos cerrados. Se borra al aprobar o rechazar.",
+   fields:[
+    {n:"uid",ref:true,t:"→ users"},{n:"groupId",ref:true,t:"→ groups"},
+    {n:"nombre / email",t:"string"},{n:"ts",t:"timestamp"},
+  ]},
+  {id:"predictions",icon:"🔮",color:"#00C2A8",docId:"{uid}_{matchId}",
+   desc:"Pronóstico de marcador exacto (gratis, no descuenta saldo). Anonimizado en el ranking.",
+   fields:[
+    {n:"uid",ref:true,t:"→ users"},{n:"matchId",t:"string"},
+    {n:"golesLocal / golesVisita",t:"number"},{n:"ts",t:"timestamp"},
+  ]},
+  {id:"figuritasAlbums",icon:"🃏",color:"#C0D4E8",docId:"{groupId}",
+   desc:"Álbum cooperativo de figuritas por equipo. Cada tap es una transacción atómica.",
+   fields:[
+    {n:"col",t:"object",note:"{[n]: count}"},{n:"locked",t:"boolean",note:"solo el dueño modifica"},
+    {n:"lockedBy",ref:true,t:"→ users"},{n:"actualizado",t:"timestamp"},
+  ]},
+  {id:"meta / bonuses",icon:"⚙️",color:"#A8C5E0",docId:"bonuses (doc fijo)",
+   desc:"Estado global del sistema: pagos de cierre de fase y selecciones clasificadas al KO.",
+   fields:[
+    {n:"groupsClosed",t:"boolean"},{n:"qualified",t:"string[]",note:"ISO2 clasificados"},
+    {n:"champ_r32 … champ_final",t:"boolean",note:"idempotencia por ronda"},{n:"at",t:"timestamp"},
+  ]},
+];
+const dbGrid=document.getElementById('db-grid');
+COLS.forEach(col=>{
+  let html=`<div class="db-col" style="border-top-color:${col.color}">
+    <div class="db-col-head" style="color:${col.color}">${col.icon} ${col.id}<span class="db-col-id">${col.docId}</span></div>`;
+  col.fields.forEach(f=>{
+    const right=f.ref?`<span class="db-fref">${f.t}</span>`:`<span class="db-ftype">${f.t}</span>`;
+    const note=f.note?` <span class="db-fnote">· ${f.note}</span>`:'';
+    html+=`<div class="db-field"><span class="db-fname">${f.n}</span>${note}${right}</div>`;
+  });
+  html+=`<div class="db-desc">${col.desc}</div></div>`;
+  dbGrid.innerHTML+=html;
 });
 
 /* ── Nav scroll activo ── */
