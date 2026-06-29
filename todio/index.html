@@ -255,6 +255,29 @@ body{
 .db-rel{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:.7rem;color:rgba(255,255,255,.42);}
 .db-rel b{color:rgba(255,184,28,.8);}
 
+/* ── Firebase cards ── */
+.fb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:4px;}
+.fb-card{border-radius:8px;padding:16px 18px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-left:3px solid transparent;transition:background .14s;}
+.fb-card:hover{background:rgba(255,255,255,.07);}
+.fb-card-icon{font-size:1.35rem;margin-bottom:8px;}
+.fb-card-title{font-family:'Bricolage Grotesque',sans-serif;font-weight:900;font-style:italic;font-size:.9rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.fb-card-desc{color:rgba(255,255,255,.36);font-size:.75rem;line-height:1.65;}
+
+/* ── Agent timeline ── */
+.agent-run{display:flex;flex-direction:column;gap:0;margin-top:4px;}
+.agent-row{display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.agent-row:last-child{border-bottom:none;}
+.agent-badge{font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:99px;white-space:nowrap;flex-shrink:0;margin-top:2px;letter-spacing:.3px;text-transform:uppercase;}
+.agent-row-t{font-weight:800;font-style:italic;font-size:.82rem;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;}
+.agent-row-d{color:rgba(255,255,255,.38);font-size:.76rem;line-height:1.6;}
+
+/* ── Flujo apuesta ── */
+.bf-row{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:7px;background:rgba(255,255,255,.03);border-left:3px solid rgba(255,255,255,.07);margin-bottom:6px;transition:background .14s;}
+.bf-row:hover{background:rgba(255,255,255,.055);}
+.bf-who{width:82px;flex-shrink:0;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding-top:2px;}
+.bf-what{font-size:.77rem;line-height:1.6;color:rgba(255,255,255,.62);}
+.bf-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#00D466;background:rgba(0,212,102,.09);padding:1px 6px;border-radius:4px;}
+
 @media(max-width:700px){
   .page{padding:22px 14px 56px;}
   .main-cols{flex-direction:column;align-items:center;}
@@ -273,6 +296,8 @@ body{
   <a href="#flujos">Flujos</a>
   <a href="#stack">Stack</a>
   <a href="#base-datos">BD</a>
+  <a href="#firebase">Firebase</a>
+  <a href="#agente">Agente</a>
   <span class="nav-sep"></span>
   <a class="nav-cta" href="/todio.html">📐 Arquitectura</a>
 </nav>
@@ -343,6 +368,26 @@ body{
       <div class="db-rel">🤝 joinRequests <b>→</b> users + groups</div>
       <div class="db-rel">🃏 figuritasAlbums <b>→</b> 👥 groups <span style="opacity:.5">· groupId</span></div>
       <div class="db-rel">🔮 predictions <b>→</b> 👤 users <span style="opacity:.5">· uid</span></div>
+    </div>
+  </div>
+
+  <!-- Firebase BaaS -->
+  <div class="section" id="firebase" style="border-left:4px solid #FF8A4A;">
+    <div class="sec-label">☁️ Backend gestionado · Google Firebase</div>
+    <h2 class="sec-title">Sin servidor propio — Firebase hace el trabajo</h2>
+    <p class="sec-desc">No hay ningún servidor Express, FastAPI ni proceso propio corriendo 24/7. Firebase actúa como backend completo: la app escribe y lee directamente desde el navegador con el SDK. Las reglas de seguridad de Firestore actúan como el "guard" — controlan quién puede leer/escribir qué sin código de servidor.</p>
+    <div class="fb-grid" id="fb-grid"></div>
+  </div>
+
+  <!-- Agente -->
+  <div class="section" id="agente" style="border-left:4px solid #9B6DFF;">
+    <div class="sec-label">🤖 Agente automático · GitHub Actions cron</div>
+    <h2 class="sec-title">El único "servidor" — y vive solo ~10 segundos</h2>
+    <p class="sec-desc">Un script Node.js que GitHub Actions ejecuta cada 5 minutos vía cron. No hay ningún servidor permanente: GitHub prende una VM, corre el script, la VM desaparece. Costo fijo: cero.</p>
+    <div class="agent-run" id="agent-run"></div>
+    <div style="margin-top:26px;">
+      <div class="sec-label" style="margin-bottom:10px;">⚡ Flujo completo — desde que un jugador apuesta hasta que cobra</div>
+      <div id="bet-flow"></div>
     </div>
   </div>
 
@@ -617,6 +662,52 @@ COLS.forEach(col=>{
   });
   html+=`<div class="db-desc">${col.desc}</div></div>`;
   dbGrid.innerHTML+=html;
+});
+
+/* ── Firebase services ── */
+[
+  {icon:"🗄️",color:"#FFAA55",title:"Cloud Firestore",desc:"Base de datos NoSQL. La app lee y escribe directamente desde el navegador. onSnapshot empuja cambios a todos los dispositivos al instante — sin recargar, sin polling."},
+  {icon:"🔑",color:"#FF8A4A",title:"Firebase Auth",desc:"Login con Google y email magic link. La sesión vive en IndexedDB — sobrevive a recargas y al cierre del navegador. No hay JWT propio ni tabla de sesiones."},
+  {icon:"🔔",color:"#F77F88",title:"Cloud Messaging (FCM)",desc:"Push al teléfono aunque la app esté cerrada. El agente llama a FCM; FCM entrega al dispositivo. Sin servidor de notificaciones propio."},
+  {icon:"🌐",color:"#C0D4E8",title:"Firebase Hosting",desc:"CDN global que sirve los archivos estáticos. Un push al repo dispara deploy.yml → nuevo código disponible en todo el mundo en ~30 segundos."},
+].forEach(s=>{
+  document.getElementById('fb-grid').innerHTML+=`<div class="fb-card" style="border-left-color:${s.color}"><div class="fb-card-icon">${s.icon}</div><div class="fb-card-title" style="color:${s.color}">${s.title}</div><div class="fb-card-desc">${s.desc}</div></div>`;
+});
+
+/* ── Agent timeline ── */
+[
+  {freq:"cada 5 min",fc:"#9B6DFF",bg:"rgba(155,109,255,.13)",t:"Genera cuotas faltantes",
+   d:"Calcula cuotas 1·X·2 para los próximos partidos (ventana 120h) usando un modelo de rating propio por selección. Sin API de odds externas. Guarda en <code>odds/{matchId}</code> con <code>fuente:'modelo'</code>. Respeta cuotas manuales."},
+  {freq:"cada 5 min",fc:"#9B6DFF",bg:"rgba(155,109,255,.13)",t:"Alertas por tiempo",
+   d:"'Empieza en ~30 min' a seguidores + apostadores activos. 'Apuestas cerradas' al inicio del partido. Anti-duplicado con <code>odds/{id}.notified</code> — no envía la misma alerta dos veces."},
+  {freq:"cada 5 min",fc:"#9B6DFF",bg:"rgba(155,109,255,.13)",t:"Resultados en vivo desde ESPN",
+   d:"ESPN API (gratis, sin clave) entrega goles del Mundial; football-data.org gratis no los incluye. Ventana anteayer→mañana UTC. Para partidos IN_PLAY: escribe <code>live:true</code>, marcador, goleadores y tarjetas. Avisa '⚽ ¡Gol!' cuando cambia el score."},
+  {freq:"cada 5 min",fc:"#9B6DFF",bg:"rgba(155,109,255,.13)",t:"Liquida apuestas de partidos terminados",
+   d:"Para cada FINISHED: transacción Firestore → paga <code>stake×odd</code> a ganadores, <code>status: won|lost</code>. Fase KO: 'draw' gana si hubo prórroga; usa <code>espnWinner</code> para penales. Manda push al apostador con el resultado."},
+  {freq:"1× / hora",fc:"#C0D4E8",bg:"rgba(192,212,232,.09)",t:"Reconciliación de saldos",
+   d:"<code>recomputeStaked()</code> recalcula <code>staked</code> y <code>betsCount</code> de cada jugador. Solo en el minuto :00 para no agotar la cuota diaria de Firestore (plan gratuito)."},
+  {freq:"1× / hora",fc:"#C0D4E8",bg:"rgba(192,212,232,.09)",t:"Limpia equipos vacíos",
+   d:"Borra grupos sin ningún integrante (margen 10 min post-creación) y sus <code>joinRequests</code> huérfanas."},
+  {freq:"1× total",fc:"#FFB81C",bg:"rgba(255,184,28,.11)",t:"Cierre de fase de grupos",
+   d:"Al terminar los 72 partidos: paga una vez por jugador — recarga +2.000 c/10 apuestas, precisión hasta +25.000, racha hasta +10.000, campeón pasa de fase +5.000. Idempotente: <code>meta/bonuses.groupsClosed</code> + <code>users/{uid}.rewards.groupsClosed</code>."},
+  {freq:"1× / ronda KO",fc:"#FFB81C",bg:"rgba(255,184,28,.11)",t:"Premio del campeón por avance",
+   d:"Tras cada ronda (r32/r16/qf/sf/final): paga a quienes eligieron al equipo que avanzó. Escala +7.000 (r32) → +30.000 (final). Idempotente vía <code>meta/bonuses.champ_{stage}</code>."},
+].forEach(s=>{
+  document.getElementById('agent-run').innerHTML+=`<div class="agent-row">
+    <span class="agent-badge" style="background:${s.bg};color:${s.fc}">${s.freq}</span>
+    <div><div class="agent-row-t" style="color:${s.fc}">${s.t}</div><div class="agent-row-d">${s.d}</div></div>
+  </div>`;
+});
+
+/* ── Flujo de una apuesta ── */
+[
+  {who:"Jugador",wc:"#00D466",what:`Apuesta en la app → <span class="bf-code">placeBet()</span> ejecuta una transacción atómica en Firestore: descuenta saldo + registra <span class="bf-code">bets/{uid}_{matchId}</span> con status <span class="bf-code">open</span>.`},
+  {who:"Firestore",wc:"#FFAA55",what:`<span class="bf-code">onSnapshot</span> notifica al instante a todos los dispositivos — el ranking se actualiza sin que nadie recargue.`},
+  {who:"Agente",wc:"#9B6DFF",what:`ESPN entrega FINISHED → <span class="bf-code">settle()</span>: transacción Firestore → calcula ganador → paga <span class="bf-code">stake × odd</span> → status <span class="bf-code">won</span> o <span class="bf-code">lost</span>. Fase KO: maneja prórroga y penales.`},
+  {who:"FCM",wc:"#F77F88",what:`El agente llama a FCM → push al teléfono del apostador aunque la app esté cerrada: "¡Ganaste! +X puntos" o "Apuesta perdida −X".`},
+  {who:"Jugador",wc:"#00D466",what:`Ve su nuevo saldo en pantalla vía <span class="bf-code">onSnapshot</span> — sin recargar, sin hacer nada.`},
+].forEach(r=>{
+  document.getElementById('bet-flow').innerHTML+=`<div class="bf-row" style="border-left-color:${r.wc}3a"><div class="bf-who" style="color:${r.wc}">${r.who}</div><div class="bf-what">${r.what}</div></div>`;
 });
 
 /* ── Nav scroll activo ── */
