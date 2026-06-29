@@ -14,7 +14,7 @@
     const noFB = function () { alert('Falta configurar Firebase (firebase-config.js).'); return Promise.reject('no-config'); };
     window.MBFirebase = {
       ready: false,
-      onAuth(cb) { cb(null); return () => {}; },
+      onAuth(cb) { cb(null); try { window.dispatchEvent(new Event('mb-auth-ready')); } catch (e) {} return () => {}; },
       signInGoogle: noFB,
       signOut() { return Promise.resolve(); },
       currentUser() { return null; },
@@ -119,11 +119,16 @@
   window.MBFirebase = {
     ready: true,
     onAuth(cb) {
+      let firstFire = true;
       return auth.onAuthStateChanged(async (u) => {
+        cb(u); // notifica inmediatamente sin esperar ensureProfile
+        if (firstFire) {
+          firstFire = false;
+          try { window.dispatchEvent(new Event('mb-auth-ready')); } catch (e2) {}
+        }
         if (u) {
           try { await ensureProfile(u); } catch (e) { console.warn('[MundialBet] perfil no guardado:', e && e.message); }
         }
-        cb(u);
       });
     },
     signInGoogle() {
