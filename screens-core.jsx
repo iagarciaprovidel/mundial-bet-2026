@@ -227,6 +227,8 @@ function Dashboard({ user, onNav, onPredict }) {
 
       {/* Aviso para elegir campeón (solo si aún no eligió y el plazo sigue abierto) */}
       {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
+      {/* Aviso semifinalistas */}
+      {authUser && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
 
       {/* Banner reclamar premios de fase de grupos */}
       {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
