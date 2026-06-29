@@ -184,10 +184,11 @@ html, body { background-color: #0c2114; }
   </div>
 </div>
 <script>
-  // En móvil mantenemos el splash un mínimo (~2.2 s) para alcanzar a ver y
-  // tocar las banderas; en escritorio se va apenas la app está lista.
+  // Splash: espera mínimo de tiempo + que Firebase resuelva el login,
+  // así el usuario nunca ve la pantalla "no autenticado" brevemente.
   var __mbSplashT0 = Date.now();
-  var __mbSplashMin = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '') ? 2200 : 0;
+  var __mbSplashMin = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '') ? 700 : 0;
+  var __mbAuthReady = false;
   window.__mbHideSplash = function (force) {
     var s = document.getElementById('mb-splash');
     if (!s) return;
@@ -196,11 +197,20 @@ html, body { background-color: #0c2114; }
       setTimeout(function () { window.__mbHideSplash(); }, __mbSplashMin - elapsed);
       return;
     }
+    if (!force && !__mbAuthReady) {
+      // Espera el evento mb-auth-ready (disparado en mb-firebase.js)
+      return;
+    }
     s.classList.add('mb-hide');
     setTimeout(function () { if (s && s.parentNode) s.parentNode.removeChild(s); }, 600);
   };
-  // Respaldo: si algo falla, oculta igual a los 6 s.
-  setTimeout(function () { window.__mbHideSplash(true); }, 6000);
+  // Cuando Firebase resuelve el primer onAuthStateChanged, oculta el splash
+  window.addEventListener('mb-auth-ready', function () {
+    __mbAuthReady = true;
+    window.__mbHideSplash();
+  });
+  // Respaldo: si Firebase falla o tarda más de 5 s, oculta igual.
+  setTimeout(function () { window.__mbHideSplash(true); }, 5000);
 </script>
 <div id="stage"></div>
 
