@@ -139,8 +139,8 @@
     return (
       <div style={{
         position: 'absolute', left: x, top: y, width: CC, height: CH_C,
-        background: isChamp ? 'rgba(212,175,55,0.07)' : 'var(--surface-1)',
-        border: isChamp ? '1.5px solid rgba(212,175,55,0.6)' : live ? '1.5px solid rgba(255,82,82,0.6)' : '1px solid var(--border)',
+        background: isChamp ? 'rgba(212,175,55,0.07)' : 'rgba(10,18,12,0.9)',
+        border: isChamp ? '1.5px solid rgba(212,175,55,0.6)' : live ? '1.5px solid rgba(255,82,82,0.6)' : '1px solid rgba(255,255,255,0.1)',
         borderRadius: 5, boxSizing: 'border-box',
         padding: '0 5px', overflow: 'hidden',
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
@@ -597,7 +597,7 @@
       return (
         <div style={{
           position: 'absolute', left: x, top: y, width: W, height: H,
-          background: isChamp ? 'rgba(212,175,55,0.07)' : 'var(--surface-1)',
+          background: isChamp ? 'rgba(212,175,55,0.07)' : 'rgba(10,18,12,0.9)',
           border: `1.5px solid ${borderColor}`,
           borderRadius: 6, boxSizing: 'border-box', padding: '0 6px', overflow: 'hidden',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
