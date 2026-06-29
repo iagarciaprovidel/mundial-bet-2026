@@ -902,8 +902,8 @@ function EquiposWeb({ highlight, onTeam }) {
         Los <strong>12 grupos</strong> del Mundial 2026 · 48 selecciones con su <strong>DT</strong>. Toca una bandera (arriba) o cualquier selección para ver su ficha completa.
       </p>
       {(window.MB_BracketScreenWeb || window.MB_BracketScreen) && (
-        <div style={{ marginBottom: 24 }}>
-          <h3 className="display" style={{ margin: '0 0 12px', fontSize: 'var(--t-xl)' }}>🏆 Cuadro eliminatorio</h3>
+        <div style={{ marginBottom: 24, background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--r-lg)', padding: '16px 20px', boxShadow: 'var(--sh-1)' }}>
+          <h3 className="display" style={{ margin: '0 0 14px', fontSize: 'var(--t-xl)' }}>🏆 Cuadro eliminatorio</h3>
           {React.createElement(window.MB_BracketScreenWeb || window.MB_BracketScreen)}
         </div>
       )}
