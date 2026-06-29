@@ -278,6 +278,37 @@ body{
 .bf-what{font-size:.77rem;line-height:1.6;color:rgba(255,255,255,.62);}
 .bf-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#00D466;background:rgba(0,212,102,.09);padding:1px 6px;border-radius:4px;}
 
+/* ── Frontend section ── */
+.fe-tree{margin-top:4px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.72rem;line-height:2;
+  color:rgba(255,255,255,.28);padding:18px 20px;background:rgba(255,255,255,.025);
+  border-radius:8px;overflow-x:auto;white-space:pre;}
+.fe-tree .t-root{color:#61DAFB;font-weight:700;}
+.fe-tree .t-comp{color:rgba(255,255,255,.72);font-weight:700;}
+.fe-tree .t-file{color:rgba(255,255,255,.28);}
+.fe-tree .t-note{color:rgba(97,218,251,.45);font-style:italic;}
+.fe-tree .t-badge{color:#FFB81C;font-weight:700;}
+.fe-split{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;}
+.fe-pane{border-radius:8px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+.fe-pane-head{padding:11px 15px 9px;font-family:'Bricolage Grotesque',sans-serif;font-weight:900;
+  font-style:italic;font-size:.88rem;text-transform:uppercase;letter-spacing:.5px;
+  display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.06);}
+.fe-screen{display:flex;align-items:baseline;gap:8px;padding:7px 15px;
+  border-top:1px solid rgba(255,255,255,.04);font-size:.75rem;}
+.fe-screen-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.fe-screen-name{font-weight:700;color:rgba(255,255,255,.65);}
+.fe-screen-desc{color:rgba(255,255,255,.25);font-size:.67rem;margin-left:auto;text-align:right;}
+.fe-file-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  background:rgba(97,218,251,.08);border:1px solid rgba(97,218,251,.18);
+  color:rgba(97,218,251,.6);padding:1px 7px;border-radius:4px;margin-left:4px;}
+.fe-load{display:flex;flex-direction:column;gap:0;margin-top:4px;}
+.fe-load-row{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.fe-load-row:last-child{border-bottom:none;}
+.fe-load-t{font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:700;
+  padding:3px 9px;border-radius:99px;white-space:nowrap;flex-shrink:0;margin-top:2px;}
+.fe-load-title{font-weight:800;font-style:italic;font-size:.82rem;text-transform:uppercase;
+  letter-spacing:.3px;margin-bottom:3px;}
+.fe-load-desc{color:rgba(255,255,255,.38);font-size:.76rem;line-height:1.6;}
+
 @media(max-width:700px){
   .page{padding:22px 14px 56px;}
   .main-cols{flex-direction:column;align-items:center;}
@@ -298,6 +329,7 @@ body{
   <a href="#base-datos">BD</a>
   <a href="#firebase">Firebase</a>
   <a href="#agente">Agente</a>
+  <a href="#frontend">Frontend</a>
   <span class="nav-sep"></span>
   <a class="nav-cta" href="/todio.html">📐 Arquitectura</a>
 </nav>
@@ -388,6 +420,86 @@ body{
     <div style="margin-top:26px;">
       <div class="sec-label" style="margin-bottom:10px;">⚡ Flujo completo — desde que un jugador apuesta hasta que cobra</div>
       <div id="bet-flow"></div>
+    </div>
+  </div>
+
+  <!-- Frontend -->
+  <div class="section" id="frontend" style="border-left:4px solid #61DAFB;">
+    <div class="sec-label">⚛️ Interfaz de usuario · React 18 + Babel Standalone · Sin proceso de build</div>
+    <h2 class="sec-title">Frontend: JSX compilado en el browser, sin npm ni webpack</h2>
+    <p class="sec-desc">No hay paso de build. Los archivos <code style="color:#61DAFB;font-size:.85em">.jsx</code> se transpilan en tiempo real por <strong style="color:#FFB81C">Babel Standalone</strong> cargado desde CDN. React 18 también viene de CDN. Cualquier editor de texto es suficiente para contribuir. El viewport al cargar determina qué componente raíz se monta: <strong style="color:#61DAFB">App</strong> (móvil &lt;1024px) o <strong style="color:#61DAFB">AppWeb</strong> (escritorio ≥1024px).</p>
+
+    <!-- Árbol de componentes -->
+    <div class="sec-label" style="margin-bottom:10px;">🌳 Árbol de componentes</div>
+    <div class="fe-tree"><span class="t-root">index.html</span>
+├── <span class="t-comp">Root</span>  <span class="t-note">detecta viewport al cargar · matchMedia(min-width:1024px)</span>
+│   │
+│   ├── <span class="t-comp">App</span>  <span class="t-badge">móvil &lt;1024px</span>  <span class="t-file">app.jsx</span>
+│   │   ├── <span class="t-file">ios-frame.jsx       </span><span class="t-note">· chrome nativo iOS · safe-area · status bar</span>
+│   │   ├── <span class="t-file">components.jsx      </span><span class="t-note">· botones · chips · loaders · toasts · avatares</span>
+│   │   ├── <span class="t-file">mb-auth-ui.jsx      </span><span class="t-note">· pantalla login: Google OAuth · email magic link</span>
+│   │   ├── <span class="t-file">mb-bet.jsx          </span><span class="t-note">· tarjeta de apuesta · selector 1·X·2 · monto</span>
+│   │   ├── <span class="t-file">screens-core.jsx    </span><span class="t-note">· inicio · perfil · mis apuestas · wallet</span>
+│   │   ├── <span class="t-file">screens-bet.jsx     </span><span class="t-note">· apostar en partidos · odds en vivo · marcador</span>
+│   │   ├── <span class="t-file">screens-rank.jsx    </span><span class="t-note">· ranking global · por grupo · historial</span>
+│   │   ├── <span class="t-file">screens-teams.jsx   </span><span class="t-note">· selecciones · plantillas · zona del grupo</span>
+│   │   └── <span class="t-file">screens-special.jsx </span><span class="t-note">· bracket interactivo · fase KO · especiales</span>
+│   │
+│   └── <span class="t-comp">AppWeb</span>  <span class="t-badge">escritorio ≥1024px</span>  <span class="t-file">app-web.jsx</span>
+│       └── <span class="t-note">sidebar nav fija + mismas screens + players.js (estadísticas por jugador)</span>
+│
+└── <span class="t-comp">Launchers</span>  <span class="t-note">siempre montados junto al componente raíz — se abren como modales/drawers</span>
+    ├── <span class="t-file">mb-admin.jsx         </span><span class="t-note">· panel admin: cuotas · notificaciones · odds manuales</span>
+    ├── <span class="t-file">mb-team-select.jsx   </span><span class="t-note">· modal de elección de campeón al registrarse</span>
+    ├── <span class="t-file">mb-groups-home.jsx   </span><span class="t-note">· crear / unirse / gestionar grupos y solicitudes</span>
+    ├── <span class="t-file">mb-ranking.jsx       </span><span class="t-note">· ranking detallado con historial de apuestas</span>
+    ├── <span class="t-file">mb-bracket.jsx       </span><span class="t-note">· bracket SVG interactivo del torneo</span>
+    ├── <span class="t-file">mb-help.jsx          </span><span class="t-note">· pantalla de ayuda y reglas del juego</span>
+    └── <span class="t-file">mb-figuritas.jsx     </span><span class="t-note">· álbum cooperativo · mb-figuritas-qr.jsx (QR de intercambio)</span></div>
+
+    <!-- Mobile vs Desktop -->
+    <div style="margin-top:24px;">
+      <div class="sec-label" style="margin-bottom:10px;">📱 Móvil · 🖥️ Escritorio — ¿qué ve cada uno?</div>
+      <div class="fe-split">
+        <div class="fe-pane">
+          <div class="fe-pane-head" style="color:#61DAFB;border-top:3px solid #61DAFB;">📱 App móvil <span class="fe-file-tag">app.jsx</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#00D466"></span><span class="fe-screen-name">Inicio</span><span class="fe-screen-desc">partidos del día · odds vivos</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#FFB81C"></span><span class="fe-screen-name">Apostar</span><span class="fe-screen-desc">1·X·2 · stake · confirmación</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#9B6DFF"></span><span class="fe-screen-name">Ranking</span><span class="fe-screen-desc">global · grupo · posición propia</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#FFAA55"></span><span class="fe-screen-name">Mis apuestas</span><span class="fe-screen-desc">abiertas · ganadas · perdidas</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#00C2A8"></span><span class="fe-screen-name">Selecciones</span><span class="fe-screen-desc">plantillas · zona · historial</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#F77F88"></span><span class="fe-screen-name">Copa / Bracket</span><span class="fe-screen-desc">fase KO · cruces · campeón</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#61DAFB"></span><span class="fe-screen-name">Perfil</span><span class="fe-screen-desc">saldo · campeón · figuritas</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#C0D4E8"></span><span class="fe-screen-name">Especiales</span><span class="fe-screen-desc">predicciones de marcador exacto</span></div>
+        </div>
+        <div class="fe-pane">
+          <div class="fe-pane-head" style="color:#FFB81C;border-top:3px solid #FFB81C;">🖥️ App escritorio <span class="fe-file-tag">app-web.jsx</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#FFB81C"></span><span class="fe-screen-name">Layout two-column</span><span class="fe-screen-desc">sidebar fija + área de contenido</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#00D466"></span><span class="fe-screen-name">Mismas pantallas</span><span class="fe-screen-desc">mismo contenido que móvil</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#9B6DFF"></span><span class="fe-screen-name">Estadísticas</span><span class="fe-screen-desc">players.js · rendimiento por jugador</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#FFAA55"></span><span class="fe-screen-name">Panel admin</span><span class="fe-screen-desc">más visible · acceso directo en sidebar</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#C0D4E8"></span><span class="fe-screen-name">tweaks-panel.jsx</span><span class="fe-screen-desc">flags de desarrollo · solo dev</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secuencia de carga -->
+    <div style="margin-top:24px;">
+      <div class="sec-label" style="margin-bottom:10px;">⏱️ Secuencia de carga — desde la URL hasta la app visible</div>
+      <div class="fe-load" id="fe-load"></div>
+    </div>
+
+    <!-- Estado y datos -->
+    <div style="margin-top:24px;">
+      <div class="sec-label" style="margin-bottom:12px;">🧠 Estado, datos e internacionalización</div>
+      <div class="db-rels">
+        <div class="db-rel">Sin global store <b>·</b> solo <code style="color:#61DAFB;font-size:.7rem">useState</code> local</div>
+        <div class="db-rel">Datos vivos via <b>onSnapshot</b> de Firestore</div>
+        <div class="db-rel"><b>i18n.js</b> · auto-detect ES / PT / EN</div>
+        <div class="db-rel">Sesión en <b>IndexedDB</b> · sobrevive al cierre</div>
+        <div class="db-rel"><b>localStorage</b> · colección figuritas offline</div>
+        <div class="db-rel">Sin router externo · screen como <b>useState</b></div>
+      </div>
     </div>
   </div>
 
@@ -708,6 +820,36 @@ COLS.forEach(col=>{
   {who:"Jugador",wc:"#00D466",what:`Ve su nuevo saldo en pantalla vía <span class="bf-code">onSnapshot</span> — sin recargar, sin hacer nada.`},
 ].forEach(r=>{
   document.getElementById('bet-flow').innerHTML+=`<div class="bf-row" style="border-left-color:${r.wc}3a"><div class="bf-who" style="color:${r.wc}">${r.who}</div><div class="bf-what">${r.what}</div></div>`;
+});
+
+/* ── Secuencia de carga del frontend ── */
+[
+  {t:"t + 0 ms",tc:"#61DAFB",bg:"rgba(97,218,251,.1)",
+   title:"HTML parseado · Splash visible",
+   desc:"El navegador renderiza el CSS inline y muestra el splash (estadio + logo + banderas) sin ejecutar ningún JS. El usuario ve algo en < 100ms."},
+  {t:"t + ~50 ms",tc:"#FFB81C",bg:"rgba(255,184,28,.1)",
+   title:"React 18 production cargado",
+   desc:"<code style='color:#61DAFB'>react.production.min.js</code> + <code style='color:#61DAFB'>react-dom.production.min.js</code> (~140 KB total) se descargan y ejecutan. <code style='color:#61DAFB'>window.React</code> y <code style='color:#61DAFB'>window.ReactDOM</code> disponibles."},
+  {t:"t + ~200 ms",tc:"#FFB81C",bg:"rgba(255,184,28,.1)",
+   title:"Babel Standalone listo · registra DOMContentLoaded",
+   desc:"<code style='color:#61DAFB'>babel.min.js</code> (~900 KB) se descarga y ejecuta. Registra un listener <code style='color:#61DAFB'>DOMContentLoaded</code> que después compilará todos los <code style='color:#61DAFB'>type=&quot;text/babel&quot;</code> del DOM."},
+  {t:"t + ~280 ms",tc:"#FF8A4A",bg:"rgba(255,138,74,.1)",
+   title:"Firebase SDK inicializado · onAuthStateChanged registrado",
+   desc:"4 scripts de Firebase compat SDK + <code style='color:#61DAFB'>firebase-config.js</code> + <code style='color:#61DAFB'>mb-firebase.js</code>. Se llama <code style='color:#61DAFB'>auth.setPersistence(LOCAL)</code> y se registra <code style='color:#61DAFB'>onAuthStateChanged</code>. Firebase empieza a resolver la sesión desde IndexedDB en paralelo."},
+  {t:"DOMContentLoaded",tc:"#9B6DFF",bg:"rgba(155,109,255,.12)",
+   title:"Babel compila 14 archivos JSX vía XHR · en orden",
+   desc:"Babel hace fetch de cada <code style='color:#61DAFB'>.jsx</code> (re-descarga via XHR aunque ya estén cacheados), los transforma a JS y los ejecuta en orden: <code style='color:#61DAFB'>ios-frame → tweaks → components → mb-bet → mb-auth-ui → screens-* → app → app-web</code> (omitido en móvil). Cada archivo registra su componente en <code style='color:#61DAFB'>window.*</code>."},
+  {t:"t + render",tc:"#61DAFB",bg:"rgba(97,218,251,.1)",
+   title:"Root monta App o AppWeb · Launchers montados",
+   desc:"<code style='color:#61DAFB'>Root</code> detecta el viewport: <code style='color:#61DAFB'>matchMedia(min-width:1024px)</code>. Monta <code style='color:#61DAFB'>App</code> (móvil) o <code style='color:#61DAFB'>AppWeb</code> (escritorio). Los 7 Launchers (admin, team-select, groups, ranking, bracket, help, figuritas) se montan siempre — esperan a ser abiertos."},
+  {t:"t + auth",tc:"#00D466",bg:"rgba(0,212,102,.1)",
+   title:"Firebase resuelve sesión · splash oculto",
+   desc:"<code style='color:#61DAFB'>onAuthStateChanged</code> dispara en ~300–500ms (lee IndexedDB). <code style='color:#61DAFB'>mb-firebase.js</code> emite <code style='color:#61DAFB'>window.dispatchEvent('mb-auth-ready')</code>. El splash escucha ese evento y se desvanece en el siguiente frame — el usuario ve la app directamente en su estado de sesión."},
+].forEach(s=>{
+  document.getElementById('fe-load').innerHTML+=`<div class="fe-load-row">
+    <span class="fe-load-t" style="background:${s.bg};color:${s.tc};border:1px solid ${s.tc}44">${s.t}</span>
+    <div><div class="fe-load-title" style="color:${s.tc}">${s.title}</div><div class="fe-load-desc">${s.desc}</div></div>
+  </div>`;
 });
 
 /* ── Nav scroll activo ── */
