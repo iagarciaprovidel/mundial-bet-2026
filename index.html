@@ -187,7 +187,7 @@ html, body { background-color: #0c2114; }
   // Splash: espera mínimo de tiempo + que Firebase resuelva el login,
   // así el usuario nunca ve la pantalla "no autenticado" brevemente.
   var __mbSplashT0 = Date.now();
-  var __mbSplashMin = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '') ? 700 : 0;
+  var __mbSplashMin = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '') ? 300 : 0;
   var __mbAuthReady = false;
   window.__mbHideSplash = function (force) {
     var s = document.getElementById('mb-splash');
@@ -237,17 +237,31 @@ window.addEventListener('appinstalled', function () {
 });
 </script>
 
-<!-- React + Babel (pinned) -->
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<!-- React + Babel (pinned) — producción para máxima velocidad en móvil -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<!-- Móvil: elimina scripts de escritorio antes de que Babel los compile -->
+<script>
+if (!window.matchMedia('(min-width:1024px)').matches) {
+  document.addEventListener('DOMContentLoaded', function() {
+    var el = document.getElementById('js-app-web');
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }, true);
+}
+</script>
 
 <!-- i18n automático (ES/PT/EN) — DEBE ir tras React y antes de Babel -->
 <script src="i18n.js"></script>
 
 <!-- Data (plain JS) -->
 <script src="data.js"></script>
-<script src="players.js"></script>
+<script>
+// players.js solo lo usa app-web.jsx (escritorio) — no cargar en móvil
+if (window.matchMedia('(min-width:1024px)').matches) {
+  document.write('<scr'+'ipt src="players.js"><\/scr'+'ipt>');
+}
+</script>
 <script src="wc2026.js"></script>
 <script src="figuritas-2026.js"></script>
 <script src="figuritas-codec.js"></script>
@@ -330,7 +344,7 @@ window.addEventListener('appinstalled', function () {
 <script type="text/babel" src="screens-rank.jsx"></script>
 <script type="text/babel" src="screens-special.jsx"></script>
 <script type="text/babel" src="app.jsx"></script>
-<script type="text/babel" src="app-web.jsx"></script>
+<script type="text/babel" src="app-web.jsx" id="js-app-web"></script>
 <script type="text/babel" src="mb-admin.jsx"></script>
 <script type="text/babel" src="mb-team-select.jsx"></script>
 <script type="text/babel" src="mb-groups-home.jsx"></script>
@@ -361,7 +375,7 @@ function Root() {
     }, 80);
     return function () { clearInterval(t); };
   }, []);
-  const Cmp = wide ? window.AppWeb : window.App;
+  const Cmp = (wide && window.AppWeb) ? window.AppWeb : window.App;
   const AdminLauncher = window.MB_AdminLauncher;
   const TeamGate = window.MB_TeamGate;
   const HelpLauncher = window.MB_HelpLauncher;
@@ -379,8 +393,8 @@ function Root() {
   );
 }
 ReactDOM.createRoot(document.getElementById('stage')).render(<Root />);
-// La app ya montó: desvanece el splash (deja un instante para que pinte).
-requestAnimationFrame(function () { setTimeout(window.__mbHideSplash, 500); });
+// La app ya montó: desvanece el splash en el próximo frame.
+requestAnimationFrame(function () { window.__mbHideSplash(); });
 </script>
 
 <!-- Banner de instalación en móvil (PWA + APK secundario) -->
