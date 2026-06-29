@@ -265,6 +265,8 @@ function Perfil() {
         </div>
         {/* Mi campeón (línea compacta) */}
         {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { compact: true })}
+        {/* Mis semifinalistas (línea compacta) */}
+        {window.MB_SemisPick && React.createElement(window.MB_SemisPick, { compact: true })}
       </div>
       {enJuego > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 14, padding: '8px 12px', borderRadius: 'var(--r-md)', background: 'var(--surface-1)', border: '1px solid var(--border)', fontSize: 'var(--t-2xs)' }}>
@@ -281,6 +283,43 @@ function Perfil() {
 
       {/* Premios al terminar la 3ª fecha: campeón (2ª fase) + recarga + precisión + racha */}
       {window.MB_ChampLadder && <div style={{ marginBottom: 12 }}>{React.createElement(window.MB_ChampLadder, { stats: bonusStats, me: meRec })}</div>}
+
+      {/* Stats personales del torneo */}
+      {settled.length >= 2 && (() => {
+        const totalGanado = settled.filter(b => b.status === 'won').reduce((s, b) => s + Math.round((b.stake || 0) * (b.odd || 1)) - (b.stake || 0), 0);
+        const mayorGanancia = settled.filter(b => b.status === 'won').reduce((mx, b) => {
+          const g = Math.round((b.stake || 0) * (b.odd || 1)) - (b.stake || 0); return g > mx.g ? { g, m: b } : mx;
+        }, { g: 0, m: null });
+        // Equipo más apostado
+        const countByTeam = {};
+        bets.forEach(b => { if (b.pick === 'home' && b.home) countByTeam[b.home] = (countByTeam[b.home] || 0) + 1; else if (b.pick === 'away' && b.away) countByTeam[b.away] = (countByTeam[b.away] || 0) + 1; });
+        const fav = Object.keys(countByTeam).sort((a, b) => countByTeam[b] - countByTeam[a])[0];
+        // Racha activa actual
+        const activeStreak = (() => {
+          const ch = settled.slice().sort((a, b) => koOf(b.matchId) - koOf(a.matchId));
+          let s = 0; for (const b of ch) { if (b.status === 'won') s++; else break; } return s;
+        })();
+        const items = [
+          { icon: '🏆', label: 'Mejor racha', value: bestStreak + ' seguidos', color: 'var(--gold-light)', show: bestStreak >= 2 },
+          { icon: '🔥', label: 'Racha activa', value: activeStreak + ' seguidos', color: '#FF8C42', show: activeStreak >= 2 },
+          { icon: '📈', label: 'Ganancia neta', value: (totalGanado >= 0 ? '+' : '') + fmt(totalGanado), color: totalGanado >= 0 ? 'var(--success)' : 'var(--danger)', show: true },
+          { icon: '⚡', label: 'Mayor ganancia', value: mayorGanancia.m ? '+' + fmt(mayorGanancia.g) + ' (' + (mayorGanancia.m.pick === 'home' ? mayorGanancia.m.home : mayorGanancia.m.away) + ')' : '—', color: 'var(--gold-light)', show: mayorGanancia.g > 0 },
+          { icon: '❤️', label: 'Favorito', value: fav || '—', color: 'var(--text)', show: !!fav },
+        ].filter(x => x.show);
+        if (!items.length) return null;
+        return (
+          <Card title="Mis estadísticas del torneo" style={{ padding: '13px 14px', marginBottom: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
+              {items.map((it) => (
+                <div key={it.label} style={{ padding: '9px 10px', borderRadius: 'var(--r-md)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 3 }}>{it.icon} {it.label}</div>
+                  <div className="num" style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: it.color, lineHeight: 1.2 }}>{it.value}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        );
+      })()}
 
       {/* Mi grupo: CTA para crear/unirse + tabla de equipos (lo mismo que la pestaña "Mi grupo") */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
