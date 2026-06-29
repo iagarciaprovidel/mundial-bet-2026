@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arquitectura · MundialBet Club 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800;12..96,900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  min-height:100vh;
+  font-family:'Manrope',system-ui,sans-serif;
+  color:#fff;
+  -webkit-font-smoothing:antialiased;
+  background-color:#0c2114;
+  background-image:
+    linear-gradient(180deg,rgba(6,14,9,.72) 0%,rgba(6,14,9,.38) 30%,rgba(6,14,9,.22) 60%,rgba(5,11,7,.55) 100%),
+    url(stadium.jpg);
+  background-size:cover;
+  background-position:center 58%;
+  background-attachment:fixed;
+}
+
+/* Nav */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(6,14,9,.88);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;gap:6px;
+  padding:0 32px;height:54px;
+}
+.nav-brand{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:900;font-style:italic;
+  font-size:1.05rem;letter-spacing:2px;text-transform:uppercase;
+  color:#fff;margin-right:10px;
+}
+.nav-brand span{color:#FFB81C;}
+.nav a{
+  text-decoration:none;color:rgba(255,255,255,.48);font-size:.8rem;font-weight:600;
+  padding:5px 11px;border-radius:5px;transition:all .15s;white-space:nowrap;
+}
+.nav a:hover{color:#fff;background:rgba(255,255,255,.07);}
+
+/* Page layout */
+.page{
+  min-height:calc(100vh - 54px);
+  padding:36px 32px 72px;
+  display:flex;flex-direction:column;align-items:center;gap:32px;
+}
+
+/* Volver */
+.volver{
+  align-self:flex-start;
+  background:transparent;border:1px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.55);padding:7px 18px;border-radius:4px;
+  font-size:.8rem;cursor:pointer;transition:all .18s;
+  font-family:inherit;font-weight:600;
+}
+.volver:hover{background:#FFB81C;color:#07100a;border-color:#FFB81C;}
+
+/* Header */
+.header{text-align:center;}
+.title{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-size:clamp(1.8rem,5vw,3rem);font-weight:900;font-style:italic;
+  letter-spacing:4px;text-transform:uppercase;color:#fff;margin:0 0 8px;
+  text-shadow:0 2px 20px rgba(0,0,0,.6);
+}
+.title span{color:#FFB81C;}
+.tagline{
+  color:rgba(255,255,255,.4);font-size:.78rem;
+  letter-spacing:2.5px;text-transform:uppercase;font-weight:700;
+}
+
+/* Main 2 cols */
+.main{display:flex;gap:24px;align-items:flex-start;width:100%;max-width:1120px;flex-wrap:wrap;justify-content:center;}
+
+/* === Carta izquierda === */
+.char-card{
+  background:rgba(8,18,12,.82);
+  border-radius:8px;border-left:4px solid #00D466;
+  box-shadow:0 2px 8px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:32px 24px 28px;
+  display:flex;flex-direction:column;align-items:center;
+  min-width:268px;max-width:300px;flex-shrink:0;
+}
+.char-logo{
+  font-size:72px;line-height:1;
+  animation:float 3.6s ease-in-out infinite;
+  filter:drop-shadow(0 10px 22px rgba(0,212,102,.28)) drop-shadow(0 2px 6px rgba(0,0,0,.5));
+}
+@keyframes float{0%,to{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.char-name-block{display:flex;align-items:baseline;gap:10px;margin-top:14px;}
+.char-name{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-size:2.1rem;font-weight:900;font-style:italic;
+  letter-spacing:5px;color:#FFB81C;
+}
+.char-version{
+  font-size:.65rem;background:rgba(255,184,28,.15);color:#FFB81C;
+  border:1px solid rgba(255,184,28,.3);padding:2px 9px;
+  border-radius:99px;font-weight:700;letter-spacing:1px;
+}
+.char-desc{
+  color:rgba(255,255,255,.45);font-size:.78rem;text-align:center;
+  margin:10px 0 22px;line-height:1.6;text-transform:uppercase;letter-spacing:.5px;
+}
+.badges{display:flex;flex-direction:column;gap:13px;width:100%;}
+.badge{display:flex;align-items:center;gap:13px;}
+.badge-pent{
+  width:40px;height:40px;flex-shrink:0;
+  clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%);
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+}
+.badge-label{
+  color:#fff;font-size:.82rem;font-weight:800;font-style:italic;
+  letter-spacing:.3px;line-height:1.25;text-transform:uppercase;
+}
+.badge-sub{color:rgba(255,255,255,.38);font-size:.67rem;margin-top:1px;}
+
+/* === Sección de engranajes === */
+.gear-section{
+  flex:1;
+  background:rgba(8,18,12,.78);
+  border-radius:8px;border-left:4px solid #FFB81C;
+  box-shadow:0 2px 8px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:24px 20px 20px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  min-width:300px;
+}
+.gear-hint{
+  color:rgba(255,255,255,.38);font-size:.76rem;font-style:italic;
+  letter-spacing:.3px;min-height:1.2em;transition:color .2s;
+  text-align:center;
+}
+.gear-svg{width:100%;max-width:540px;height:auto;overflow:visible;cursor:default;}
+.gear-desc-card{
+  width:100%;min-height:72px;
+  padding:14px 16px 14px 18px;
+  border-left:4px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+  border-radius:0 6px 6px 0;
+  transition:border-color .3s,opacity .2s;
+  opacity:.4;
+}
+.gear-desc-card.visible{opacity:1;}
+.gear-desc-nombre{
+  display:flex;align-items:baseline;gap:8px;
+  font-weight:900;font-style:italic;font-size:.95rem;
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;
+  font-family:'Bricolage Grotesque',sans-serif;
+}
+.gear-desc-version{
+  font-size:.66rem;font-style:normal;font-weight:600;
+  color:rgba(255,255,255,.45);background:rgba(255,255,255,.08);
+  padding:1px 7px;border-radius:99px;letter-spacing:.5px;
+}
+.gear-desc-text{color:rgba(255,255,255,.58);font-size:.82rem;line-height:1.65;margin:0;}
+.gear-desc-placeholder{color:rgba(255,255,255,.2);font-size:.8rem;font-style:italic;margin:0;line-height:72px;}
+
+/* === Sección Cloud / Flujos === */
+.flow-section{
+  width:100%;max-width:1120px;
+  background:rgba(8,18,12,.78);
+  border-radius:8px;border-left:4px solid #9B6DFF;
+  box-shadow:0 2px 8px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:28px 28px 28px;
+}
+.flow-section-label{
+  font-size:.7rem;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin-bottom:8px;
+}
+.flow-section-title{
+  font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(1.1rem,3vw,1.5rem);
+  font-weight:900;font-style:italic;letter-spacing:1px;text-transform:uppercase;
+  color:#fff;margin-bottom:6px;
+}
+.flow-section-sub{
+  color:rgba(255,255,255,.4);font-size:.82rem;line-height:1.65;margin-bottom:24px;
+}
+.flow-row{display:flex;flex-wrap:wrap;align-items:center;gap:0;justify-content:center;}
+.flow-node{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:14px 16px;border-radius:7px;border-top:3px solid;
+  background:rgba(255,255,255,.04);cursor:pointer;
+  min-width:110px;text-align:center;
+  transition:background .18s,transform .18s;
+  font-size:.75rem;
+}
+.flow-node:hover{background:rgba(255,255,255,.09);transform:translateY(-2px);}
+.flow-node .fn-icon{font-size:1.3rem;}
+.flow-node .fn-label{font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.4px;font-size:.72rem;}
+.flow-node .fn-sub{color:rgba(255,255,255,.38);font-size:.66rem;}
+.flow-arrow{color:rgba(255,255,255,.2);font-size:1.1rem;padding:0 4px;align-self:center;}
+.flow-steps{margin-top:22px;display:flex;flex-direction:column;gap:10px;}
+.flow-step{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 14px;border-radius:6px;background:rgba(255,255,255,.04);
+  border-left:3px solid rgba(255,255,255,.1);
+}
+.step-num{
+  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:800;font-family:'Bricolage Grotesque',sans-serif;
+}
+.step-title{font-weight:800;font-style:italic;font-size:.82rem;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;}
+.step-desc{color:rgba(255,255,255,.45);font-size:.77rem;line-height:1.5;}
+
+/* Stack */
+.stack-section{
+  width:100%;max-width:1120px;
+  background:rgba(8,18,12,.78);
+  border-radius:8px;border-left:4px solid #00C2A8;
+  box-shadow:0 2px 8px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:28px 28px;
+}
+.stack-title{
+  font-family:'Bricolage Grotesque',sans-serif;font-size:1.1rem;
+  font-weight:900;font-style:italic;letter-spacing:1px;text-transform:uppercase;
+  color:#fff;margin-bottom:16px;
+}
+.stack-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.stack-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:99px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  font-size:.78rem;font-weight:700;color:rgba(255,255,255,.75);
+  transition:background .15s;
+}
+.stack-chip:hover{background:rgba(255,255,255,.1);}
+.chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+@media(max-width:680px){
+  .page{padding:24px 16px 48px;}
+  .main{flex-direction:column;align-items:center;}
+  .char-card{max-width:100%;width:100%;}
+  .flow-row{gap:4px;}
+  .flow-node{min-width:80px;padding:10px 8px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-brand">Mundial<span>Bet</span></span>
+  <a href="index.html">← App</a>
+  <a href="#engranajes">Engranajes</a>
+  <a href="#flujos">Flujos</a>
+  <a href="#stack">Stack</a>
+</nav>
+
+<div class="page">
+  <button class="volver" onclick="history.back()">← Volver</button>
+
+  <div class="header">
+    <h1 class="title">Arquitectura de <span>MundialBet</span></h1>
+    <p class="tagline">PWA · Firebase · GitHub Actions · Sin servidor propio · Mundial 2026</p>
+  </div>
+
+  <!-- 2 columnas -->
+  <div class="main" id="engranajes">
+
+    <!-- Carta izquierda -->
+    <div class="char-card">
+      <div class="char-logo">🏆</div>
+      <div class="char-name-block">
+        <span class="char-name">MB26</span>
+        <span class="char-version">v171</span>
+      </div>
+      <p class="char-desc">Sistema de pronósticos<br>del Mundial 2026</p>
+      <div class="badges" id="badges-list"></div>
+    </div>
+
+    <!-- Sección de engranajes -->
+    <div class="gear-section">
+      <p class="gear-hint" id="gear-hint">Pasa el cursor sobre un engranaje para explorar</p>
+      <svg id="gear-svg" class="gear-svg" viewBox="-240 -200 480 430" role="img" aria-label="Arquitectura MundialBet">
+        <!-- Líneas de conexión (se generan por JS) -->
+        <g id="gear-lines"></g>
+        <!-- Engranajes (se generan por JS) -->
+        <g id="gear-gears"></g>
+      </svg>
+      <div class="gear-desc-card" id="gear-desc">
+        <p class="gear-desc-placeholder">Selecciona un engranaje para ver su descripción</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flujos de datos -->
+  <div class="flow-section" id="flujos">
+    <div class="flow-section-label">🔄 Cómo fluyen los datos</div>
+    <h2 class="flow-section-title">Flujo completo: del usuario al resultado</h2>
+    <p class="flow-section-sub">
+      Desde que un jugador abre la app hasta que recibe la notificación de que ganó su apuesta —
+      sin servidores propios, todo orquestado por servicios cloud y un agente automático.
+    </p>
+    <div class="flow-row" id="flow-row"></div>
+    <div class="flow-steps" id="flow-steps"></div>
+  </div>
+
+  <!-- Stack completo -->
+  <div class="stack-section" id="stack">
+    <div class="stack-title">🛠️ Stack completo</div>
+    <div class="stack-grid" id="stack-grid"></div>
+  </div>
+</div>
+
+<script>
+// ── Datos de componentes ──────────────────────────────────────────
+const COMPS = [
+  {
+    id:"react",nombre:"React App",version:"v18.3",icon:"⚛️",color:"#00D466",
+    gear:{cx:0,cy:0,teeth:14,outer:52,inner:37,speed:9,cw:true},
+    descripcion:"Interfaz de usuario reactiva. Carga desde CDN sin npm ni build. Archivos .jsx transpilados por Babel en el navegador. Dos versiones: App (móvil) y AppWeb (escritorio ≥1024px)."
+  },
+  {
+    id:"sw",nombre:"Service Worker",version:"v171",icon:"⚙️",color:"#FFB81C",
+    gear:{cx:-107,cy:-82,teeth:10,outer:37,inner:26,speed:12,cw:false},
+    descripcion:"Cache offline de toda la app. Estrategia Network-First: intenta la red, cae a caché si falla. Detecta versión nueva por CACHE='mundialbet-vN' y recarga automáticamente."
+  },
+  {
+    id:"auth",nombre:"Firebase Auth",version:"10.12",icon:"🔑",color:"#FF8A4A",
+    gear:{cx:112,cy:-74,teeth:9,outer:33,inner:23,speed:14,cw:false},
+    descripcion:"Login con Google, Facebook y email sin contraseña (magic link). Sesión persiste al cerrar el navegador gracias a IndexedDB. El splash espera el evento mb-auth-ready antes de cerrarse."
+  },
+  {
+    id:"firestore",nombre:"Firestore DB",version:"NoSQL",icon:"🗄️",color:"#FF8A4A",
+    gear:{cx:152,cy:28,teeth:8,outer:27,inner:19,speed:17,cw:true},
+    descripcion:"Base de datos en tiempo real. onSnapshot actualiza el ranking en todos los dispositivos al instante. Colecciones: users, bets, odds, groups, joinRequests, predictions."
+  },
+  {
+    id:"fcm",nombre:"FCM Push",version:"Cloud",icon:"🔔",color:"#F77F88",
+    gear:{cx:96,cy:108,teeth:8,outer:26,inner:18,speed:16,cw:false},
+    descripcion:"Notificaciones push a dispositivos aunque la app esté cerrada. Funciona en web PWA, Android e iOS. El agente envía push masivo al liquidar partidos."
+  },
+  {
+    id:"agent",nombre:"Agente Auto.",version:"Node 20",icon:"🤖",color:"#9B6DFF",
+    gear:{cx:-108,cy:88,teeth:11,outer:41,inner:29,speed:10,cw:false},
+    descripcion:"Script Node.js que GitHub ejecuta cada 5 min. Consulta football-data.org, detecta partidos terminados, liquida apuestas, paga bonos y envía notificaciones push."
+  },
+  {
+    id:"github",nombre:"GitHub Actions",version:"CI/CD",icon:"🐙",color:"#A8C5E0",
+    gear:{cx:-152,cy:-18,teeth:8,outer:27,inner:19,speed:21,cw:true},
+    descripcion:"CI/CD automático: cada push a main dispara deploy a Firebase Hosting en ~30s. Cron cada 5 minutos para el agente. Sin servidores permanentes, sin costo fijo."
+  },
+  {
+    id:"fdorg",nombre:"football-data",version:"API v4",icon:"⚽",color:"#00C2A8",
+    gear:{cx:0,cy:155,teeth:7,outer:23,inner:16,speed:19,cw:true},
+    descripcion:"API gratuita de resultados del Mundial (football-data.org). Plan gratis incluye competición WC. El agente consulta esta API para detectar partidos finalizados."
+  }
+];
+
+// ── Función para generar path de engranaje ────────────────────────
+function gearPath(teeth, outer, inner) {
+  const step = Math.PI * 2 / teeth;
+  const half = step * 0.42;
+  let d = "";
+  for (let i = 0; i < teeth; i++) {
+    const a = i * step - Math.PI / 2;
+    const b = a + half;
+    const p1 = [outer * Math.cos(a), outer * Math.sin(a)];
+    const p2 = [inner * Math.cos(a + 0.07), inner * Math.sin(a + 0.07)];
+    const p3 = [inner * Math.cos(b - 0.07), inner * Math.sin(b - 0.07)];
+    const p4 = [outer * Math.cos(b), outer * Math.sin(b)];
+    const fmt = n => n.toFixed(2);
+    if (i === 0) d += `M ${fmt(p1[0])} ${fmt(p1[1])}`;
+    else d += ` A ${outer} ${outer} 0 0 1 ${fmt(p1[0])} ${fmt(p1[1])}`;
+    d += ` L ${fmt(p2[0])} ${fmt(p2[1])} L ${fmt(p3[0])} ${fmt(p3[1])} L ${fmt(p4[0])} ${fmt(p4[1])}`;
+  }
+  const sx = (outer * Math.cos(-Math.PI / 2)).toFixed(2);
+  const sy = (outer * Math.sin(-Math.PI / 2)).toFixed(2);
+  return d + ` A ${outer} ${outer} 0 0 1 ${sx} ${sy} Z`;
+}
+
+// ── Renderizar SVG ────────────────────────────────────────────────
+const NS = "http://www.w3.org/2000/svg";
+const linesG = document.getElementById("gear-lines");
+const gearsG = document.getElementById("gear-gears");
+
+COMPS.forEach(c => {
+  if (c.gear.cx !== 0 || c.gear.cy !== 0) {
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", 0); line.setAttribute("y1", 0);
+    line.setAttribute("x2", c.gear.cx); line.setAttribute("y2", c.gear.cy);
+    line.setAttribute("stroke", "rgba(255,255,255,0.07)");
+    line.setAttribute("stroke-width", "1.5");
+    line.setAttribute("stroke-dasharray", "4 6");
+    linesG.appendChild(line);
+  }
+});
+
+COMPS.forEach(c => {
+  const g = document.createElementNS(NS, "g");
+  g.setAttribute("transform", `translate(${c.gear.cx},${c.gear.cy})`);
+  g.style.cursor = "pointer";
+
+  // Fondo circular suave
+  const circle = document.createElementNS(NS, "circle");
+  circle.setAttribute("r", c.gear.outer + 4);
+  circle.setAttribute("fill", c.color);
+  circle.setAttribute("fill-opacity", "0.07");
+  g.appendChild(circle);
+
+  // Engranaje con animación
+  const path = document.createElementNS(NS, "path");
+  path.setAttribute("d", gearPath(c.gear.teeth, c.gear.outer, c.gear.inner));
+  path.setAttribute("fill", c.color);
+  path.setAttribute("fill-opacity", "0.82");
+  path.setAttribute("stroke", c.color);
+  path.setAttribute("stroke-width", "0.8");
+  path.setAttribute("stroke-opacity", "1");
+
+  const anim = document.createElementNS(NS, "animateTransform");
+  anim.setAttribute("attributeName", "transform");
+  anim.setAttribute("attributeType", "XML");
+  anim.setAttribute("type", "rotate");
+  anim.setAttribute("from", "0 0 0");
+  anim.setAttribute("to", c.gear.cw ? "360 0 0" : "-360 0 0");
+  anim.setAttribute("dur", `${c.gear.speed}s`);
+  anim.setAttribute("repeatCount", "indefinite");
+  path.appendChild(anim);
+  g.appendChild(path);
+
+  // Agujero central
+  const hole = document.createElementNS(NS, "circle");
+  hole.setAttribute("r", Math.round(c.gear.inner * 0.42));
+  hole.setAttribute("fill", "rgba(8,18,12,0.88)");
+  hole.setAttribute("stroke", c.color);
+  hole.setAttribute("stroke-width", "1.5");
+  hole.setAttribute("stroke-opacity", "0.6");
+  g.appendChild(hole);
+
+  // Icono (texto)
+  const txt = document.createElementNS(NS, "text");
+  txt.setAttribute("text-anchor", "middle");
+  txt.setAttribute("dominant-baseline", "central");
+  txt.setAttribute("font-size", Math.round(c.gear.inner * 0.54));
+  txt.setAttribute("y", "1");
+  txt.textContent = c.icon;
+  g.appendChild(txt);
+
+  // Etiqueta debajo
+  const lbl = document.createElementNS(NS, "text");
+  lbl.setAttribute("text-anchor", "middle");
+  lbl.setAttribute("y", c.gear.outer + 14);
+  lbl.setAttribute("fill", c.color);
+  lbl.setAttribute("font-size", "9");
+  lbl.setAttribute("font-family", "Manrope, sans-serif");
+  lbl.setAttribute("font-weight", "800");
+  lbl.setAttribute("letter-spacing", "0.5");
+  lbl.textContent = c.nombre.toUpperCase();
+  g.appendChild(lbl);
+
+  // Interacción
+  g.addEventListener("mouseenter", () => {
+    document.getElementById("gear-hint").textContent = `${c.nombre} — ${c.version}`;
+    circle.setAttribute("fill-opacity", "0.18");
+    path.setAttribute("fill-opacity", "1");
+  });
+  g.addEventListener("mouseleave", () => {
+    document.getElementById("gear-hint").textContent = "Pasa el cursor sobre un engranaje para explorar";
+    circle.setAttribute("fill-opacity", "0.07");
+    path.setAttribute("fill-opacity", "0.82");
+  });
+  g.addEventListener("click", () => {
+    const card = document.getElementById("gear-desc");
+    card.classList.add("visible");
+    card.style.borderLeftColor = c.color;
+    card.innerHTML = `
+      <span class="gear-desc-nombre" style="color:${c.color}">
+        ${c.nombre} <span class="gear-desc-version">${c.version}</span>
+      </span>
+      <p class="gear-desc-text">${c.descripcion}</p>
+    `;
+  });
+
+  gearsG.appendChild(g);
+});
+
+// ── Badges izquierda ─────────────────────────────────────────────
+const BADGES = [
+  {icon:"⚛️",color:"#00D466",label:"Sin proceso de build",sub:"Babel transpila en el navegador"},
+  {icon:"🔥",color:"#FF8A4A",label:"Firebase Backend",sub:"Auth · Firestore · FCM · Hosting"},
+  {icon:"🤖",color:"#9B6DFF",label:"Agente automático",sub:"GitHub Actions · cron 5 min"},
+  {icon:"📱",color:"#FFB81C",label:"PWA instalable",sub:"Offline · Auto-actualizable"},
+];
+const badgesList = document.getElementById("badges-list");
+BADGES.forEach(b => {
+  badgesList.innerHTML += `
+    <div class="badge">
+      <div class="badge-pent" style="background:${b.color}22;">
+        <span style="font-size:1rem">${b.icon}</span>
+      </div>
+      <div>
+        <div class="badge-label">${b.label}</div>
+        <div class="badge-sub">${b.sub}</div>
+      </div>
+    </div>
+  `;
+});
+
+// ── Flujo de datos ────────────────────────────────────────────────
+const FLOW_NODES = [
+  {icon:"📱",label:"Usuario",sub:"PWA / Browser",color:"#00D466"},
+  {arrow:true},
+  {icon:"⚙️",label:"Service Worker",sub:"Cache offline",color:"#FFB81C"},
+  {arrow:true},
+  {icon:"⚛️",label:"React App",sub:"app.jsx",color:"#00D466"},
+  {arrow:true},
+  {icon:"🔑",label:"Firebase Auth",sub:"Google login",color:"#FF8A4A"},
+  {arrow:true},
+  {icon:"🗄️",label:"Firestore",sub:"Tiempo real",color:"#FF8A4A"},
+];
+
+const flowRow = document.getElementById("flow-row");
+FLOW_NODES.forEach(n => {
+  if (n.arrow) {
+    const a = document.createElement("span");
+    a.className = "flow-arrow";
+    a.textContent = "→";
+    flowRow.appendChild(a);
+  } else {
+    const el = document.createElement("div");
+    el.className = "flow-node";
+    el.style.borderTopColor = n.color;
+    el.innerHTML = `<div class="fn-icon">${n.icon}</div><div class="fn-label">${n.label}</div><div class="fn-sub">${n.sub}</div>`;
+    flowRow.appendChild(el);
+  }
+});
+
+// Segunda fila de flujo
+const flowRow2 = document.createElement("div");
+flowRow2.className = "flow-row";
+flowRow2.style.marginTop = "8px";
+[
+  {icon:"🐙",label:"GitHub Actions",sub:"push → deploy",color:"#A8C5E0"},
+  {arrow:true},
+  {icon:"🤖",label:"Agente Node.js",sub:"agent/index.js",color:"#9B6DFF"},
+  {arrow:true},
+  {icon:"⚽",label:"football-data",sub:"API gratis",color:"#00C2A8"},
+  {arrow:true},
+  {icon:"💰",label:"Liquida apuestas",sub:"Firestore write",color:"#FF8A4A"},
+  {arrow:true},
+  {icon:"🔔",label:"FCM push",sub:"Notificación",color:"#F77F88"},
+].forEach(n => {
+  if (n.arrow) {
+    const a = document.createElement("span");
+    a.className = "flow-arrow";
+    a.textContent = "→";
+    flowRow2.appendChild(a);
+  } else {
+    const el = document.createElement("div");
+    el.className = "flow-node";
+    el.style.borderTopColor = n.color;
+    el.innerHTML = `<div class="fn-icon">${n.icon}</div><div class="fn-label">${n.label}</div><div class="fn-sub">${n.sub}</div>`;
+    flowRow2.appendChild(el);
+  }
+});
+document.getElementById("flow-steps").before(flowRow2);
+
+const STEPS = [
+  {n:"1",color:"#00D466",title:"Usuario abre la app",desc:"El Service Worker sirve la app desde caché (funciona offline). Firebase Auth verifica la sesión en ~300ms. El splash espera al evento mb-auth-ready antes de ocultarse — el usuario nunca ve el estado «no logueado»."},
+  {n:"2",color:"#FFB81C",title:"Jugador hace una apuesta",desc:"La UI llama a MBFirebase.placeBet(). Firestore descuenta el saldo y registra la apuesta en una transacción atómica. El ranking se actualiza en tiempo real para todos los jugadores vía onSnapshot."},
+  {n:"3",color:"#9B6DFF",title:"GitHub Actions despierta al agente (cada 5 min)",desc:"El agente Node.js consulta football-data.org. Si detecta un partido FINISHED, liquida las apuestas: paga saldo × cuota a ganadores, registra historial y actualiza prevSaldo para las flechas ↑↓ del ranking."},
+  {n:"4",color:"#F77F88",title:"Notificación push instantánea",desc:"Tras liquidar, el agente envía push FCM a todos los dispositivos suscritos aunque la app esté cerrada. En móvil aparece como notificación del sistema; en desktop como notificación web."},
+  {n:"5",color:"#A8C5E0",title:"Deploy automático tras cada cambio de código",desc:"Un push a la rama main dispara el workflow deploy.yml. Firebase Hosting actualiza el CDN en ~30s. El Service Worker detecta la nueva versión (CACHE='mundialbet-vN') y recarga automáticamente todos los clientes."},
+];
+const stepsEl = document.getElementById("flow-steps");
+STEPS.forEach(s => {
+  stepsEl.innerHTML += `
+    <div class="flow-step" style="border-left-color:${s.color}22">
+      <div class="step-num" style="background:${s.color}22;color:${s.color}">${s.n}</div>
+      <div>
+        <div class="step-title" style="color:${s.color}">${s.title}</div>
+        <div class="step-desc">${s.desc}</div>
+      </div>
+    </div>
+  `;
+});
+
+// ── Stack chips ───────────────────────────────────────────────────
+const STACK = [
+  {dot:"#00D466",label:"React 18 (UMD)"},
+  {dot:"#FFB81C",label:"Babel Standalone"},
+  {dot:"#FF8A4A",label:"Firebase Auth"},
+  {dot:"#FF8A4A",label:"Cloud Firestore"},
+  {dot:"#F77F88",label:"Firebase Cloud Messaging"},
+  {dot:"#FF8A4A",label:"Firebase Hosting"},
+  {dot:"#FFB81C",label:"Service Worker API"},
+  {dot:"#9B6DFF",label:"GitHub Actions"},
+  {dot:"#9B6DFF",label:"Node.js 20"},
+  {dot:"#00C2A8",label:"football-data.org API"},
+  {dot:"#A8C5E0",label:"GitHub Pages (respaldo)"},
+  {dot:"#00D466",label:"Bricolage Grotesque"},
+  {dot:"#00D466",label:"Manrope"},
+  {dot:"#A8C5E0",label:"JetBrains Mono"},
+  {dot:"#00C2A8",label:"flagcdn.com"},
+  {dot:"#A8C5E0",label:"qrcode-generator"},
+  {dot:"#A8C5E0",label:"jsQR"},
+  {dot:"#00D466",label:"PWA Manifest"},
+  {dot:"#FFB81C",label:"IndexedDB (Auth persist.)"},
+  {dot:"#FF8A4A",label:"Firebase Admin SDK"},
+];
+const stackGrid = document.getElementById("stack-grid");
+STACK.forEach(s => {
+  stackGrid.innerHTML += `
+    <div class="stack-chip">
+      <span class="chip-dot" style="background:${s.dot}"></span>
+      ${s.label}
+    </div>
+  `;
+});
+</script>
+</body>
+</html>
