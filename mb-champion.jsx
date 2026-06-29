@@ -170,15 +170,23 @@
 
     // ── COMPACT: fila dentro de la card de métricas ──
     if (compact) {
+      const openDetail = (e) => {
+        if (myChamp && myChamp.code) {
+          e.stopPropagation();
+          if (window.__mbOpenTeamByCode) window.__mbOpenTeamByCode(myChamp.code);
+          else if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(myChamp.name);
+        }
+      };
       return (
         <div onClick={() => !locked && setOpen(true)}
           style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderTop: '1px solid var(--border)', cursor: locked ? 'default' : 'pointer' }}>
           <span style={{ fontSize: 13 }}>🏆</span>
           <span style={{ flex: 1, fontSize: 'var(--t-xs)', color: 'var(--muted)', fontWeight: 700 }}>Mi campeón</span>
           {myChamp ? (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-xs)', fontWeight: 800, color: 'var(--gold-light)' }}>
-              <img src={`https://flagcdn.com/h20/${myChamp.code}.png`} alt={myChamp.name} style={{ height: 14, borderRadius: 2 }} />
+            <span onClick={openDetail} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-xs)', fontWeight: 800, color: 'var(--gold-light)', cursor: 'pointer' }} title={'Ver ficha de ' + myChamp.name}>
+              <img src={`https://flagcdn.com/h20/${myChamp.code}.png`} alt={myChamp.name} style={{ height: 18, borderRadius: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.5)' }} />
               {myChamp.name}
+              {!locked && <span style={{ fontSize: 9, color: 'var(--muted-2)', marginLeft: 2 }}>✏️</span>}
             </span>
           ) : locked ? (
             <span style={{ fontSize: 'var(--t-xs)', color: 'var(--muted-2)', fontWeight: 600 }}>No elegiste</span>
