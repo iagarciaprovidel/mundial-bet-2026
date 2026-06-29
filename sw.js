@@ -1,9 +1,9 @@
-/* MundialBet Club 2026 — Service Worker
-   Estrategia: network-first para navegación y assets propios (siempre
-   intenta traer la versión más nueva), con fallback a caché para que la
-   app funcione sin conexión una vez visitada. */
+﻿/* MundialBet Club 2026 â€” Service Worker
+   Estrategia: network-first para navegaciÃ³n y assets propios (siempre
+   intenta traer la versiÃ³n mÃ¡s nueva), con fallback a cachÃ© para que la
+   app funcione sin conexiÃ³n una vez visitada. */
 
-const CACHE = 'mundialbet-v169';
+const CACHE = 'mundialbet-v170';
 
 // App shell (rutas relativas al scope /mundial-bet-2026/)
 const SHELL = [
@@ -63,22 +63,22 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
-  // NO interceptar el flujo de autenticación de Firebase (/__/auth/handler e
+  // NO interceptar el flujo de autenticaciÃ³n de Firebase (/__/auth/handler e
   // /__/auth/iframe). Si el service worker los sirve/cachea, el login se rompe
   // (pantalla en blanco en la PWA). Lo maneja el navegador directamente.
   let url;
   try { url = new URL(request.url); } catch (e) {}
   if (url && url.origin === self.location.origin && url.pathname.startsWith('/__/')) return;
 
-  // Para archivos PROPIOS pedimos a la red saltando el caché HTTP del navegador
-  // (cache: 'reload'), así siempre llega la última versión y no queda atrás.
+  // Para archivos PROPIOS pedimos a la red saltando el cachÃ© HTTP del navegador
+  // (cache: 'reload'), asÃ­ siempre llega la Ãºltima versiÃ³n y no queda atrÃ¡s.
   let netRequest = request;
   if (url && url.origin === self.location.origin) netRequest = new Request(request, { cache: 'reload' });
 
   event.respondWith(
     fetch(netRequest)
       .then((response) => {
-        // Cachea copias de respuestas válidas (incluye opacas de CDN)
+        // Cachea copias de respuestas vÃ¡lidas (incluye opacas de CDN)
         const copy = response.clone();
         caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
         return response;
@@ -86,7 +86,7 @@ self.addEventListener('fetch', (event) => {
       .catch(() =>
         caches.match(request).then((cached) => {
           if (cached) return cached;
-          // Fallback para navegación: la app shell
+          // Fallback para navegaciÃ³n: la app shell
           if (request.mode === 'navigate') return caches.match('./index.html');
           return Response.error();
         })
