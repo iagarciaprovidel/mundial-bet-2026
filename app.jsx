@@ -178,10 +178,17 @@ function App() {
       const found = list.find(x => x.name === name);
       if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(true); }
     };
+    const openByCode = (code) => {
+      if (!code) return;
+      const list = window.MB_ALL_TEAMS || [];
+      const found = list.find(x => x.code === code);
+      if (found) { setTeam(found); if (window.__mbHideSplash) window.__mbHideSplash(true); }
+    };
     window.__mbOpenTeamByName = openByName;
+    window.__mbOpenTeamByCode = openByCode;
     window.MB_openTeam = openByName;
     if (window.__mbPendingTeam) openByName(window.__mbPendingTeam);
-    return () => { window.__mbOpenTeamByName = null; window.MB_openTeam = null; };
+    return () => { window.__mbOpenTeamByName = null; window.__mbOpenTeamByCode = null; window.MB_openTeam = null; };
   }, []);
 
   // loaders por sección (primera visita)
