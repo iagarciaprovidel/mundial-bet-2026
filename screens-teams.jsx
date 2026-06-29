@@ -145,13 +145,12 @@ function GroupClassificationMap({ onTeam }) {
         </div>
       </div>
       <div style={{ overflowX: 'auto', paddingBottom: 6 }}>
-        <div style={{ display: 'flex', gap: 4, width: 'max-content' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(56px, 1fr))', gap: 4 }}>
           {groups.map(g => {
             const teams = gs[g] || [];
             return (
-              <div key={g} style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center', width: 62 }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--gold-light)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2, alignSelf: 'stretch', textAlign: 'center', borderBottom: '1px solid var(--border)', paddingBottom: 3 }}>G.{g}</div>
-                {/* separator: dotted line after 2nd team */}
+              <div key={g} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--gold-light)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2, textAlign: 'center', borderBottom: '1px solid var(--border)', paddingBottom: 3 }}>G.{g}</div>
                 {teams.map((team, idx) => {
                   const classified = r32Codes.has(team.code);
                   return (
@@ -160,15 +159,16 @@ function GroupClassificationMap({ onTeam }) {
                         <div style={{ width: '100%', borderTop: '1px dashed rgba(255,255,255,0.12)', margin: '1px 0' }} />
                       )}
                       <div onClick={() => openTeam(team)} className="mb-press" title={`${team.name}${classified ? ' — Clasificado ✅' : ' — Eliminado ❌'}`} style={{
-                        cursor: 'pointer', padding: '4px 5px 5px', borderRadius: 5, width: '100%',
+                        cursor: 'pointer', padding: '4px 5px 5px', borderRadius: 5,
                         background: classified ? 'rgba(0,200,90,0.1)' : 'rgba(232,64,64,0.05)',
                         borderLeft: `2px solid ${classified ? 'var(--success)' : 'rgba(232,64,64,0.35)'}`,
                         opacity: classified ? 1 : 0.5,
                         filter: classified ? 'none' : 'grayscale(0.65)',
+                        overflow: 'hidden',
                       }}>
-                        <img src={`https://flagcdn.com/h20/${team.code || ''}.png`} alt={team.name} style={{ height: 15, width: 'auto', borderRadius: 2, display: 'block', maxWidth: 52 }} />
-                        <div style={{ fontSize: '10px', color: classified ? 'var(--success)' : 'var(--muted-2)', fontWeight: 700, marginTop: 3, lineHeight: 1.15, maxWidth: 52, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {(team.name || '').substring(0, 10)}
+                        <img src={`https://flagcdn.com/h20/${team.code || ''}.png`} alt={team.name} style={{ height: 15, width: 'auto', borderRadius: 2, display: 'block', maxWidth: '100%' }} />
+                        <div style={{ fontSize: '10px', color: classified ? 'var(--success)' : 'var(--muted-2)', fontWeight: 700, marginTop: 3, lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {(team.name || '').substring(0, 11)}
                         </div>
                         <div style={{ fontSize: '9px', color: 'var(--muted-2)', fontWeight: 600, lineHeight: 1, marginTop: 2 }}>{team.pts}pts</div>
                       </div>
