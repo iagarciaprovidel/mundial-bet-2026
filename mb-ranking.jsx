@@ -88,7 +88,7 @@
             return (
               <div key={u.uid} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderRadius: 'var(--r-sm)', background: isMe ? 'rgba(212,175,55,0.14)' : 'transparent', borderBottom: i < shown.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <span style={{ width: 20, textAlign: 'center', color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)' }}>{i + 1}</span>
-                <span onClick={() => u.champion && window.MB_openTeam && window.MB_openTeam(u.champion)} style={{ cursor: u.champion ? 'pointer' : 'default', flexShrink: 0 }}>
+                <span onClick={() => { if (u.championCode && window.__mbOpenTeamByCode) window.__mbOpenTeamByCode(u.championCode); else if (u.champion && window.MB_openTeam) window.MB_openTeam(u.champion); }} style={{ cursor: (u.champion || u.championCode) ? 'pointer' : 'default', flexShrink: 0 }}>
                   {window.MB_champAvatar ? window.MB_champAvatar(u.championCode, u.champion, u.nombre, 30) : <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -169,7 +169,7 @@
             return (
               <div key={u.uid} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 2px', borderRadius: 'var(--r-sm)', background: isMe ? 'rgba(212,175,55,0.10)' : 'transparent', borderBottom: i < players.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 {rankNum(i)}
-                <span onClick={() => u.champion && window.MB_openTeam && window.MB_openTeam(u.champion)} style={{ cursor: u.champion ? 'pointer' : 'default', flexShrink: 0 }}>
+                <span onClick={() => { if (u.championCode && window.__mbOpenTeamByCode) window.__mbOpenTeamByCode(u.championCode); else if (u.champion && window.MB_openTeam) window.MB_openTeam(u.champion); }} style={{ cursor: (u.champion || u.championCode) ? 'pointer' : 'default', flexShrink: 0 }}>
                   {window.MB_champAvatar ? window.MB_champAvatar(u.championCode, u.champion, u.nombre, 30) : <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
