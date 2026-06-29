@@ -44,6 +44,8 @@
       savePrediction() { return Promise.reject('no-config'); },
       getMyPrediction() { return Promise.resolve(null); },
       subscribePredictions() { return () => {}; },
+      saveSemiPick: noFB, getSemiPick() { return Promise.resolve(null); },
+      saveChallengePick: noFB, getChallengePicks() { return Promise.resolve(null); },
     };
     if (!configured) console.warn('[MundialBet] Firebase no configurado: edita firebase-config.js');
     return;
@@ -418,8 +420,8 @@
       return !!locked;
     },
     // Apuesta al ganador. pick: 'home' | 'draw' | 'away'. stake en puntos (mín 1.000).
-    // Si ya había apuesta abierta en ese partido, la reemplaza (devuelve lo anterior).
-    async placeBet(match, pick, stake) {
+    // exactHome/exactAway opcionales: si se aciertan ×3. Si ya había apuesta abierta, la reemplaza.
+    async placeBet(match, pick, stake, exactHome, exactAway) {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       stake = Math.floor(Number(stake) || 0);
       if (['home', 'draw', 'away'].indexOf(pick) === -1) return Promise.reject('pick-invalido');
@@ -440,10 +442,15 @@
         const refund = (prev.exists && prev.data().status === 'open') ? (prev.data().stake || 0) : 0;
         if (saldo + refund < stake) throw 'saldo-insuficiente';
         tx.set(userRef, { saldo: saldo + refund - stake, staked: Math.max(0, staked0 - refund + stake) }, { merge: true });
-        tx.set(betRef, {
+        const betData = {
           uid: u.uid, matchId: match.id, md: match.md || null, pick: pick, stake: stake, odd: odd,
           home: match.home, away: match.away, status: 'open', creado: FV.serverTimestamp(),
-        });
+        };
+        if (exactHome != null && exactAway != null && !isNaN(exactHome) && !isNaN(exactAway)) {
+          betData.exactHome = Number(exactHome);
+          betData.exactAway = Number(exactAway);
+        }
+        tx.set(betRef, betData);
       });
     },
     // Carga/actualiza las cuotas de un partido (lo hará el agente; también
@@ -507,6 +514,43 @@
     subscribePredictions(matchId, cb) {
       return db.collection('predictions').where('matchId', '==', matchId)
         .onSnapshot(s => cb(s.docs.map(d => d.data())));
+    },
+
+    // ── Pronóstico de semifinalistas ──
+    // semi_picks/{uid} → { teams: [code,...], ts }
+    async saveSemiPick(teams) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      if (!Array.isArray(teams) || teams.length !== 4) return Promise.reject('pick-invalido');
+      await db.collection('semi_picks').doc(u.uid).set({
+        uid: u.uid, teams: teams, ts: FV.serverTimestamp(),
+      });
+      return true;
+    },
+    async getSemiPick() {
+      const u = auth.currentUser; if (!u) return null;
+      const doc = await db.collection('semi_picks').doc(u.uid).get();
+      return doc.exists ? (doc.data().teams || null) : null;
+    },
+
+    // ── Desafíos por partido (challenge_picks) ──
+    // challenge_picks/{uid_matchId_qkey} → { uid, matchId, qkey, pick, ts }
+    async saveChallengePick(matchId, qkey, pick) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      if (!matchId || !qkey || !pick) return Promise.reject('pick-invalido');
+      const id = u.uid + '_' + matchId + '_' + qkey;
+      await db.collection('challenge_picks').doc(id).set({
+        uid: u.uid, matchId: matchId, qkey: qkey, pick: pick, ts: FV.serverTimestamp(),
+      });
+      return true;
+    },
+    async getChallengePicks(matchId) {
+      const u = auth.currentUser; if (!u) return null;
+      const q1 = await db.collection('challenge_picks').doc(u.uid + '_' + matchId + '_q1').get();
+      const q2 = await db.collection('challenge_picks').doc(u.uid + '_' + matchId + '_q2').get();
+      const out = {};
+      if (q1.exists) out.q1 = q1.data().pick;
+      if (q2.exists) out.q2 = q2.data().pick;
+      return (q1.exists || q2.exists) ? out : null;
     },
   };
 
