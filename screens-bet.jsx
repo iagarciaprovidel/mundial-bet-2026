@@ -285,43 +285,6 @@ function ActivityTicker() {
   );
 }
 
-// Partido destacado: el próximo por jugar (cualquier fase), con diseño más
-// grande arriba de la lista. Ayuda a que siempre haya un "ancla" clara de
-// "qué viene ahora" sin tener que buscarlo entre todas las jornadas.
-function FeaturedMatchCard({ m }) {
-  const openTeam = (name) => { if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
-  const kickoffInMin = Math.max(0, Math.round((new Date(m.kickoff).getTime() - Date.now()) / 60000));
-  const d = new Date(m.kickoff);
-  const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
-  const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-  const slipState = window.MB_useParlaySlip ? window.MB_useParlaySlip() : null;
-  return (
-    <Card style={{ marginBottom: 16, padding: '16px', border: '1.5px solid var(--gold)', background: 'linear-gradient(160deg, rgba(212,175,55,0.10), rgba(13,20,15,0.95))' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--gold-light)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}>🔥 Próximo partido</span>
-        {CountdownTimer ? <CountdownTimer minutes={kickoffInMin} compact /> : <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div onClick={() => openTeam(m.home)} className="mb-press" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, cursor: 'pointer' }}>
-          <img src={`https://flagcdn.com/h60/${m.homeCode}.png`} alt="" style={{ height: 34, width: 'auto', borderRadius: 4 }} />
-          <span style={{ fontWeight: 800, fontSize: 'var(--t-sm)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{m.home}</span>
-        </div>
-        <span className="display" style={{ color: 'var(--muted-2)', fontWeight: 800, padding: '0 10px', fontSize: 'var(--t-md)' }}>VS</span>
-        <div onClick={() => openTeam(m.away)} className="mb-press" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, cursor: 'pointer' }}>
-          <img src={`https://flagcdn.com/h60/${m.awayCode}.png`} alt="" style={{ height: 34, width: 'auto', borderRadius: 4 }} />
-          <span style={{ fontWeight: 800, fontSize: 'var(--t-sm)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{m.away}</span>
-        </div>
-      </div>
-      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 600, textAlign: 'center', marginBottom: 4 }}>
-        {m.group ? `Grupo ${m.group} · J${m.md}` : (m.stage === 'r32' ? 'Dieciseisavos' : m.stage === 'r16' ? 'Octavos' : m.stage === 'qf' ? 'Cuartos' : m.stage === 'sf' ? 'Semifinales' : 'Final')} · 🏟️ {m.stadium}
-      </div>
-      {slipState && slipState.on
-        ? (window.MB_ParlayPickStrip ? <window.MB_ParlayPickStrip m={m} /> : null)
-        : (window.MB_BetBox ? <window.MB_BetBox m={m} /> : null)}
-    </Card>
-  );
-}
-
 function Partidos() {
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const odds = (store && store.odds) || {};
@@ -358,10 +321,6 @@ function Partidos() {
     mine: 'Todavía no tienes apuestas. ¡Elige un partido y arranca!',
   };
 
-  // Próximo partido a jugarse (cualquier fase), para la tarjeta destacada.
-  const featured = fx.filter((m) => !matchLive(m) && !matchDone(m) && new Date(m.kickoff).getTime() > now)
-    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))[0] || null;
-
   const openBets = Object.values(bets).filter((b) => b && b.status === 'open');
   const openParlays = myParlays.filter((p) => p && p.status === 'open');
   const openTotal = openBets.reduce((s, b) => s + (b.stake || 0), 0) + openParlays.reduce((s, p) => s + (p.stake || 0), 0);
@@ -388,7 +347,6 @@ function Partidos() {
 
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      {filter === 'all' && featured && <FeaturedMatchCard m={featured} />}
       <ActivityTicker />
       {/* Filtros rápidos: buscan en todo el torneo, no solo en la jornada activa */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, overflowX: 'auto', paddingBottom: 2 }}>
