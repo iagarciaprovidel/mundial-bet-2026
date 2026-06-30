@@ -148,6 +148,24 @@
     );
   };
 
+  // Detalle pateador a pateador de la tanda de penales (✓/✗ + bandera + nombre).
+  // odds.penKicks viene del agente (ESPN), si el feed lo incluye; si no, se omite.
+  const penKicksEl = (list) => {
+    if (!list || !list.length) return null;
+    return (
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {list.map((k, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-2xs)' }}>
+            <span style={{ fontSize: 10, flexShrink: 0 }}>{k.scored ? '✅' : '❌'}</span>
+            {k.code && <img src={'https://flagcdn.com/h20/' + k.code + '.png'} alt="" style={{ height: 11, width: 'auto', borderRadius: 1, flexShrink: 0 }} />}
+            <span style={{ color: 'var(--text)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.name}</span>
+            <span style={{ color: k.scored ? 'var(--success)' : '#e98b8b', fontWeight: 700, marginLeft: 'auto', flexShrink: 0 }}>{k.scored ? 'Gol' : 'Falló'}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // ── Caja de apuesta (1·X·2) ──
   function BetBox({ m, compact }) {
     const s = useBetStore();
@@ -195,8 +213,12 @@
             <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
           </div>
           {onPens && (
-            <div style={{ marginTop: 6, padding: '6px 11px', borderRadius: 'var(--r-md)', border: '1px solid rgba(212,175,55,0.4)', background: 'rgba(212,175,55,0.08)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: 'var(--gold-light)', textAlign: 'center' }}>
-              ⚽ {advances} avanza por penales
+            <div style={{ marginTop: 6, padding: '6px 11px', borderRadius: 'var(--r-md)', border: '1px solid rgba(212,175,55,0.4)', background: 'rgba(212,175,55,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 700, color: 'var(--gold-light)' }}>⚽ {advances} avanza por penales</span>
+                {odds.penScore && <span className="num" style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)', flexShrink: 0 }}>{odds.penScore.home}–{odds.penScore.away}</span>}
+              </div>
+              {penKicksEl(odds.penKicks)}
             </div>
           )}
           {scorersEl(odds.scorers)}
