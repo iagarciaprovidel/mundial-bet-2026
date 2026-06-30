@@ -1027,7 +1027,42 @@ async function main() {
     if (fdFallbackN) { settled += fdFallbackN; console.log(`FD fallback: ${fdFallbackN} apuesta(s) liquidada(s).`); }
   } catch (e) { console.warn('FD fallback:', (e && e.message) || e); }
 
+  try { await recomputeAllStreaks(); } catch (e) { console.warn('recomputeAllStreaks:', (e && e.message) || e); }
+
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s).`);
+}
+
+// Recalcula currentStreak para TODOS los usuarios con apuestas liquidadas.
+// Se ejecuta en cada corrida (self-healing): así se rellena para jugadores
+// cuya racha nunca se tocó (p. ej. si su última apuesta liquidada fue antes
+// de que existiera este campo) y no solo para quien acaba de liquidar ahora.
+async function recomputeAllStreaks() {
+  const betsSnap = await db.collection('bets').where('status', 'in', ['won', 'lost']).get();
+  const byUid = {};
+  betsSnap.docs.forEach((d) => {
+    const b = d.data();
+    if (!b.uid) return;
+    (byUid[b.uid] = byUid[b.uid] || []).push(b);
+  });
+  const streakOf = (bets) => {
+    const settled = bets.slice().sort((a, b) => {
+      const ta = (a.settledAt && a.settledAt.seconds) ? a.settledAt.seconds : 0;
+      const tb = (b.settledAt && b.settledAt.seconds) ? b.settledAt.seconds : 0;
+      return tb - ta;
+    });
+    let s = 0;
+    for (const b of settled) { if (b.status === 'won') s++; else break; }
+    return s;
+  };
+  const uids = Object.keys(byUid);
+  let batch = db.batch(), ops = 0;
+  for (const uid of uids) {
+    batch.set(db.collection('users').doc(uid), { currentStreak: streakOf(byUid[uid]) }, { merge: true });
+    ops++;
+    if (ops >= 400) { await batch.commit(); batch = db.batch(); ops = 0; }
+  }
+  if (ops) await batch.commit();
+  console.log(`Rachas recalculadas para ${uids.length} usuario(s).`);
 }
 
 // Liquida con football-data.org partidos terminados que ESPN no procesó (best-effort).
