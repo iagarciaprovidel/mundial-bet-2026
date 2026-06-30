@@ -445,17 +445,25 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
           // Excluye los que ya están EN VIVO arriba (no repetir el mismo partido).
           const liveIds = new Set((window.MB_liveMatches ? window.MB_liveMatches(store ? store.odds : {}) : []).map(x => x.m.id));
           const dayList = day.list.filter(m => !liveIds.has(m.id));
-          if (!dayList.length) return null;
-          return (
+          // "Próximos partidos" (mañana): solo si arriba ya se muestra el de hoy.
+          const tmrw = (day.today && window.MB_tomorrowFixtures) ? window.MB_tomorrowFixtures().filter(m => !liveIds.has(m.id)) : [];
+          if (!dayList.length && !tmrw.length) return null;
+          const block = (title, items) => (
             <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 16px', boxShadow: 'var(--sh-1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
-                <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{day.today ? 'Partidos de hoy' : 'Próximos partidos'} <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {dayList.length}</span></h3>
+                <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{title} <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {items.length}</span></h3>
                 <button onClick={() => onNav('partidos')} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.55)', background: 'var(--coin-bg)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' }}>Ver todos →</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                {dayList.map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
+                {items.map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
               </div>
             </div>
+          );
+          return (
+            <>
+              {!!dayList.length && block(day.today ? 'Partidos de hoy' : 'Próximos partidos', dayList)}
+              {!!tmrw.length && block('Próximos partidos', tmrw)}
+            </>
           );
         })()}
       </div>
