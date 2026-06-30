@@ -150,6 +150,25 @@ function espnToFd(e) {
   const penalties  = /pen|PKs|penalty|penalties/i.test(statusDesc);
   // Ganador final (útil para penales donde el marcador queda igualado)
   const espnWinner = home.winner === true ? 'home' : away.winner === true ? 'away' : null;
+  // Marcador de la tanda de penales (campo estándar de ESPN: shootoutScore por
+  // equipo). Si no viene, intenta sacarlo del texto del estado ("Pen 4-2").
+  const penScore = (home.shootoutScore != null && away.shootoutScore != null)
+    ? { home: num(home.shootoutScore), away: num(away.shootoutScore) }
+    : (() => {
+        const mtch = penalties ? statusDesc.match(/(\d+)\s*-\s*(\d+)/) : null;
+        return mtch ? { home: parseInt(mtch[1], 10), away: parseInt(mtch[2], 10) } : null;
+      })();
+  // Detalle pateador a pateador (quién anotó y quién falló), si ESPN lo incluye
+  // entre los "details" del scoreboard. Best-effort: si no viene, queda [].
+  const penKicks = ((c.details || []).filter((x) => {
+    const t = (x.type && x.type.text) || '';
+    return x.shootout === true || /shootout|tanda de penales/i.test(t);
+  })).map((x) => {
+    const tid = x.team && x.team.id;
+    const side = (tid && tid === hid) ? 'home' : (tid && tid === aid) ? 'away' : null;
+    const ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
+    return { side: side, name: ath ? (ath.displayName || ath.shortName || '') : '', scored: x.scoringPlay !== false };
+  }).filter((k) => k.side && k.name);
   return {
     status: status,
     minute: (e.status && (e.status.displayClock || e.status.period)) || null,
@@ -162,6 +181,8 @@ function espnToFd(e) {
     extraTime: extraTime || penalties, // fue a prórroga o penales
     penalties: penalties,              // fue específicamente a penales
     espnWinner: espnWinner,            // ganador según ESPN (sirve para penales)
+    penScore: penScore,                // { home, away } goles en la tanda (orientación ESPN)
+    penKicks: penKicks,                // [{ side, name, scored }] pateador a pateador (orientación ESPN)
   };
 }
 
@@ -930,12 +951,23 @@ async function main() {
     if (isKO && extraTime && ourResult === 'draw' && m.espnWinner) {
       penWinner = mm.sameOrient ? m.espnWinner : (m.espnWinner === 'home' ? 'away' : 'home');
     }
+    // Marcador de la tanda + detalle pateador a pateador, en NUESTRA orientación.
+    let penScore = null, penKicks = [];
+    if (penWinner && m.penScore) {
+      penScore = mm.sameOrient ? m.penScore : { home: m.penScore.away, away: m.penScore.home };
+    }
+    if (penWinner && m.penKicks && m.penKicks.length) {
+      penKicks = m.penKicks.map((k) => {
+        const side = mm.sameOrient ? k.side : (k.side === 'home' ? 'away' : 'home');
+        return { code: side === 'home' ? mm.our.homeCode : mm.our.awayCode, name: k.name, scored: !!k.scored };
+      });
+    }
 
     const odoc = await db.collection('odds').doc(mm.our.id).get();
     const wasFinished = odoc.exists && odoc.data().finished;
     await db.collection('odds').doc(mm.our.id).set(Object.assign(
       { finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: scorers, cards: cards,
-        ...(isKO && { extraTime: extraTime, penWinner: penWinner || null }) },
+        ...(isKO && { extraTime: extraTime, penWinner: penWinner || null, penScore: penScore || null, penKicks: penKicks }) },
       wasFinished ? {} : { finishedAt: admin.firestore.FieldValue.serverTimestamp() }
     ), { merge: true });
     if (!wasFinished) results++;
@@ -1022,11 +1054,16 @@ async function settleFdFallback() {
         ? (fdWinner === 'HOME_TEAM' ? 'home' : 'away')
         : (fdWinner === 'HOME_TEAM' ? 'away' : 'home');
     }
+    // Marcador de la tanda (football-data no trae detalle pateador a pateador).
+    let penScore = null;
+    if (penWinner && hasPKs) {
+      penScore = mm.sameOrient ? { home: pkScore.home, away: pkScore.away } : { home: pkScore.away, away: pkScore.home };
+    }
     console.log(`  FD fallback ${mm.our.id}: ${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${extraTime ? ' (ET/PKs)' : ''}`);
     await db.collection('odds').doc(mm.our.id).set({
       finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: [], cards: [],
       finishedAt: admin.firestore.FieldValue.serverTimestamp(),
-      ...(isKO && { extraTime: !!extraTime, penWinner: penWinner || null }),
+      ...(isKO && { extraTime: !!extraTime, penWinner: penWinner || null, penScore: penScore || null, penKicks: [] }),
     }, { merge: true });
     const nt = (odoc.exists && odoc.data().notified) || {};
     if (!nt.final) {
