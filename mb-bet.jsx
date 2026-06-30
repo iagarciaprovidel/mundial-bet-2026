@@ -162,6 +162,9 @@
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState('');
     const [ok, setOk] = useState('');
+    const [exactH, setExactH] = useState('');
+    const [exactA, setExactA] = useState('');
+    const [allInArm, setAllInArm] = useState(false); // primer toque activa, segundo dispara
 
     // Al elegir un resultado, pre-rellena un monto SUGERIDO (~25% de tu saldo,
     // redondeado), si el monto actual era el mínimo por defecto o no alcanza.
@@ -180,14 +183,22 @@
     if (finished) {
       const gh = (odds.gh != null) ? odds.gh : '–';
       const ga = (odds.ga != null) ? odds.ga : '–';
+      const onPens = !!odds.penWinner;
+      const wentET = !onPens && !!odds.extraTime;
+      const advances = onPens ? (odds.penWinner === 'home' ? m.home : m.away) : null;
       const settledBet = bet && (bet.status === 'won' || bet.status === 'lost');
       const won = bet && bet.status === 'won';
       return (
         <div style={{ marginTop: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 11px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)' }}>
-            <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>🏁 Final</span>
+            <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>🏁 Final{onPens ? ' · Penales' : wentET ? ' · Prórroga' : ''}</span>
             <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)' }}>{gh} <span style={{ color: 'var(--muted-2)' }}>–</span> {ga}</span>
           </div>
+          {onPens && (
+            <div style={{ marginTop: 6, padding: '6px 11px', borderRadius: 'var(--r-md)', border: '1px solid rgba(212,175,55,0.4)', background: 'rgba(212,175,55,0.08)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: 'var(--gold-light)', textAlign: 'center' }}>
+              ⚽ {advances} avanza por penales
+            </div>
+          )}
           {scorersEl(odds.scorers)}
           {cardsEl(odds.cards)}
           {settledBet && (
@@ -238,9 +249,12 @@
     }
 
     const place = (pick) => {
-      setErr(''); setOk(''); setBusy(true);
-      FB().placeBet(m, pick, stake)
-        .then(() => { setOk('¡Apuesta registrada!'); setSel(null); })
+      setErr(''); setOk(''); setBusy(true); setAllInArm(false);
+      const eh = (exactH !== '' && exactH != null) ? parseInt(exactH, 10) : null;
+      const ea = (exactA !== '' && exactA != null) ? parseInt(exactA, 10) : null;
+      const hasExact = eh != null && ea != null && !isNaN(eh) && !isNaN(ea);
+      FB().placeBet(m, pick, stake, hasExact ? eh : null, hasExact ? ea : null)
+        .then(() => { setOk('¡Apuesta registrada!'); setSel(null); setExactH(''); setExactA(''); })
         .catch((e) => {
           const code = (e && e.code) || e;
           setErr(ERRORS[code] || ('No se pudo: ' + ((e && e.message) || code)));
@@ -359,6 +373,36 @@
               <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)' }}>Ganancia si aciertas</span>
               <span className="num" style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: 'var(--success)' }}>{fmt(win)}</span>
             </div>
+
+            {/* ── Marcador exacto opcional (×3 si aciertas exacto) ── */}
+            <div style={{ marginBottom: 9, padding: '9px 11px', background: 'rgba(97,218,251,0.04)', borderRadius: 'var(--r-md)', border: '1px dashed rgba(97,218,251,0.22)' }}>
+              <div style={{ fontSize: 8.5, color: 'rgba(97,218,251,0.65)', fontWeight: 800, marginBottom: 7, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>🎯 Marcador exacto (opcional)</span>
+                <span style={{ color: 'var(--gold)', fontWeight: 800 }}>×3 si aciertas exacto</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                <input type="number" min="0" max="20" value={exactH} onChange={(e) => setExactH(e.target.value)} placeholder="—"
+                  style={{ width: 46, textAlign: 'center', fontWeight: 800, color: '#61DAFB', background: 'var(--surface-2)', border: '1px solid rgba(97,218,251,0.35)', borderRadius: 8, padding: '6px 4px', fontFamily: 'var(--font-mono,monospace)', fontSize: 'var(--t-md)', outline: 'none' }} />
+                <span style={{ fontWeight: 800, color: 'var(--muted-2)', fontSize: 'var(--t-sm)' }}>–</span>
+                <input type="number" min="0" max="20" value={exactA} onChange={(e) => setExactA(e.target.value)} placeholder="—"
+                  style={{ width: 46, textAlign: 'center', fontWeight: 800, color: '#61DAFB', background: 'var(--surface-2)', border: '1px solid rgba(97,218,251,0.35)', borderRadius: 8, padding: '6px 4px', fontFamily: 'var(--font-mono,monospace)', fontSize: 'var(--t-md)', outline: 'none' }} />
+              </div>
+              {exactH !== '' && exactA !== '' && !isNaN(parseInt(exactH)) && !isNaN(parseInt(exactA)) && (
+                <div style={{ fontSize: 8, color: 'rgba(97,218,251,0.5)', textAlign: 'center', marginTop: 5 }}>Si sale {exactH}–{exactA}: <span style={{ color: 'var(--gold)', fontWeight: 800 }}>+{fmt(win * 3)} pts</span></div>
+              )}
+            </div>
+
+            {/* ── All-in especial para la Final ── */}
+            {m.stage === 'final' && (
+              <button onClick={() => {
+                if (!allInArm) { setStake(maxSaldo); setAllInArm(true); return; }
+                place(sel);
+              }} disabled={busy} className="mb-press"
+                style={{ width: '100%', padding: '11px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', border: 'none', marginBottom: 7, background: allInArm ? 'linear-gradient(135deg,#e53935,#b71c1c)' : 'rgba(229,57,53,0.15)', color: allInArm ? '#fff' : '#ef9a9a', borderColor: 'rgba(229,57,53,0.5)' }}>
+                {allInArm ? `🔥 ¡CONFIRMAR TODO (${fmt(maxSaldo)} pts)!` : '🔥 ALL IN — Apostar todo'}
+              </button>
+            )}
+
             <button onClick={() => place(sel)} disabled={busy || stake < MIN_BET || stake > maxSaldo} className="mb-press" style={{
               width: '100%', padding: '10px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)',
               border: 'none', color: '#1a1206',
