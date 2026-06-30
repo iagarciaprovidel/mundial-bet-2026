@@ -984,7 +984,69 @@ async function main() {
     }
   }
 
+  // Fallback: usa football-data.org para cualquier partido terminado que ESPN no devolvió.
+  try {
+    const fdFallbackN = await settleFdFallback();
+    if (fdFallbackN) { settled += fdFallbackN; console.log(`FD fallback: ${fdFallbackN} apuesta(s) liquidada(s).`); }
+  } catch (e) { console.warn('FD fallback:', (e && e.message) || e); }
+
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s).`);
+}
+
+// Liquida con football-data.org partidos terminados que ESPN no procesó (best-effort).
+async function settleFdFallback() {
+  let n = 0;
+  const fdAll = await fdMatches();
+  for (const m of fdAll) {
+    if (m.status !== 'FINISHED') continue;
+    const mm = matchOur((m.homeTeam && m.homeTeam.name) || '', (m.awayTeam && m.awayTeam.name) || '');
+    if (!mm) continue;
+    const odoc = await db.collection('odds').doc(mm.our.id).get();
+    if (odoc.exists && odoc.data().finished) continue; // ya liquidado
+    const ft = m.score && m.score.fullTime;
+    if (!ft || ft.home == null || ft.away == null) continue;
+    const gh = ft.home, ga = ft.away;
+    const ghOur = mm.sameOrient ? gh : ga;
+    const gaOur = mm.sameOrient ? ga : gh;
+    const isKO = mm.our.stage && mm.our.stage !== 'Grupos';
+    const etScore = m.score && m.score.extraTime;
+    const pkScore = m.score && m.score.penalties;
+    const hasET = etScore && (etScore.home != null || etScore.away != null);
+    const hasPKs = pkScore && (pkScore.home != null || pkScore.away != null);
+    const extraTime = isKO && (hasET || hasPKs);
+    const fdWinner = m.score && m.score.winner; // "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null
+    let ourResult = ghOur > gaOur ? 'home' : ghOur < gaOur ? 'away' : 'draw';
+    let penWinner = null;
+    if (isKO && extraTime && ourResult === 'draw' && fdWinner && fdWinner !== 'DRAW') {
+      penWinner = mm.sameOrient
+        ? (fdWinner === 'HOME_TEAM' ? 'home' : 'away')
+        : (fdWinner === 'HOME_TEAM' ? 'away' : 'home');
+    }
+    console.log(`  FD fallback ${mm.our.id}: ${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${extraTime ? ' (ET/PKs)' : ''}`);
+    await db.collection('odds').doc(mm.our.id).set({
+      finished: true, live: false, gh: ghOur, ga: gaOur, result: ourResult, scorers: [], cards: [],
+      finishedAt: admin.firestore.FieldValue.serverTimestamp(),
+      ...(isKO && { extraTime: !!extraTime, penWinner: penWinner || null }),
+    }, { merge: true });
+    const nt = (odoc.exists && odoc.data().notified) || {};
+    if (!nt.final) {
+      const suffix = extraTime ? (penWinner ? ' (penales)' : ' (prórroga)') : '';
+      await notifyWatchers(mm.our.id, '🏁 Resultado final', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${suffix}`);
+      nt.final = true; nt.closed = true; nt.soon = true;
+      await db.collection('odds').doc(mm.our.id).set({ notified: nt }, { merge: true });
+    }
+    const count = await settle(mm.our, ourResult, !!extraTime, penWinner, ghOur, gaOur);
+    if (count) n += count;
+    if (isKO) {
+      const od2 = (await db.collection('odds').doc(mm.our.id).get()).data() || {};
+      if (typeof od2.penalties === 'undefined') {
+        await db.collection('odds').doc(mm.our.id).set({ penalties: !!(extraTime && penWinner) }, { merge: true });
+        od2.penalties = !!(extraTime && penWinner);
+      }
+      await settleChallengePicks(mm.our, od2);
+    }
+  }
+  return n;
 }
 
 main().catch((e) => { console.error('ERROR:', (e && e.message) || e); process.exit(1); });
