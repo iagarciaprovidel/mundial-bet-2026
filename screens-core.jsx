@@ -172,16 +172,19 @@ function Dashboard({ user, onNav, onPredict }) {
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const [hdrUsers, setHdrUsers] = useStateC([]);
   useEffectC(() => {
-    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setHdrUsers([]); return undefined; }
-    const un = window.MBFirebase.subscribeUsers(setHdrUsers);
-    return () => { if (typeof un === 'function') un(); };
+    if (!authUser || !window.MBFirebase || !window.MBFirebase.getUsersOnce) { setHdrUsers([]); return undefined; }
+    let alive = true;
+    window.MBFirebase.getUsersOnce().then((u) => { if (alive) setHdrUsers(u); }).catch(() => {});
+    return () => { alive = false; };
   }, [authUser]);
   const SAL = 90000;
   const fmtN = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
   const saldoOfU = (u) => (u && typeof u.saldo === 'number') ? u.saldo : SAL; // disponible (billetera)
   const worthOf = (u) => window.MB_worth ? window.MB_worth(u) : saldoOfU(u);  // patrimonio (ranking)
   const meRec = authUser ? hdrUsers.find(u => u.uid === authUser.uid) : null;
-  const myPts = meRec ? saldoOfU(meRec) : (store && typeof store.saldo === 'number' ? store.saldo : SAL);
+  // Saldo: preferir el store (subscribeMe, live y de un solo doc) sobre el
+  // snapshot puntual de hdrUsers, que ya no es realtime (ver getUsersOnce).
+  const myPts = (store && typeof store.saldo === 'number') ? store.saldo : (meRec ? saldoOfU(meRec) : SAL);
   const myPos = meRec ? (hdrUsers.slice().sort((a, b) => worthOf(b) - worthOf(a)).findIndex(u => u.uid === authUser.uid) + 1) : 0;
   const myBets = (store && authUser) ? Object.keys(store.bets).map(k => store.bets[k]) : [];
   const mySettled = myBets.filter(b => b.status === 'won' || b.status === 'lost');

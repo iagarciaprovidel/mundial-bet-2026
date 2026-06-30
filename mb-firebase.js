@@ -39,6 +39,7 @@
       teamOwnerUid() { return Promise.resolve(null); }, albumMark: noFB, albumAddMany: noFB, setAlbumLock: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
       subscribeUsers(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
+      getUsersOnce() { return Promise.resolve([]); },
       subscribeGroupMembers(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeJoinRequests(groupId, cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       savePrediction() { return Promise.reject('no-config'); },
@@ -252,6 +253,14 @@
         function () { return db.collection('users'); },
         function (s) { return s.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); }); },
         cb);
+    },
+    // Lectura única (NO realtime) de todos los usuarios. Para vistas que solo
+    // necesitan un dato aproximado (p. ej. el header de Inicio: mi saldo/posición)
+    // sin pagar el costo de un listener de colección completa en cada pantalla
+    // (eso multiplicaba lecturas de Firestore por cada apuesta × usuario conectado).
+    async getUsersOnce() {
+      const s = await db.collection('users').get();
+      return s.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); });
     },
     // Miembros de un equipo (solo el admin puede leer todos los users según reglas)
     subscribeGroupMembers(groupId, cb) {
