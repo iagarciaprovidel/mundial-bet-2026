@@ -20,9 +20,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - id: deploy
+        continue-on-error: true
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: mundialbet-club
+
+      # La action a veces reporta "failure" aunque el deploy SI se publicó: una
+      # reconexión de red ("premature close") hace que firebase-tools reintente
+      # una versión que ya había quedado activa, y la API responde "is the
+      # current active version". Antes de fallar el job (y mandar correo) de
+      # verdad, confirmamos contra el sitio en vivo si el contenido ya coincide.
+      - name: Verificar publicación si la action reportó error
+        if: steps.deploy.outcome == 'failure'
+        run: |
+          EXPECTED=$(grep -o "CACHE = '[^']*'" sw.js)
+          echo "Buscando en vivo: $EXPECTED"
+          for i in 1 2 3 4 5; do
+            sleep 6
+            LIVE=$(curl -fsS "https://mundialbet-club.web.app/sw.js?cb=$RANDOM-$i" | grep -o "CACHE = '[^']*'" || true)
+            echo "Intento $i: $LIVE"
+            if [ -n "$LIVE" ] && [ "$LIVE" = "$EXPECTED" ]; then
+              echo "El deploy SI se publicó (coincide sw.js). Falso negativo conocido de la action; se trata como éxito."
+              exit 0
+            fi
+          done
+          echo "El sitio en vivo no coincide con lo esperado: el deploy realmente falló."
+          exit 1

@@ -1162,4 +1162,16 @@ async function settleFdFallback() {
   return n;
 }
 
-main().catch((e) => { console.error('ERROR:', (e && e.message) || e); process.exit(1); });
+main().catch((e) => {
+  const msg = (e && e.message) || String(e);
+  console.error('ERROR:', msg);
+  // Cuota de Firestore agotada (plan gratuito): es transitorio y se repone solo
+  // (cada ~24h). El cron corre cada 5 min; si esto se trata como fallo de build
+  // se manda un correo de error cada 5 min hasta que se repone la cuota. Lo
+  // registramos como advertencia y salimos en éxito para no inundar el correo.
+  if (/RESOURCE_EXHAUSTED|Quota exceeded/i.test(msg)) {
+    console.warn('Cuota de Firestore agotada por hoy; reintenta en la próxima corrida.');
+    process.exit(0);
+  }
+  process.exit(1);
+});
