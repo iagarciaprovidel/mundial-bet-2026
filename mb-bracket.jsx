@@ -40,11 +40,21 @@
     return !!(od && !od.finished && ko <= now() && ko > now() - 3 * 60 * 60 * 1000);
   };
 
+  // Resultado efectivo: si terminó en empate y se definió por penales, el
+  // ganador real es penWinner (result queda en 'draw' porque el marcador
+  // de 90'/120' fue empate).
+  const effResult = (od) => {
+    if (!od || !od.finished) return null;
+    if (od.result === 'draw' && od.penWinner) return od.penWinner;
+    return od.result;
+  };
+
   const getWinner = (m, od, allowProvisional) => {
     if (!m || !od) return null;
     if (od.finished) {
-      if (od.result === 'home') return { name: m.home, code: m.homeCode };
-      if (od.result === 'away') return { name: m.away, code: m.awayCode };
+      const r = effResult(od);
+      if (r === 'home') return { name: m.home, code: m.homeCode };
+      if (r === 'away') return { name: m.away, code: m.awayCode };
       return null;
     }
     if (allowProvisional && isLive(m, od) && od.gh != null && od.ga != null) {
@@ -99,8 +109,10 @@
 
     const live     = isLive(m, od);
     const finished = !!(od && od.finished);
-    const homeWon  = finished && od.result === 'home';
-    const awayWon  = finished && od.result === 'away';
+    const onPens   = finished && od.result === 'draw' && !!od.penWinner;
+    const r        = effResult(od);
+    const homeWon  = finished && r === 'home';
+    const awayWon  = finished && r === 'away';
     const hCode    = m.homeCode, aCode = m.awayCode;
     const isChamp  = champCode && (hCode === champCode || aCode === champCode);
     const hs  = od && od.gh  != null ? od.gh  : null;
@@ -157,7 +169,7 @@
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />
           )}
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {live ? 'EN VIVO · ' : finished ? '✓ ' : ''}{cityOf(m.stadium)}
+            {live ? 'EN VIVO · ' : finished ? (onPens ? '✓ Penales · ' : '✓ ') : ''}{cityOf(m.stadium)}
           </span>
         </div>
 
@@ -544,8 +556,10 @@
 
       const live     = isLive(m, od);
       const finished = !!(od && od.finished);
-      const homeWon  = finished && od.result === 'home';
-      const awayWon  = finished && od.result === 'away';
+      const onPens   = finished && od.result === 'draw' && !!od.penWinner;
+      const r        = effResult(od);
+      const homeWon  = finished && r === 'home';
+      const awayWon  = finished && r === 'away';
       const hs  = (od && od.gh  != null) ? od.gh  : null;
       const as_ = (od && od.ga  != null) ? od.ga  : null;
       const hCode = m.homeCode, aCode = m.awayCode;
@@ -607,7 +621,7 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 14, paddingTop: 3, fontSize: 7.5, fontWeight: 700, letterSpacing: 0.3, overflow: 'hidden' }}>
             {live && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />}
             <span style={{ color: live ? '#ff5252' : finished ? 'var(--success)' : 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {live ? 'EN VIVO · ' : finished ? '✓ ' : ''}{cityOf(m.stadium)}
+              {live ? 'EN VIVO · ' : finished ? (onPens ? '✓ Penales · ' : '✓ ') : ''}{cityOf(m.stadium)}
             </span>
           </div>
           {/* Equipos */}
@@ -628,8 +642,9 @@
     function WSlot({ m, x, y, champCode, od, label }) {
       const finished = !!(od && od.finished);
       const live_s   = m ? isLive(m, od) : false;
-      const t1 = m ? { name: m.home, code: m.homeCode, won: finished && od.result === 'home' } : null;
-      const t2 = m ? { name: m.away, code: m.awayCode, won: finished && od.result === 'away' } : null;
+      const r = effResult(od);
+      const t1 = m ? { name: m.home, code: m.homeCode, won: finished && r === 'home' } : null;
+      const t2 = m ? { name: m.away, code: m.awayCode, won: finished && r === 'away' } : null;
 
       const TeamRow = ({ t }) => {
         if (!t) return (
