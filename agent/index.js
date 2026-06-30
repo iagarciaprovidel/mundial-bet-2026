@@ -169,11 +169,6 @@ function espnToFd(e) {
     const ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
     return { side: side, name: ath ? (ath.displayName || ath.shortName || '') : '', scored: x.scoringPlay !== false };
   }).filter((k) => k.side && k.name);
-  // DEBUG TEMPORAL: volcar el detalle crudo de ESPN cuando hubo penales, para
-  // confirmar los nombres de campo reales antes de afinar la extracción de penKicks.
-  if (penalties) {
-    try { console.log('DEBUG_PENDETAILS ' + e.id + ' ' + JSON.stringify(c.details)); } catch (err) {}
-  }
   return {
     status: status,
     minute: (e.status && (e.status.displayClock || e.status.period)) || null,
@@ -226,6 +221,41 @@ async function espnCardsFromSummary(eventId, homeId, awayId) {
       const minute = (x.clock && x.clock.displayValue) || (x.time && x.time.displayValue) || '';
       if (!homeAway || !name) return;
       out.push({ homeAway: homeAway, name: name, minute: minute, red: !!isRed });
+    });
+    return out;
+  } catch (e) { return []; }
+}
+// Detalle completo de la tanda de penales (incluye los FALLADOS, que el
+// scoreboard compacto omite — solo trae los convertidos). Misma fuente y
+// patrón que espnCardsFromSummary: keyEvents/commentary del endpoint summary.
+async function espnPenKicksFromSummary(eventId, homeId, awayId) {
+  if (!eventId) return [];
+  try {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${eventId}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(12000) });
+    if (!res.ok) return [];
+    const j = await res.json().catch(() => null);
+    const kev = (j && (j.keyEvents || j.commentary || [])) || [];
+    const teamId = (tm) => {
+      if (!tm) return null;
+      if (tm.id != null) return String(tm.id);
+      const ref = tm.$ref || tm.href || '';
+      const mt = String(ref).match(/teams\/(\d+)/);
+      return mt ? mt[1] : null;
+    };
+    const out = [];
+    kev.forEach((x) => {
+      const t = (x.type && x.type.text) || x.text || '';
+      const isShootoutKick = x.shootout === true || (x.penaltyKick === true && /shootout|penal/i.test(t)) || /shootout/i.test(t);
+      if (!isShootoutKick) return;
+      const tid = teamId(x.team);
+      const homeAway = (tid && tid === String(homeId)) ? 'home' : (tid && tid === String(awayId)) ? 'away' : null;
+      let ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
+      if (!ath && x.participants && x.participants[0]) ath = x.participants[0].athlete || x.participants[0];
+      const name = ath ? (ath.displayName || ath.shortName || ath.fullName || '') : '';
+      if (!homeAway || !name) return;
+      const scored = x.scoringPlay === true || /scored/i.test(t);
+      out.push({ homeAway: homeAway, name: name, scored: scored });
     });
     return out;
   } catch (e) { return []; }
@@ -961,8 +991,24 @@ async function main() {
     if (penWinner && m.penScore) {
       penScore = mm.sameOrient ? m.penScore : { home: m.penScore.away, away: m.penScore.home };
     }
-    if (penWinner && m.penKicks && m.penKicks.length) {
-      penKicks = m.penKicks.map((k) => {
+    if (penWinner) {
+      // El scoreboard compacto solo trae los penales CONVERTIDOS (omite los
+      // fallados), así que el detalle completo se pide siempre al endpoint
+      // summary; si no responde, se usa lo poco que trajo el scoreboard.
+      let need = true;
+      if (isFinished) {
+        const ex = await db.collection('odds').doc(mm.our.id).get();
+        need = !(ex.exists && Array.isArray(ex.data().penKicks) && ex.data().penKicks.some((k) => k.scored === false));
+      }
+      let kicksSrc = [];
+      if (need) {
+        const sk = await espnPenKicksFromSummary(m.espnId, m.espnHomeId, m.espnAwayId);
+        console.log(`  summary ${mm.our.id} (event ${m.espnId}): ${sk.length} penal(es) en la tanda`);
+        kicksSrc = sk.length ? sk.map((k) => ({ side: k.homeAway, name: k.name, scored: k.scored })) : (m.penKicks || []);
+      } else {
+        kicksSrc = m.penKicks || [];
+      }
+      penKicks = kicksSrc.map((k) => {
         const side = mm.sameOrient ? k.side : (k.side === 'home' ? 'away' : 'home');
         return { code: side === 'home' ? mm.our.homeCode : mm.our.awayCode, name: k.name, scored: !!k.scored };
       });
