@@ -242,26 +242,35 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Partidos EN VIVO ahora (solo aparece si hay alguno jugándose) */}
       {window.MB_LiveNow && React.createElement(window.MB_LiveNow)}
 
-      {/* partidos del día: apostables; los terminados aparecen al final con el marcador */}
+      {/* partidos del día: apostables; los terminados aparecen en su horario real */}
       {(() => {
         const day = window.MB_dayFixtures ? window.MB_dayFixtures(store ? store.odds : {}) : { list: [], today: false };
         // Excluye los que ya están EN VIVO arriba (no repetir el mismo partido).
         const liveIds = new Set((window.MB_liveMatches ? window.MB_liveMatches(store ? store.odds : {}) : []).map(x => x.m.id));
         const dayFiltered = day.list.filter(m => !liveIds.has(m.id));
         const list = dayFiltered.length ? dayFiltered : fallback.filter(m => !liveIds.has(m.id));
-        if (!list.length) return null;
-        return (
+        // "Próximos partidos" (mañana): solo si el bloque de arriba ya es el de
+        // hoy — si no hay nada hoy, ese bloque de arriba ya muestra mañana.
+        const tmrw = (day.today && window.MB_tomorrowFixtures) ? window.MB_tomorrowFixtures().filter(m => !liveIds.has(m.id)) : [];
+        if (!list.length && !tmrw.length) return null;
+        const block = (title, items) => (
           <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', borderRadius: 'var(--r-lg)', padding: '14px 14px', boxShadow: 'var(--sh-1)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
-              <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{day.today ? 'Partidos de hoy' : 'Próximos partidos'} <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {list.length}</span></h3>
+              <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)', color: 'var(--text)' }}>{title} <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 400 }}>· {items.length}</span></h3>
               <button onClick={() => onNav('partidos')} className="mb-press" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 'var(--r-pill)', border: '1px solid rgba(212,175,55,0.55)', background: 'var(--coin-bg)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap' }}>Ver todos →</button>
             </div>
             <div>
               {window.MobileFixtureCard
-                ? list.map(m => React.createElement(window.MobileFixtureCard, { key: m.id, m: m }))
-                : fallback.map((m, idx) => <NextMatchCard key={m.id} m={m} featured={idx === 0} daysLeft={daysLeft} onPredict={onPredict} />)}
+                ? items.map(m => React.createElement(window.MobileFixtureCard, { key: m.id, m: m }))
+                : items.map((m, idx) => <NextMatchCard key={m.id} m={m} featured={idx === 0} daysLeft={daysLeft} onPredict={onPredict} />)}
             </div>
           </div>
+        );
+        return (
+          <>
+            {!!list.length && block(day.today ? 'Partidos de hoy' : 'Próximos partidos', list)}
+            {!!tmrw.length && block('Próximos partidos', tmrw)}
+          </>
         );
       })()}
 
