@@ -573,6 +573,15 @@
                   {cardsEl(o.cards)}
                 </div>
               ) : null}
+              {(() => {
+                const bet = s.bets[m.id];
+                if (!bet || bet.status !== 'open') return null;
+                return (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(220,80,80,0.20)', fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>
+                    Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>
@@ -1090,8 +1099,11 @@
     return React.createElement('span', { style: { width: s, height: s, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: s >= 40 ? 'var(--t-md)' : 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 } }, avatarInitials(nombre));
   };
 
-  // Partidos del "día foco": el del próximo partido por jugar (o el último si ya
-  // terminó todo). Ordena: por jugar primero (apostables), terminados al final.
+  // Partidos del "día foco" para el Inicio: si hoy hay partidos, los de hoy
+  // (en orden cronológico, igual que en la pantalla "Partidos" — los que ya
+  // terminaron aparecen en su horario real, no al final); si hoy no hay,
+  // los de mañana; si tampoco hay mañana (día de descanso largo en
+  // eliminatorias), el próximo día con partidos.
   // oddsMap (del store) sirve para saber cuáles ya terminaron (finished).
   window.MB_dayFixtures = function (oddsMap) {
     const fx = (window.MB && window.MB.WC_FIXTURES) || [];
@@ -1100,12 +1112,17 @@
     const dstr = (ms) => new Date(ms).toLocaleDateString('sv'); // YYYY-MM-DD local
     const rows = fx.map((m) => { const ko = new Date(m.kickoff).getTime(); const od = (oddsMap && oddsMap[m.id]) || {}; return { m, ko, finished: !!od.finished }; });
     rows.sort((a, b) => a.ko - b.ko);
+    const todayStr = dstr(now);
+    const todayRows = rows.filter((x) => dstr(x.ko) === todayStr);
+    if (todayRows.length) return { list: todayRows.map((x) => x.m), today: true };
+    const tomorrowStr = dstr(now + 86400000);
+    const tomorrowRows = rows.filter((x) => dstr(x.ko) === tomorrowStr);
+    if (tomorrowRows.length) return { list: tomorrowRows.map((x) => x.m), today: false };
     const nextUp = rows.find((x) => !x.finished && x.ko > now) || rows.find((x) => !x.finished) || rows[rows.length - 1];
     if (!nextUp) return { list: [], today: false };
     const focus = dstr(nextUp.ko);
     const day = rows.filter((x) => dstr(x.ko) === focus);
-    day.sort((a, b) => (a.finished ? 1 : 0) - (b.finished ? 1 : 0) || a.ko - b.ko);
-    return { list: day.map((x) => x.m), today: focus === dstr(now) };
+    return { list: day.map((x) => x.m), today: focus === todayStr };
   };
 
   // ── Sembrar cuotas de PRUEBA (solo para ver la UI antes del agente real) ──
