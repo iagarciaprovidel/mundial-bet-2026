@@ -92,27 +92,9 @@ function FlagWall({ vertical = false, size = 34, opacity = 0.1, repeat = 4 }) {
   );
 }
 
-// Todos los equipos del Mundial con su grupo (para el ticker y el modal)
-const ALL_TEAMS = (function () {
-  // Usar datos reales wc2026.js (tienen código ISO y nombres correctos)
-  if (window.MB_WC && window.MB_WC.GROUPS) {
-    const out = [];
-    Object.keys(window.MB_WC.GROUPS).forEach(g => {
-      (window.MB_WC.GROUPS[g] || []).forEach(([name, code]) => {
-        // Enriquecer con datos de GROUP_STANDINGS si el nombre coincide
-        const std = Object.values(Dw.GROUP_STANDINGS).flat().find(t => t.name === name);
-        out.push(Object.assign({ group: g, code }, std || { name, flag: '' }));
-      });
-    });
-    return out;
-  }
-  // Fallback: datos de data.js (sin código ISO)
-  const out = [];
-  Object.keys(Dw.GROUP_STANDINGS).forEach(letter => {
-    Dw.GROUP_STANDINGS[letter].forEach(t => out.push(Object.assign({}, t, { group: letter })));
-  });
-  return out;
-})();
+// Todos los equipos del Mundial con su grupo (para el ticker y el modal).
+// Definidos en mb-team-modal.jsx (compartido con móvil); se reutilizan aquí.
+const ALL_TEAMS = window.MB_ALL_TEAMS || [];
 // Busca la ficha completa de una selección por nombre (para abrir el modal desde partidos)
 const teamByName = (name) => ALL_TEAMS.find(t => t.name === name) || null;
 
@@ -244,199 +226,8 @@ function FlagTicker({ onSelect, onGroup }) {
 }
 
 // Modal con todos los datos de un equipo
-const POS_TONE = {
-  POR: ['var(--gold-light)', 'rgba(212,175,55,0.14)'],
-  DEF: ['var(--info)', 'rgba(74,144,226,0.14)'],
-  MED: ['var(--success)', 'rgba(0,200,90,0.14)'],
-  DEL: ['var(--danger)', 'rgba(232,64,64,0.14)'],
-};
-function PlayerRow({ p, starter }) {
-  const tone = POS_TONE[p.pos] || ['var(--muted)', 'rgba(255,255,255,0.06)'];
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-      <span className="num" style={{ width: 22, textAlign: 'center', color: starter ? 'var(--gold-light)' : 'var(--muted-2)', fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{p.n}</span>
-      <span style={{ flex: 1, fontSize: 'var(--t-sm)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: starter ? 700 : 400 }}>
-        {starter && <span style={{ color: 'var(--gold)', marginRight: 4 }}>★</span>}{p.name}
-      </span>
-      <span style={{ fontSize: 9, fontWeight: 800, color: tone[0], background: tone[1], padding: '2px 6px', borderRadius: 'var(--r-pill)', flexShrink: 0 }}>{p.pos}</span>
-    </div>
-  );
-}
-function TeamModal({ team, onClose }) {
-  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
-  if (!team) return null;
-  const code = teamCode(team);
-  const standings = (window.MB_standings ? window.MB_standings(store ? store.odds : {})[team.group]
-                     : (window.MB.GROUP_STANDINGS && window.MB.GROUP_STANDINGS[team.group])) || [];
-  const fmtKO = (iso) => new Date(iso).toLocaleString('es-CL', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-  const teamFixtures = ((window.MB.WC_FIXTURES) || [])
-    .filter(m => m.home === team.name || m.away === team.name)
-    .sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
-  const squad = (window.MB.PLAYERS && window.MB.PLAYERS[team.name]) || [];
-  const titulares = squad.filter(p => p.t);
-  const suplentes = squad.filter(p => !p.t);
-  const allFxM = (window.MB && window.MB.WC_FIXTURES) || [];
-  const r32CodesM = new Set(allFxM.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
-  const groupFxM = allFxM.filter(f => !f.stage || f.stage === 'Grupos');
-  const lastKOM = groupFxM.length ? Math.max.apply(null, groupFxM.map(f => new Date(f.kickoff).getTime())) : Infinity;
-  const groupsClosedM = r32CodesM.size > 0 && isFinite(lastKOM) && Date.now() >= lastKOM + 2 * 60 * 60 * 1000;
-  const isQualified = groupsClosedM && r32CodesM.has(code);
-  const isEliminated = groupsClosedM && !r32CodesM.has(code);
-  return (
-    <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(6,8,15,0.72)',
-      backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
-      animation: 'mb-fade-up var(--dur-base) var(--ease-out)',
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: 'var(--surface-1)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-2xl)',
-        padding: 24, width: 'min(480px, 92vw)', maxHeight: '88vh', overflow: 'auto',
-        boxShadow: 'var(--sh-4)', animation: 'mb-pop var(--dur-slow) var(--ease-spring)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-          <img src={`https://flagcdn.com/h80/${code}.png`} alt={team.name}
-            style={{ height: 50, width: 'auto', borderRadius: 5, boxShadow: 'var(--sh-2)' }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 className="display" style={{ margin: 0, fontSize: 'var(--t-2xl)' }}>{team.name}</h2>
-            {team.coach && (
-              <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span>🎽 DT:</span>
-                {team.coachCode && <img src={`https://flagcdn.com/h20/${team.coachCode}.png`} alt="" title={team.coachCountry} style={{ height: 11, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.4)' }} />}
-                <strong>{team.coach}</strong>
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-              <Chip tone="blue">Grupo {team.group}</Chip>
-              {isQualified && <Chip tone="green">✅ Clasificado</Chip>}
-              {isEliminated && <Chip tone="red">❌ Eliminado</Chip>}
-            </div>
-          </div>
-          <button onClick={onClose} className="mb-press" style={{
-            width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)',
-            background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 15, flexShrink: 0,
-          }}>✕</button>
-        </div>
-
-        <div style={{ marginBottom: 18 }}>
-          <SectionHead title={`Tabla · Grupo ${team.group}`} />
-          <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '10px 6px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '18px 1fr 22px 18px 18px 18px 30px 30px', gap: 5, alignItems: 'center', padding: '0 6px 7px', borderBottom: '1px solid var(--border)', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 700 }}>
-              <span style={{ textAlign: 'center' }}>#</span>
-              <span>Equipo</span>
-              <span style={{ textAlign: 'center' }}>PJ</span>
-              <span style={{ textAlign: 'center' }}>G</span>
-              <span style={{ textAlign: 'center' }}>E</span>
-              <span style={{ textAlign: 'center' }}>P</span>
-              <span style={{ textAlign: 'center' }}>DG</span>
-              <span style={{ textAlign: 'center' }}>Pts</span>
-            </div>
-            {standings.map(r => {
-              const isMe = r.name === team.name;
-              const d = r.gf - r.gc;
-              return (
-                <div key={r.name} style={{
-                  display: 'grid', gridTemplateColumns: '18px 1fr 22px 18px 18px 18px 30px 30px', gap: 5, alignItems: 'center', padding: '7px 6px',
-                  borderRadius: 'var(--r-sm)', marginTop: 2,
-                  background: isMe ? 'rgba(212,175,55,0.16)' : 'transparent',
-                  border: isMe ? '1px solid rgba(212,175,55,0.55)' : '1px solid transparent',
-                }}>
-                  <span style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', fontWeight: 700, color: r.pos <= 2 ? 'var(--success)' : 'var(--muted-2)' }}>{r.pos}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                    <img src={`https://flagcdn.com/h20/${r.code || ''}.png`} alt="" style={{ height: 13, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 'var(--t-2xs)', fontWeight: isMe ? 800 : 600, color: isMe ? 'var(--gold-light)' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}{r.live && <span title="En vivo" style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#ff5252', marginLeft: 4, verticalAlign: 'middle', animation: 'mb-pulse-live 1s var(--ease-out) infinite' }} />}</span>
-                  </span>
-                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.j}</span>
-                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.g}</span>
-                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.e}</span>
-                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{r.p}</span>
-                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-2xs)', color: d >= 0 ? 'var(--success)' : 'var(--danger)' }}>{(d > 0 ? '+' : '') + d}</span>
-                  <span className="num" style={{ textAlign: 'center', fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>{r.pts}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 6, paddingLeft: 2 }}>Los 2 primeros avanzan de fase.</div>
-        </div>
-
-        <SectionHead title="Partidos y resultados" />
-        {teamFixtures.length === 0 && (
-          <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Sin partidos registrados.</div>
-        )}
-        {teamFixtures.map((m, i) => {
-          const od = (store && store.odds) ? store.odds[m.id] : null;
-          const isLive = !!(od && od.live && !od.finished);
-          const isFin = !!(od && od.finished);
-          const hasScore = (isLive || isFin) && od.gh != null && od.ga != null;
-          const isHome = m.home === team.name;
-          let res = null; // resultado desde la perspectiva del equipo seleccionado
-          if (isFin && hasScore) {
-            const my = isHome ? od.gh : od.ga, ot = isHome ? od.ga : od.gh;
-            res = my > ot ? { t: '✓ Ganó', c: 'var(--success)', bg: 'var(--success-bg)' }
-                : my < ot ? { t: '✕ Perdió', c: 'var(--danger)', bg: 'rgba(232,64,64,0.12)' }
-                : { t: '= Empató', c: 'var(--muted)', bg: 'var(--surface-2)' };
-          }
-          return (
-            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < teamFixtures.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-              <Chip tone="blue">J{m.md}</Chip>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 'var(--t-sm)', fontWeight: 700 }}>{m.home} vs {m.away}</div>
-                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {m.stadium}</div>
-                {(() => {
-                  const r = window.MB.refForMatch && window.MB.refForMatch(m);
-                  return r ? (
-                    <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
-                      <span>🧑‍⚖️</span>
-                      <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 8, width: 'auto', borderRadius: 1 }} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
-                    </div>
-                  ) : null;
-                })()}
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 64 }}>
-                {hasScore ? (
-                  <React.Fragment>
-                    <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, lineHeight: 1, color: isLive ? '#ff6b6b' : 'var(--text)' }}>{od.gh}<span style={{ color: 'var(--muted-2)', margin: '0 2px' }}>–</span>{od.ga}</div>
-                    {isLive
-                      ? <div style={{ fontSize: 9, color: '#ff6b6b', fontWeight: 800, marginTop: 3 }}>🔴 EN VIVO</div>
-                      : (res && <span style={{ display: 'inline-block', marginTop: 4, fontSize: 9, fontWeight: 700, color: res.c, background: res.bg, padding: '2px 7px', borderRadius: 'var(--r-pill)' }}>{res.t}</span>)}
-                  </React.Fragment>
-                ) : (
-                  <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{fmtKO(m.kickoff)}</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        <div style={{ marginTop: 18 }}>
-          <SectionHead title={`Jugadores convocados (${squad.length})`} />
-        </div>
-        {team.coach && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', margin: '-4px 0 10px' }}>
-            <span>🎽 DT:</span>
-            {team.coachCode && <img src={`https://flagcdn.com/h20/${team.coachCode}.png`} alt="" title={team.coachCountry} style={{ height: 11, width: 'auto', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.4)' }} />}
-            <strong>{team.coach}</strong>
-          </div>
-        )}
-        {squad.length === 0 ? (
-          <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)' }}>Plantilla no disponible.</div>
-        ) : (
-          <div>
-            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 4px' }}>★ Once titular ({titulares.length})</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px', marginBottom: 12 }}>
-              {titulares.map((p, i) => <PlayerRow key={'t' + i} p={p} starter />)}
-            </div>
-            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 4px' }}>Suplentes ({suplentes.length})</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px' }}>
-              {suplentes.map((p, i) => <PlayerRow key={'s' + i} p={p} />)}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+// PlayerRow, TeamModal (POS_TONE incluido) están en mb-team-modal.jsx,
+// compartido con móvil; se usa aquí vía window.MB_TeamModal.
 
 // ── Sidebar ───────────────────────────────────────────────
 function Sidebar({ tab, onTab, me, accent, role, onAdmin }) {
@@ -1264,7 +1055,7 @@ function AppWeb() {
         </main>
       </div>
       <WebTweaks t={t} setTweak={setTweak} setClose={setCloseScreen} />
-      <TeamModal team={team} onClose={() => setTeam(null)} />
+      {window.MB_TeamModal && React.createElement(window.MB_TeamModal, { team, onClose: () => setTeam(null) })}
     </div>
   );
 }
@@ -1283,10 +1074,7 @@ function WebTweaks({ t, setTweak, setClose }) {
   );
 }
 
-// ── Export (lo monta el bootstrap responsive de index.html) ──
-// Se exponen para reutilizar en la versión móvil (app.jsx)
-window.MB_TeamModal = TeamModal;
-window.MB_ALL_TEAMS = ALL_TEAMS;
+// window.MB_TeamModal y window.MB_ALL_TEAMS los expone mb-team-modal.jsx
 window.MB_flagToCode = flagToCode;
 window.AppWeb = AppWeb;
 })();
