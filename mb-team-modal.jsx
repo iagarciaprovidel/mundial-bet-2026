@@ -175,10 +175,16 @@
             const isHome = m.home === team.name;
             let res = null; // resultado desde la perspectiva del equipo seleccionado
             if (isFin && hasScore) {
-              const my = isHome ? od.gh : od.ga, ot = isHome ? od.ga : od.gh;
-              res = my > ot ? { t: '✓ Ganó', c: 'var(--success)', bg: 'var(--success-bg)' }
-                  : my < ot ? { t: '✕ Perdió', c: 'var(--danger)', bg: 'rgba(232,64,64,0.12)' }
-                  : { t: '= Empató', c: 'var(--muted)', bg: 'var(--surface-2)' };
+              if (od.penWinner) {
+                const won = (isHome && od.penWinner === 'home') || (!isHome && od.penWinner === 'away');
+                res = won ? { t: '✓ Ganó (pen)', c: 'var(--success)', bg: 'var(--success-bg)' }
+                          : { t: '✕ Perdió (pen)', c: 'var(--danger)', bg: 'rgba(232,64,64,0.12)' };
+              } else {
+                const my = isHome ? od.gh : od.ga, ot = isHome ? od.ga : od.gh;
+                res = my > ot ? { t: '✓ Ganó', c: 'var(--success)', bg: 'var(--success-bg)' }
+                    : my < ot ? { t: '✕ Perdió', c: 'var(--danger)', bg: 'rgba(232,64,64,0.12)' }
+                    : { t: '= Empató', c: 'var(--muted)', bg: 'var(--surface-2)' };
+              }
             }
             return (
               <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < teamFixtures.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
@@ -201,6 +207,7 @@
                   {hasScore ? (
                     <React.Fragment>
                       <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, lineHeight: 1, color: isLive ? '#ff6b6b' : 'var(--text)' }}>{od.gh}<span style={{ color: 'var(--muted-2)', margin: '0 2px' }}>–</span>{od.ga}</div>
+                      {od.penWinner && od.penScore && <div className="num" style={{ fontSize: 9, color: 'var(--gold-light)', fontWeight: 700, marginTop: 2 }}>Pen {od.penScore.home}-{od.penScore.away}</div>}
                       {isLive
                         ? <div style={{ fontSize: 9, color: '#ff6b6b', fontWeight: 800, marginTop: 3 }}>🔴 EN VIVO</div>
                         : (res && <span style={{ display: 'inline-block', marginTop: 4, fontSize: 9, fontWeight: 700, color: res.c, background: res.bg, padding: '2px 7px', borderRadius: 'var(--r-pill)' }}>{res.t}</span>)}
