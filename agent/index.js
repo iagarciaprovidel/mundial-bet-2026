@@ -226,8 +226,9 @@ async function espnCardsFromSummary(eventId, homeId, awayId) {
   } catch (e) { return []; }
 }
 // Detalle completo de la tanda de penales (incluye los FALLADOS, que el
-// scoreboard compacto omite — solo trae los convertidos). Misma fuente y
-// patrón que espnCardsFromSummary: keyEvents/commentary del endpoint summary.
+// scoreboard compacto omite — solo trae los convertidos). El detalle completo
+// vive en el campo top-level "shootout" del endpoint summary (NO en
+// keyEvents/commentary): un array por equipo con sus tiros en orden.
 async function espnPenKicksFromSummary(eventId, homeId, awayId) {
   if (!eventId) return [];
   try {
@@ -235,30 +236,16 @@ async function espnPenKicksFromSummary(eventId, homeId, awayId) {
     const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(12000) });
     if (!res.ok) return [];
     const j = await res.json().catch(() => null);
-    const kev = (j && (j.keyEvents || j.commentary || [])) || [];
-    // DEBUG TEMPORAL: ESPN trae un campo top-level "shootout" dedicado (no
-    // mezclado en keyEvents/commentary) — inspeccionar su forma real.
-    try { console.log('DEBUG_SHOOTOUT ' + eventId + ' ' + JSON.stringify(j && j.shootout)); } catch (err) {}
-    const teamId = (tm) => {
-      if (!tm) return null;
-      if (tm.id != null) return String(tm.id);
-      const ref = tm.$ref || tm.href || '';
-      const mt = String(ref).match(/teams\/(\d+)/);
-      return mt ? mt[1] : null;
-    };
+    const teams = (j && j.shootout) || [];
     const out = [];
-    kev.forEach((x) => {
-      const t = (x.type && x.type.text) || x.text || '';
-      const isShootoutKick = x.shootout === true || (x.penaltyKick === true && /shootout|penal/i.test(t)) || /shootout/i.test(t);
-      if (!isShootoutKick) return;
-      const tid = teamId(x.team);
+    teams.forEach((t) => {
+      const tid = (t.id != null) ? String(t.id) : null;
       const homeAway = (tid && tid === String(homeId)) ? 'home' : (tid && tid === String(awayId)) ? 'away' : null;
-      let ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
-      if (!ath && x.participants && x.participants[0]) ath = x.participants[0].athlete || x.participants[0];
-      const name = ath ? (ath.displayName || ath.shortName || ath.fullName || '') : '';
-      if (!homeAway || !name) return;
-      const scored = x.scoringPlay === true || /scored/i.test(t);
-      out.push({ homeAway: homeAway, name: name, scored: scored });
+      if (!homeAway) return;
+      (t.shots || []).slice().sort((a, b) => (a.shotNumber || 0) - (b.shotNumber || 0)).forEach((s) => {
+        if (!s.player) return;
+        out.push({ homeAway: homeAway, name: s.player, scored: !!s.didScore });
+      });
     });
     return out;
   } catch (e) { return []; }
