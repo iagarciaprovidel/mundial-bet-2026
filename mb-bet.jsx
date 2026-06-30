@@ -12,6 +12,9 @@
   const SALDO_INICIAL = 90000;
   const BET_GRACE_MS = 5 * 60 * 1000; // margen: se puede cambiar/cancelar hasta 5 min después del kickoff
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
+  // Marcador exacto opcional guardado en la apuesta (si lo llenaste al apostar).
+  const exactLabel = (bet) => (bet && typeof bet.exactHome === 'number' && typeof bet.exactAway === 'number')
+    ? (' · 🎯 ' + bet.exactHome + '-' + bet.exactAway) : '';
 
   // ── Puntaje del jugador para rankings ──────────────────────────────────────
   // PATRIMONIO = saldo disponible + puntos EN JUEGO (apuestas abiertas todavía
@@ -225,7 +228,7 @@
           {cardsEl(odds.cards)}
           {settledBet && (
             <div style={{ marginTop: 6, padding: '7px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (won ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: won ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: won ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}</span>
+              <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}{exactLabel(bet)}</span>
               <span className="num">{won ? '+' + fmt(Math.round(bet.stake * bet.odd)) : '−' + fmt(bet.stake)}</span>
             </div>
           )}
@@ -253,7 +256,7 @@
           {scorersEl(odds && odds.scorers)}
           {cardsEl(odds && odds.cards)}
           {bet && bet.status === 'open' && (
-            <div style={{ marginTop: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}</div>
+            <div style={{ marginTop: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}{exactLabel(bet)}</div>
           )}
         </div>
       );
@@ -270,11 +273,25 @@
       );
     }
 
+    // ¿El marcador exacto que escribiste es compatible con el pick (home/draw/away)?
+    // Ej.: si apostaste a que gana Noruega (away), un marcador con más goles locales
+    // no puede pasar nunca (sería ganar Costa de Marfil), así que no dejamos enviarlo.
+    const exactContradicts = (pick, eh, ea) => {
+      if (eh == null || ea == null || isNaN(eh) || isNaN(ea) || !pick) return false;
+      if (pick === 'home') return eh <= ea;
+      if (pick === 'away') return eh >= ea;
+      return eh !== ea; // 'draw' (empate o, en eliminatoria, definición por prórroga/penales)
+    };
+
     const place = (pick) => {
-      setErr(''); setOk(''); setBusy(true); setAllInArm(false);
       const eh = (exactH !== '' && exactH != null) ? parseInt(exactH, 10) : null;
       const ea = (exactA !== '' && exactA != null) ? parseInt(exactA, 10) : null;
       const hasExact = eh != null && ea != null && !isNaN(eh) && !isNaN(ea);
+      if (hasExact && exactContradicts(pick, eh, ea)) {
+        setErr('Ese marcador exacto no es compatible con tu apuesta a ' + PICK_LABEL(m, pick) + '.');
+        return;
+      }
+      setErr(''); setOk(''); setBusy(true); setAllInArm(false);
       FB().placeBet(m, pick, stake, hasExact ? eh : null, hasExact ? ea : null)
         .then(() => { setOk('¡Apuesta registrada!'); setSel(null); setExactH(''); setExactA(''); })
         .catch((e) => {
@@ -295,7 +312,7 @@
         <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 'var(--r-md)', border: '1px solid rgba(74,144,226,0.4)', background: 'rgba(74,144,226,0.10)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ fontSize: 'var(--t-2xs)', fontWeight: 700, color: 'var(--text)' }}>
-              Tu apuesta: <span style={{ color: 'var(--info)' }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}
+              Tu apuesta: <span style={{ color: 'var(--info)' }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}{exactLabel(bet)}
             </div>
             <span className="num" style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800 }}>↑ {fmt(Math.round(bet.stake * bet.odd))}</span>
           </div>
@@ -325,6 +342,10 @@
     const selOdd = sel ? Number((picks.find((p) => p.k === sel) || {}).odd || 0) : 0;
     const win = selOdd ? Math.round(stake * selOdd) : 0;
     const maxSaldo = (typeof saldo === 'number' ? saldo : SALDO_INICIAL) + ((bet && bet.status === 'open') ? (bet.stake || 0) : 0);
+    const exactHNum = exactH !== '' ? parseInt(exactH, 10) : null;
+    const exactANum = exactA !== '' ? parseInt(exactA, 10) : null;
+    const hasExactInput = exactHNum != null && exactANum != null && !isNaN(exactHNum) && !isNaN(exactANum);
+    const exactBad = hasExactInput && exactContradicts(sel, exactHNum, exactANum);
 
     return (
       <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
@@ -404,12 +425,15 @@
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                 <input type="number" min="0" max="20" value={exactH} onChange={(e) => setExactH(e.target.value)} placeholder="—"
-                  style={{ width: 46, textAlign: 'center', fontWeight: 800, color: '#61DAFB', background: 'var(--surface-2)', border: '1px solid rgba(97,218,251,0.35)', borderRadius: 8, padding: '6px 4px', fontFamily: 'var(--font-mono,monospace)', fontSize: 'var(--t-md)', outline: 'none' }} />
+                  style={{ width: 46, textAlign: 'center', fontWeight: 800, color: exactBad ? '#e98b8b' : '#61DAFB', background: 'var(--surface-2)', border: '1px solid ' + (exactBad ? 'rgba(220,80,80,0.5)' : 'rgba(97,218,251,0.35)'), borderRadius: 8, padding: '6px 4px', fontFamily: 'var(--font-mono,monospace)', fontSize: 'var(--t-md)', outline: 'none' }} />
                 <span style={{ fontWeight: 800, color: 'var(--muted-2)', fontSize: 'var(--t-sm)' }}>–</span>
                 <input type="number" min="0" max="20" value={exactA} onChange={(e) => setExactA(e.target.value)} placeholder="—"
-                  style={{ width: 46, textAlign: 'center', fontWeight: 800, color: '#61DAFB', background: 'var(--surface-2)', border: '1px solid rgba(97,218,251,0.35)', borderRadius: 8, padding: '6px 4px', fontFamily: 'var(--font-mono,monospace)', fontSize: 'var(--t-md)', outline: 'none' }} />
+                  style={{ width: 46, textAlign: 'center', fontWeight: 800, color: exactBad ? '#e98b8b' : '#61DAFB', background: 'var(--surface-2)', border: '1px solid ' + (exactBad ? 'rgba(220,80,80,0.5)' : 'rgba(97,218,251,0.35)'), borderRadius: 8, padding: '6px 4px', fontFamily: 'var(--font-mono,monospace)', fontSize: 'var(--t-md)', outline: 'none' }} />
               </div>
-              {exactH !== '' && exactA !== '' && !isNaN(parseInt(exactH)) && !isNaN(parseInt(exactA)) && (
+              {hasExactInput && exactBad && (
+                <div style={{ fontSize: 8, color: '#e98b8b', fontWeight: 700, textAlign: 'center', marginTop: 5 }}>⚠ Ese marcador no es compatible con tu apuesta a {PICK_LABEL(m, sel)}. Ajústalo o bórralo.</div>
+              )}
+              {hasExactInput && !exactBad && (
                 <div style={{ fontSize: 8, color: 'rgba(97,218,251,0.5)', textAlign: 'center', marginTop: 5 }}>Si sale {exactH}–{exactA}: <span style={{ color: 'var(--gold)', fontWeight: 800 }}>+{fmt(win * 3)} pts</span></div>
               )}
             </div>
@@ -419,17 +443,17 @@
               <button onClick={() => {
                 if (!allInArm) { setStake(maxSaldo); setAllInArm(true); return; }
                 place(sel);
-              }} disabled={busy} className="mb-press"
+              }} disabled={busy || exactBad} className="mb-press"
                 style={{ width: '100%', padding: '11px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', border: 'none', marginBottom: 7, background: allInArm ? 'linear-gradient(135deg,#e53935,#b71c1c)' : 'rgba(229,57,53,0.15)', color: allInArm ? '#fff' : '#ef9a9a', borderColor: 'rgba(229,57,53,0.5)' }}>
                 {allInArm ? `🔥 ¡CONFIRMAR TODO (${fmt(maxSaldo)} pts)!` : '🔥 ALL IN — Apostar todo'}
               </button>
             )}
 
-            <button onClick={() => place(sel)} disabled={busy || stake < MIN_BET || stake > maxSaldo} className="mb-press" style={{
+            <button onClick={() => place(sel)} disabled={busy || stake < MIN_BET || stake > maxSaldo || exactBad} className="mb-press" style={{
               width: '100%', padding: '10px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)',
               border: 'none', color: '#1a1206',
-              background: (busy || stake < MIN_BET || stake > maxSaldo) ? 'var(--surface-2)' : 'linear-gradient(180deg, var(--gold-light), var(--gold))',
-              opacity: (busy || stake < MIN_BET || stake > maxSaldo) ? 0.55 : 1,
+              background: (busy || stake < MIN_BET || stake > maxSaldo || exactBad) ? 'var(--surface-2)' : 'linear-gradient(180deg, var(--gold-light), var(--gold))',
+              opacity: (busy || stake < MIN_BET || stake > maxSaldo || exactBad) ? 0.55 : 1,
             }}>{busy ? 'Registrando…' : (bet ? 'Cambiar apuesta' : 'Apostar') + ' · ' + PICK_LABEL(m, sel)}</button>
           </div>
         )}
