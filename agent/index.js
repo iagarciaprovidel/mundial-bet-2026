@@ -236,6 +236,11 @@ async function espnPenKicksFromSummary(eventId, homeId, awayId) {
     if (!res.ok) return [];
     const j = await res.json().catch(() => null);
     const kev = (j && (j.keyEvents || j.commentary || [])) || [];
+    // DEBUG TEMPORAL: confirmar dónde vive el detalle de penales en /summary.
+    try {
+      const penLike = kev.filter((x) => /penal/i.test((x.type && x.type.text) || x.text || ''));
+      console.log('DEBUG_SUMMARY ' + eventId + ' keys=' + Object.keys(j || {}).join(',') + ' kevLen=' + kev.length + ' penLike=' + JSON.stringify(penLike.slice(0, 12)));
+    } catch (err) {}
     const teamId = (tm) => {
       if (!tm) return null;
       if (tm.id != null) return String(tm.id);
