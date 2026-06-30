@@ -1125,6 +1125,19 @@
     return { list: day.map((x) => x.m), today: focus === todayStr };
   };
 
+  // Partidos de MAÑANA (calendario), en orden cronológico. Independiente de si
+  // hoy hay partidos o no — se usa para mostrar "Próximos partidos" debajo de
+  // "Partidos de hoy" cuando ambos días tienen juegos.
+  window.MB_tomorrowFixtures = function () {
+    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    if (!fx.length) return [];
+    const now = Date.now();
+    const dstr = (ms) => new Date(ms).toLocaleDateString('sv');
+    const tomorrowStr = dstr(now + 86400000);
+    return fx.filter((m) => dstr(new Date(m.kickoff).getTime()) === tomorrowStr)
+      .slice().sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+  };
+
   // ── Sembrar cuotas de PRUEBA (solo para ver la UI antes del agente real) ──
   // Uso: abrir consola del navegador estando logueado y ejecutar  MB_seedOdds()
   // Genera cuotas estables (deterministas por equipos) para todos los fixtures.
