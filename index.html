@@ -386,8 +386,10 @@ function Root() {
   const HelpLauncher = window.MB_HelpLauncher;
   const TeamMembers = window.MB_TeamMembersLauncher;
   const Figuritas = window.MB_FiguritasLauncher;
+  const OfflineBanner = window.MB_OfflineBanner;
   return (
     <React.Fragment>
+      {OfflineBanner ? <OfflineBanner /> : null}
       <Cmp />
       {AdminLauncher ? <AdminLauncher /> : null}
       {TeamGate ? <TeamGate /> : null}

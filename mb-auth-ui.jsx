@@ -8,6 +8,36 @@
 (function () {
   const { useState, useEffect } = React;
 
+  // ── ¿Hay conexión a internet? Sin esto, Google/Facebook/correo fallan en
+  // silencio o con errores confusos; mejor avisar claro y de entrada. ──
+  function useOnline() {
+    const [online, setOnline] = useState(typeof navigator === 'undefined' || navigator.onLine);
+    useEffect(() => {
+      const on = () => setOnline(true), off = () => setOnline(false);
+      window.addEventListener('online', on);
+      window.addEventListener('offline', off);
+      return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+    }, []);
+    return online;
+  }
+  window.MB_useOnline = useOnline;
+
+  // Banner fijo arriba de toda la app cuando no hay conexión.
+  function OfflineBanner() {
+    const online = useOnline();
+    if (online) return null;
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 2000, padding: '10px 16px',
+        background: 'linear-gradient(135deg,#e53935,#b71c1c)', color: '#fff', textAlign: 'center',
+        fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-2xs)', boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+      }}>
+        📡 Sin conexión a internet. Conéctate para poder jugar y guardar tu progreso.
+      </div>
+    );
+  }
+  window.MB_OfflineBanner = OfflineBanner;
+
   function useAuth() {
     const [user, setUser] = useState(window.MBFirebase ? window.MBFirebase.currentUser() : null);
     const [, force] = useState(0);
@@ -61,6 +91,7 @@
     const [sent, setSent] = useState(false);
     const [busy, setBusy] = useState(false);
     const [safe, setSafe] = useState(false); // desplegable "¿Es seguro?"
+    const online = useOnline();
     const send = () => {
       const v = email.trim();
       if (!v || v.indexOf('@') === -1) { alert('Escribe un correo válido.'); return; }
@@ -77,6 +108,13 @@
             <h2 className="display" style={{ margin: 0, flex: 1, fontSize: 'var(--t-xl)' }}>Entrar a MundialBet</h2>
             <button onClick={onClose} className="mb-press" style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer', fontSize: 14 }}>✕</button>
           </div>
+
+          {!online && (
+            <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.12)', border: '1px solid rgba(220,80,80,0.45)', display: 'flex', alignItems: 'center', gap: 9 }}>
+              <span style={{ fontSize: 20 }}>📡</span>
+              <span style={{ fontSize: 'var(--t-2xs)', color: '#e98b8b', fontWeight: 700, lineHeight: 1.4 }}>Sin conexión a internet. Conéctate para poder entrar y reclamar tus puntos.</span>
+            </div>
+          )}
 
           {!sent && (
             <div style={{ marginBottom: 16, padding: '13px 15px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg, rgba(212,175,55,0.20), rgba(201,155,31,0.07))', border: '1px solid var(--gold)' }}>
@@ -100,15 +138,18 @@
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <label style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>Entra con tu correo (cualquiera: Gmail, Hotmail, Outlook…)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>Entra con tu correo (cualquiera: Gmail, Hotmail, Outlook…)</label>
+                <span style={{ fontSize: 8, fontWeight: 800, color: 'var(--gold-light)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', borderRadius: 'var(--r-pill)', padding: '2px 7px' }}>⭐ RECOMENDADO</span>
+              </div>
               <input value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
                 type="email" placeholder="tucorreo@ejemplo.com" autoFocus
                 style={{ padding: '11px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 'var(--t-sm)' }} />
-              <button onClick={send} disabled={busy} className="mb-press" style={{ padding: '11px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: busy ? 0.6 : 1 }}>
+              <button onClick={send} disabled={busy || !online} className="mb-press" style={{ padding: '11px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: (busy || !online) ? 0.5 : 1 }}>
                 {busy ? 'Enviando…' : '✉️ Enviarme el enlace'}
               </button>
               <p style={{ margin: '4px 0 0', fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center', lineHeight: 1.5 }}>
-                Te llegará un correo para confirmar y entrar. Sin contraseña.
+                Te llegará un correo para confirmar y entrar. Sin contraseña, y no dependes de tener Google o Facebook conectados en este celular.
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0 2px' }}>
@@ -116,10 +157,10 @@
                 <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>o</span>
                 <div style={{ flex: 1, height: 1, background: 'var(--border-2)' }} />
               </div>
-              <button onClick={signInGoogle} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', cursor: 'pointer', background: '#fff', color: '#1f2328', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
+              <button onClick={signInGoogle} disabled={!online} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', cursor: 'pointer', background: '#fff', color: '#1f2328', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)', opacity: online ? 1 : 0.5 }}>
                 <GoogleIcon /> Continuar con Google
               </button>
-              <button onClick={signInFacebook} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: '#1877F2', color: '#fff', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)' }}>
+              <button onClick={signInFacebook} disabled={!online} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '11px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: '#1877F2', color: '#fff', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-sm)', opacity: online ? 1 : 0.5 }}>
                 <FacebookIcon /> Continuar con Facebook
               </button>
             </div>
@@ -255,5 +296,5 @@
     );
   }
 
-  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton, MB_SignInNote: SignInNote, MB_WelcomeHero: WelcomeHero });
+  Object.assign(window, { MB_useAuth: useAuth, MB_LoginButton: LoginButton, MB_SignInNote: SignInNote, MB_WelcomeHero: WelcomeHero, MB_LoginModal: LoginModal });
 })();

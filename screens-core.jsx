@@ -14,6 +14,13 @@ const {
 // ─────────────────────────────────────────────────────────
 function Onboarding({ onFinish }) {
   const [step, setStep] = useStateC(0);
+  const [showLogin, setShowLogin] = useStateC(false);
+  const user = window.MB_useAuth ? window.MB_useAuth() : null;
+  const online = window.MB_useOnline ? window.MB_useOnline() : true;
+
+  // Si se loguea (Google/Facebook/correo) mientras ve el onboarding, entra solo
+  // — no hace falta que toque "jugar de invitado" para continuar.
+  useEffectC(() => { if (user) onFinish('zayu'); }, [user]);
 
   const steps = [
     { emoji: '🏆', title: '¡Bienvenido a MundialBet Club 2026!',
@@ -66,7 +73,22 @@ function Onboarding({ onFinish }) {
             width: '100%', padding: '13px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border-2)', position: 'relative', zIndex: 1,
             background: 'var(--surface-1)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-md)', cursor: 'pointer',
           }}>Continuar</button>
-        : <div style={{ position: 'relative', zIndex: 1 }}><GoldButton onClick={() => onFinish('zayu')}>¡Empezar a jugar!</GoldButton></div>}
+        : (
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {!online && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.14)', border: '1px solid rgba(220,80,80,0.5)' }}>
+                <span style={{ fontSize: 16 }}>📡</span>
+                <span style={{ fontSize: 'var(--t-3xs)', color: '#e98b8b', fontWeight: 700, lineHeight: 1.35 }}>Sin conexión a internet. Conéctate para entrar y guardar tus puntos.</span>
+              </div>
+            )}
+            <GoldButton onClick={() => setShowLogin(true)}>🎁 Reclamar mis 90.000 y jugar</GoldButton>
+            <button onClick={() => onFinish('zayu')} className="mb-press" style={{
+              background: 'none', border: 'none', color: 'rgba(255,255,255,0.65)', fontFamily: 'var(--font-body)',
+              fontWeight: 700, fontSize: 'var(--t-2xs)', cursor: 'pointer', textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+            }}>Jugar como invitado (no guarda tu progreso)</button>
+          </div>
+        )}
+      {showLogin && window.MB_LoginModal ? <window.MB_LoginModal onClose={() => setShowLogin(false)} /> : null}
     </div>
   );
 }
