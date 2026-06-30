@@ -61,6 +61,12 @@
   }
 
   function TeamSelectModal({ onDone, onSkip }) {
+    const user = window.MB_useAuth ? window.MB_useAuth() : null;
+    // Paso 0: confirma que el registro/login YA se completó (con qué cuenta entró
+    // y el regalo de 90.000), antes de pedir apodo. Sin esto, alguien con sesión
+    // restaurada de otra visita ve el formulario de apodo "de la nada", sin saber
+    // que ya está adentro. Una vez confirmado en esta sesión, no se repite.
+    const [confirmed, setConfirmed] = useState(false);
     const [groups, setGroups] = useState([]);
     const [name, setName] = useState('');
     const [busy, setBusy] = useState(false);
@@ -70,6 +76,33 @@
       const unsub = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
       return () => { if (typeof unsub === 'function') unsub(); };
     }, []);
+
+    if (!confirmed) {
+      return (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--surface-1)', border: '1px solid var(--gold)', borderRadius: 'var(--r-2xl)', padding: 26, width: 'min(400px, 94vw)', boxShadow: 'var(--sh-4)', textAlign: 'center' }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>🎉</div>
+            <h2 className="display" style={{ margin: '0 0 6px', fontSize: 'var(--t-2xl)' }}>¡Ya estás dentro!</h2>
+            {user && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '10px 0 14px' }}>
+                {user.photoURL
+                  ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" style={{ width: 28, height: 28, borderRadius: '50%' }} />
+                  : <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</span>}
+                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>{user.email || user.displayName || 'tu cuenta'}</span>
+              </div>
+            )}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderRadius: 'var(--r-pill)', background: 'var(--coin-bg)', border: '1px solid var(--gold)', marginBottom: 14 }}>
+              <span style={{ fontSize: 22 }}>🎁</span>
+              <span className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--gold-light)' }}>90.000 puntos</span>
+            </div>
+            <p style={{ margin: '0 0 18px', fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Tu cuenta y tus puntos ya están guardados. Ahora elige tu apodo para que te reconozcan en el ranking.</p>
+            <button onClick={() => setConfirmed(true)} className="mb-press" style={{ width: '100%', padding: '12px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)' }}>
+              Elegir mi apodo →
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     // Ignora equipos sin nombre (datos de prueba/incompletos): no se muestran para unirse.
     const validGroups = groups.filter(g => g && g.name && String(g.name).trim());
