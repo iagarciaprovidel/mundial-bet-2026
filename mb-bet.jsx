@@ -27,7 +27,7 @@
   window.MB_worth = (u) => window.MB_avail(u) + window.MB_staked(u);                        // patrimonio (ranking)
 
   // ── Store compartido: una sola suscripción a cuotas + mis apuestas + mi saldo ──
-  const store = { odds: {}, bets: {}, saldo: null, watch: [], notif: false, ready: false, listeners: new Set() };
+  const store = { odds: {}, bets: {}, parlays: [], saldo: null, watch: [], notif: false, ready: false, listeners: new Set() };
   function emit() { store.listeners.forEach((fn) => { try { fn(); } catch (e) {} }); }
   let started = false, unsubs = [];
   // (Re)crea las suscripciones a cuotas/apuestas/saldo. Las cuotas requieren
@@ -40,6 +40,7 @@
     if (fb.subscribeMyBets) unsubs.push(fb.subscribeMyBets((list) => {
       const map = {}; (list || []).forEach((b) => { map[b.matchId] = b; }); store.bets = map; emit();
     }));
+    if (fb.subscribeMyParlays) unsubs.push(fb.subscribeMyParlays((list) => { store.parlays = list || []; emit(); }));
     if (fb.subscribeMe) unsubs.push(fb.subscribeMe((u) => {
       store.saldo = (u && typeof u.saldo === 'number') ? u.saldo : (u ? SALDO_INICIAL : null);
       store.watch = (u && Array.isArray(u.watchMatches)) ? u.watchMatches : [];
@@ -51,7 +52,7 @@
     const fb = FB();
     // Reconecta en CADA cambio de sesión (login / logout / restauración al cargar).
     // Así las cuotas se cargan cuando Firebase ya restauró la sesión, no antes.
-    if (fb.onAuth) { fb.onAuth(function () { store.bets = {}; store.saldo = null; store.watch = []; emit(); resubscribe(); }); }
+    if (fb.onAuth) { fb.onAuth(function () { store.bets = {}; store.parlays = []; store.saldo = null; store.watch = []; emit(); resubscribe(); }); }
     else { resubscribe(); }
   }
   // Si cambia el apodo, refrescamos también.
@@ -369,6 +370,28 @@
             );
           })}
         </div>
+
+        {/* ── Consenso: % de apostadores en cada pick (calculado por el agente) ── */}
+        {(() => {
+          const c = odds && odds.consensus;
+          const total = c ? (c.home || 0) + (c.draw || 0) + (c.away || 0) : 0;
+          if (total < 3) return null; // muestra muy chica: no vale la pena mostrarlo
+          const pct = (n) => Math.round(((n || 0) / total) * 100);
+          return (
+            <div style={{ marginTop: 7 }}>
+              <div style={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', background: 'var(--surface-2)' }}>
+                <div style={{ width: pct(c.home) + '%', background: 'var(--info)' }} />
+                <div style={{ width: pct(c.draw) + '%', background: 'var(--muted-2)' }} />
+                <div style={{ width: pct(c.away) + '%', background: 'var(--gold)' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 7.5, color: 'var(--muted-2)', fontWeight: 700 }}>
+                <span>{pct(c.home)}% {m.home}</span>
+                <span>👥 {total}</span>
+                <span>{pct(c.away)}% {m.away}</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {isKO(m) && (
           <div style={{ marginTop: 6, fontSize: 8.5, color: 'var(--muted-2)', lineHeight: 1.5, padding: '5px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.07)' }}>

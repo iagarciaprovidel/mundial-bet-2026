@@ -31,9 +31,11 @@
       joinGroupById: noFB, chooseNoGroup: noFB,
       approveRequest: noFB, rejectRequest: noFB,
       placeBet: noFB, cancelBet: noFB, setOdds: noFB,
+      placeParlay: noFB, cancelParlay: noFB, subscribeMyParlays(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeOdds(cb) { if (typeof cb === 'function') cb({}); return () => {}; },
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
+      subscribeActivity(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, claimGroupBonuses: noFB, watchMatch: noFB,
       subscribeTeamAlbum(gid, cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       teamOwnerUid() { return Promise.resolve(null); }, albumMark: noFB, albumAddMany: noFB, setAlbumLock: noFB,
@@ -300,6 +302,12 @@
       return db.collection('users').doc(u.uid)
         .onSnapshot(function (d) { cb(d.exists ? Object.assign({ id: d.id }, d.data()) : null); }, function () { cb(null); });
     },
+    // Últimas apuestas de cualquier jugador (ticker de actividad). Un solo doc
+    // (meta/activity) que arma el agente; no lee la colección `bets` en el cliente.
+    subscribeActivity(cb) {
+      return db.collection('meta').doc('activity')
+        .onSnapshot(function (d) { cb(d.exists ? (d.data().recent || []) : []); }, function () { cb([]); });
+    },
 
     // ── Reclamo manual de premios de fase de grupos + bono campeón ──
     async claimGroupBonuses(bd) {
@@ -452,7 +460,7 @@
         if (saldo + refund < stake) throw 'saldo-insuficiente';
         tx.set(userRef, { saldo: saldo + refund - stake, staked: Math.max(0, staked0 - refund + stake) }, { merge: true });
         const betData = {
-          uid: u.uid, matchId: match.id, md: match.md || null, pick: pick, stake: stake, odd: odd,
+          uid: u.uid, nombre: u.displayName || 'Jugador', matchId: match.id, md: match.md || null, pick: pick, stake: stake, odd: odd,
           home: match.home, away: match.away, status: 'open', creado: FV.serverTimestamp(),
         };
         if (exactHome != null && exactAway != null && !isNaN(exactHome) && !isNaN(exactAway)) {
@@ -484,6 +492,65 @@
         const st = bs.data().stake || 0;
         tx.set(userRef, { saldo: saldo + st, staked: Math.max(0, staked0 - st) }, { merge: true });
         tx.delete(betRef);
+      });
+    },
+
+    // ── Apuesta combinada (parlay): 2-6 picks de partidos distintos, cuota
+    // combinada = producto de cada cuota. Gana solo si TODOS los picks aciertan.
+    // legs: [{ matchId, pick, home, away, kickoff }] (sin odd: se relee fresca acá).
+    async placeParlay(legs, stake) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      stake = Math.floor(Number(stake) || 0);
+      if (!Array.isArray(legs) || legs.length < 2) return Promise.reject('combinada-minima');
+      if (legs.length > 6) return Promise.reject('combinada-maxima');
+      if (stake < 1000) return Promise.reject('min-1000');
+      const ids = new Set(legs.map((l) => l.matchId));
+      if (ids.size !== legs.length) return Promise.reject('partido-repetido');
+      const fresh = [];
+      for (const leg of legs) {
+        if (new Date(leg.kickoff).getTime() + 5 * 60 * 1000 <= Date.now()) return Promise.reject('cerrado');
+        const oddsSnap = await db.collection('odds').doc(leg.matchId).get();
+        const odds = oddsSnap.exists ? oddsSnap.data() : null;
+        if (!odds || !odds[leg.pick]) return Promise.reject('sin-cuota');
+        fresh.push({ matchId: leg.matchId, pick: leg.pick, odd: Number(odds[leg.pick]), home: leg.home, away: leg.away, kickoff: leg.kickoff });
+      }
+      const combinedOdd = fresh.reduce((p, l) => p * l.odd, 1);
+      const userRef = db.collection('users').doc(u.uid);
+      const parlayRef = db.collection('parlays').doc();
+      return db.runTransaction(async function (tx) {
+        const us = await tx.get(userRef);
+        const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
+        const staked0 = (us.exists && typeof us.data().staked === 'number') ? us.data().staked : 0;
+        if (saldo < stake) throw 'saldo-insuficiente';
+        tx.set(userRef, { saldo: saldo - stake, staked: staked0 + stake }, { merge: true });
+        tx.set(parlayRef, {
+          uid: u.uid, nombre: u.displayName || 'Jugador', legs: fresh, stake: stake, combinedOdd: combinedOdd,
+          status: 'open', creado: FV.serverTimestamp(),
+        });
+      });
+    },
+    subscribeMyParlays(cb) {
+      const u = auth.currentUser; if (!u) { cb([]); return function () {}; }
+      return db.collection('parlays').where('uid', '==', u.uid)
+        .onSnapshot(function (s) { cb(s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { cb([]); });
+    },
+    // Cancela una combinada abierta (solo si NINGÚN partido de la combinada empezó).
+    cancelParlay(id) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const userRef = db.collection('users').doc(u.uid);
+      const parlayRef = db.collection('parlays').doc(id);
+      return db.runTransaction(async function (tx) {
+        const ps = await tx.get(parlayRef);
+        if (!ps.exists || ps.data().status !== 'open' || ps.data().uid !== u.uid) return;
+        const legs = ps.data().legs || [];
+        const started = legs.some(function (l) { return new Date(l.kickoff).getTime() + 5 * 60 * 1000 <= Date.now(); });
+        if (started) throw 'cerrado';
+        const us = await tx.get(userRef);
+        const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
+        const staked0 = (us.exists && typeof us.data().staked === 'number') ? us.data().staked : 0;
+        const st = ps.data().stake || 0;
+        tx.set(userRef, { saldo: saldo + st, staked: Math.max(0, staked0 - st) }, { merge: true });
+        tx.delete(parlayRef);
       });
     },
 

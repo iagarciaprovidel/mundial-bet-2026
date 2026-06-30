@@ -64,6 +64,21 @@ service cloud.firestore {
       allow delete:         if signedIn() && resource.data.uid == request.auth.uid;
     }
 
+    // Metadatos públicos calculados por el agente (consenso de apuestas,
+    // actividad reciente). Solo lectura: el agente escribe con el service
+    // account, que se salta las reglas.
+    match /meta/{id} {
+      allow read: if signedIn();
+    }
+
+    // Apuestas combinadas (parlay): mismo patrón que `bets`, pero sin update
+    // desde el cliente (la liquidación la hace solo el agente).
+    match /parlays/{id} {
+      allow read:   if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
     // Predicciones de marcador (quiniela)
     match /predictions/{pid} {
       allow read:  if signedIn();

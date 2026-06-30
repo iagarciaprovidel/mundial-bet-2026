@@ -290,6 +290,34 @@ async function ensureOdds() {
   return n;
 }
 
+// ── Consenso de apuestas (% por pick) + actividad reciente, para la UI ──
+// Una sola lectura de `bets` abiertas (no por partido) y se agrupa en memoria,
+// para no multiplicar lecturas de Firestore. El cliente NUNCA lee `bets` de
+// otros usuarios (las reglas se lo impiden); por eso esto se calcula acá, con
+// el service account, y se publica en `odds` (que el cliente ya escucha).
+async function updateBetConsensus() {
+  const snap = await db.collection('bets').where('status', '==', 'open').get();
+  const byMatch = {};
+  const withTs = [];
+  snap.docs.forEach((d) => {
+    const b = d.data();
+    if (!b.matchId || !b.pick) return;
+    const g = byMatch[b.matchId] || (byMatch[b.matchId] = { home: 0, draw: 0, away: 0 });
+    g[b.pick] = (g[b.pick] || 0) + 1;
+    if (b.creado && typeof b.creado.toMillis === 'function') withTs.push(b);
+  });
+  let writes = 0;
+  for (const matchId of Object.keys(byMatch)) {
+    await db.collection('odds').doc(matchId).set({ consensus: byMatch[matchId] }, { merge: true });
+    writes++;
+  }
+  // Últimas 8 apuestas (cualquier estado en el lote leído) para el ticker de actividad.
+  const recent = withTs.sort((a, b) => b.creado.toMillis() - a.creado.toMillis()).slice(0, 8)
+    .map((b) => ({ nombre: b.nombre || 'Jugador', pick: b.pick, home: b.home, away: b.away, stake: b.stake, ts: b.creado.toMillis() }));
+  if (recent.length) await db.collection('meta').doc('activity').set({ recent: recent }, { merge: true });
+  return writes;
+}
+
 // ── Envía una notificación push a un usuario (si tiene tokens) ──
 const ICON_URL = 'https://mundialbet-club.web.app/icon-192.png';
 async function notify(uid, title, body) {
@@ -465,6 +493,64 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
   return n;
 }
 
+// ── ¿Acertó este pick en este partido? null = el partido aún no terminó.
+// Lee del doc `odds` (ya tiene finished/result/extraTime/penWinner), así
+// no depende de la fixture estática ni de los parámetros de settle().
+async function legWon(matchId, pick, cache) {
+  if (!(matchId in cache)) {
+    const s = await db.collection('odds').doc(matchId).get();
+    cache[matchId] = s.exists ? s.data() : null;
+  }
+  const o = cache[matchId];
+  if (!o || !o.finished) return null;
+  if (o.extraTime) {
+    if (pick === 'draw') return !!o.extraTime;
+    if (o.penWinner) return pick === o.penWinner;
+  }
+  return pick === o.result;
+}
+
+// ── Liquida combinadas (parlay): gana solo si TODOS los picks acertaron.
+// Solo se liquida cuando los partidos de TODAS las patas ya terminaron.
+async function settleParlays() {
+  const snap = await db.collection('parlays').where('status', '==', 'open').get();
+  if (snap.empty) return 0;
+  const oddsCache = {};
+  let n = 0;
+  for (const doc of snap.docs) {
+    const p = doc.data();
+    const legs = p.legs || [];
+    if (!legs.length) continue;
+    const results = [];
+    let allResolved = true;
+    for (const leg of legs) {
+      const w = await legWon(leg.matchId, leg.pick, oddsCache);
+      if (w == null) { allResolved = false; break; }
+      results.push(w);
+    }
+    if (!allResolved) continue;
+    const won = results.every(Boolean);
+    const payout = won ? Math.round((p.stake || 0) * (p.combinedOdd || 0)) : 0;
+    await db.runTransaction(async (tx) => {
+      const ps = await tx.get(doc.ref);
+      if (!ps.exists || ps.data().status !== 'open') return;
+      const userRef = db.collection('users').doc(p.uid);
+      const us = await tx.get(userRef);
+      const userData = us.exists ? us.data() : {};
+      const saldo = (typeof userData.saldo === 'number') ? userData.saldo : SALDO_INICIAL;
+      const staked0 = (typeof userData.staked === 'number') ? userData.staked : 0;
+      tx.set(userRef, { saldo: saldo + payout, staked: Math.max(0, staked0 - (p.stake || 0)) }, { merge: true });
+      tx.set(doc.ref, { status: won ? 'won' : 'lost', payout: payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    });
+    try {
+      await notify(p.uid, won ? '¡Ganaste tu combinada! 🎉' : 'Combinada perdida 😕',
+        legs.length + ' partidos: ' + (won ? '+' + payout : '−' + (p.stake || 0)) + ' puntos');
+    } catch (e) { /* no crítico */ }
+    n++;
+  }
+  return n;
+}
+
 // ── Liquida los desafíos por partido (challenge_picks) ──────
 // Q1: ¿Habrá gol en el primer tiempo? — necesita odds.htGoal (bool)
 // Q2: ¿Irá a penales? — necesita odds.penalties (bool derivado de extraTime)
@@ -551,11 +637,17 @@ async function cleanupEmptyGroups() {
 //    (participación) de cada usuario. Escribe staked + betsCount. ──
 async function recomputeStaked() {
   const bets = await db.collection('bets').get(); // todas las apuestas
+  const parlays = await db.collection('parlays').get(); // todas las combinadas
   const stakeByUid = {}, countByUid = {};
   bets.forEach(function (d) {
     const b = d.data(); if (!b.uid) return;
     countByUid[b.uid] = (countByUid[b.uid] || 0) + 1;                 // participación (todas)
     if (b.status === 'open') stakeByUid[b.uid] = (stakeByUid[b.uid] || 0) + (b.stake || 0); // en juego (abiertas)
+  });
+  parlays.forEach(function (d) {
+    const p = d.data(); if (!p.uid) return;
+    countByUid[p.uid] = (countByUid[p.uid] || 0) + 1;
+    if (p.status === 'open') stakeByUid[p.uid] = (stakeByUid[p.uid] || 0) + (p.stake || 0);
   });
   // Usuarios a tocar: los que tienen apuestas + los que tenían staked>0 (para resetear).
   const uids = {};
@@ -863,6 +955,11 @@ async function main() {
   const oddsN = await ensureOdds();
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
 
+  try {
+    const consN = await updateBetConsensus();
+    if (consN) console.log(`Consenso de apuestas actualizado: ${consN} partido(s).`);
+  } catch (e) { console.warn('updateBetConsensus falló:', (e && e.message) || e); }
+
   // Tareas PESADAS (leen colecciones completas: users/bets/groups). El cron
   // corre cada 5 min; correrlas siempre agota la cuota diaria de Firestore
   // (plan gratuito). Solo 1 vez por hora (en la corrida del minuto :00).
@@ -1065,7 +1162,10 @@ async function main() {
 
   try { await recomputeAllStreaks(); } catch (e) { console.warn('recomputeAllStreaks:', (e && e.message) || e); }
 
-  console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s).`);
+  let parlaysSettled = 0;
+  try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
+
+  console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
 }
 
 // Recalcula currentStreak para TODOS los usuarios con apuestas liquidadas.

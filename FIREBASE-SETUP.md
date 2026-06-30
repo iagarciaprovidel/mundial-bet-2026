@@ -68,6 +68,17 @@ service cloud.firestore {
       allow create, update:         if signedIn() && request.resource.data.uid == request.auth.uid;
       allow delete:                 if signedIn() && resource.data.uid == request.auth.uid;
     }
+    // Metadatos públicos calculados por el agente (consenso de apuestas,
+    // actividad reciente). Solo lectura: el agente escribe con el service
+    // account, que se salta las reglas.
+    match /meta/{id} {
+      allow read: if signedIn();
+    }
+    match /parlays/{id} {
+      allow read:   if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
     match /predictions/{pid} {
       allow read:  if signedIn();
       allow write: if signedIn() && request.resource.data.uid == request.auth.uid;

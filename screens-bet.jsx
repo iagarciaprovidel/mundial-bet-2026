@@ -1,7 +1,7 @@
 /* ============================================================
    Screens: Partidos (cuotas + apuesta) + Quiniela (anonimato)
    ============================================================ */
-const { useState: useStateB } = React;
+const { useState: useStateB, useEffect: useEffectB } = React;
 const Db = window.MB;
 const Mb = Db.MASCOTS;
 const {
@@ -198,7 +198,11 @@ function MobileFixtureCard({ m }) {
         {r && <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 9, width: 'auto', borderRadius: 1, flexShrink: 0 }} />}
         {r && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.name}</span>}
       </div>
-      {window.MB_BetBox ? <window.MB_BetBox m={m} /> : null}
+      {(() => {
+        const slipState = window.MB_useParlaySlip ? window.MB_useParlaySlip() : null;
+        if (slipState && slipState.on) return window.MB_ParlayPickStrip ? <window.MB_ParlayPickStrip m={m} /> : null;
+        return window.MB_BetBox ? <window.MB_BetBox m={m} /> : null;
+      })()}
     </Card>
   );
 }
@@ -247,9 +251,82 @@ function BetHowTo() {
   );
 }
 
+// Ticker horizontal con las últimas apuestas de cualquier jugador (meta/activity,
+// lo arma el agente cada 5 min). Da sensación de comunidad activa.
+function ActivityTicker() {
+  const [items, setItems] = useStateB([]);
+  useEffectB(() => {
+    const fb = window.MBFirebase;
+    if (!fb || !fb.subscribeActivity) return undefined;
+    const un = fb.subscribeActivity(setItems);
+    return () => { if (typeof un === 'function') un(); };
+  }, []);
+  if (!items.length) return null;
+  const ago = (ts) => {
+    const m = Math.max(0, Math.round((Date.now() - ts) / 60000));
+    if (m < 1) return 'recién';
+    if (m < 60) return `hace ${m}m`;
+    return `hace ${Math.round(m / 60)}h`;
+  };
+  const teamFor = (it) => it.pick === 'home' ? it.home : it.pick === 'away' ? it.away : 'Empate/Pen.';
+  return (
+    <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 4, marginBottom: 12 }}>
+      {items.map((it, i) => (
+        <div key={i} style={{
+          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 11px',
+          borderRadius: 'var(--r-pill)', background: 'var(--surface-2)', border: '1px solid var(--border-2)',
+          fontSize: 'var(--t-3xs)', color: 'var(--muted)', whiteSpace: 'nowrap',
+        }}>
+          <span style={{ fontWeight: 700, color: 'var(--text)' }}>{it.nombre}</span> apostó <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{Db.fmt(it.stake)}</span> a <span style={{ fontWeight: 700 }}>{teamFor(it)}</span>
+          <span style={{ color: 'var(--muted-2)' }}>· {ago(it.ts)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Partido destacado: el próximo por jugar (cualquier fase), con diseño más
+// grande arriba de la lista. Ayuda a que siempre haya un "ancla" clara de
+// "qué viene ahora" sin tener que buscarlo entre todas las jornadas.
+function FeaturedMatchCard({ m }) {
+  const openTeam = (name) => { if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
+  const kickoffInMin = Math.max(0, Math.round((new Date(m.kickoff).getTime() - Date.now()) / 60000));
+  const d = new Date(m.kickoff);
+  const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
+  const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  const slipState = window.MB_useParlaySlip ? window.MB_useParlaySlip() : null;
+  return (
+    <Card style={{ marginBottom: 16, padding: '16px', border: '1.5px solid var(--gold)', background: 'linear-gradient(160deg, rgba(212,175,55,0.10), rgba(13,20,15,0.95))' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--gold-light)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}>🔥 Próximo partido</span>
+        {CountdownTimer ? <CountdownTimer minutes={kickoffInMin} compact /> : <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, textTransform: 'capitalize' }}>{fecha} · {hora}</span>}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div onClick={() => openTeam(m.home)} className="mb-press" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, cursor: 'pointer' }}>
+          <img src={`https://flagcdn.com/h60/${m.homeCode}.png`} alt="" style={{ height: 34, width: 'auto', borderRadius: 4 }} />
+          <span style={{ fontWeight: 800, fontSize: 'var(--t-sm)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{m.home}</span>
+        </div>
+        <span className="display" style={{ color: 'var(--muted-2)', fontWeight: 800, padding: '0 10px', fontSize: 'var(--t-md)' }}>VS</span>
+        <div onClick={() => openTeam(m.away)} className="mb-press" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, cursor: 'pointer' }}>
+          <img src={`https://flagcdn.com/h60/${m.awayCode}.png`} alt="" style={{ height: 34, width: 'auto', borderRadius: 4 }} />
+          <span style={{ fontWeight: 800, fontSize: 'var(--t-sm)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{m.away}</span>
+        </div>
+      </div>
+      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 600, textAlign: 'center', marginBottom: 4 }}>
+        {m.group ? `Grupo ${m.group} · J${m.md}` : (m.stage === 'r32' ? 'Dieciseisavos' : m.stage === 'r16' ? 'Octavos' : m.stage === 'qf' ? 'Cuartos' : m.stage === 'sf' ? 'Semifinales' : 'Final')} · 🏟️ {m.stadium}
+      </div>
+      {slipState && slipState.on
+        ? (window.MB_ParlayPickStrip ? <window.MB_ParlayPickStrip m={m} /> : null)
+        : (window.MB_BetBox ? <window.MB_BetBox m={m} /> : null)}
+    </Card>
+  );
+}
+
 function Partidos() {
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const odds = (store && store.odds) || {};
+  const bets = (store && store.bets) || {};
+  const myParlays = (store && store.parlays) || [];
   const fx = (window.MB.WC_FIXTURES) || [];
   const ko = (window.MB.WC_KNOCKOUTS) || [];
   const mdMap = { J1: 1, J2: 2, J3: 3 };
@@ -265,6 +342,30 @@ function Partidos() {
   const curTab = !st[1].done ? 'J1' : !st[2].done ? 'J2' : !st[3].done ? 'J3' : 'KO';
 
   const [tab, setTab] = useStateB(curTab); // abre por defecto en la jornada actual
+  const [filter, setFilter] = useStateB('all'); // 'all' | 'live' | 'soon' | 'mine' — filtro rápido (busca en TODO el torneo, no solo la jornada activa)
+
+  // Apuestas en cuotas exactamente como cierran pronto: aún no empezó, falta ≤3h.
+  const closingSoon = (m) => { if (matchLive(m) || matchDone(m)) return false; const k = new Date(m.kickoff).getTime(); return k > now && k - now <= 3 * 3600e3; };
+  const liveMatches = fx.filter(matchLive);
+  const soonMatches = fx.filter(closingSoon);
+  const mineMatches = fx.filter((m) => bets[m.id]);
+  const byKickoffAsc = (a, b) => new Date(a.kickoff) - new Date(b.kickoff);
+  const FILTER_LIST = { live: liveMatches, soon: soonMatches, mine: mineMatches };
+  const FILTER_LABEL = { live: '🔴 En vivo ahora', soon: '⏱ Por cerrar (≤3h)', mine: '🎟 Mis apuestas' };
+  const FILTER_EMPTY = {
+    live: 'No hay partidos en vivo en este momento.',
+    soon: 'No hay apuestas por cerrar en las próximas 3 horas.',
+    mine: 'Todavía no tienes apuestas. ¡Elige un partido y arranca!',
+  };
+
+  // Próximo partido a jugarse (cualquier fase), para la tarjeta destacada.
+  const featured = fx.filter((m) => !matchLive(m) && !matchDone(m) && new Date(m.kickoff).getTime() > now)
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))[0] || null;
+
+  const openBets = Object.values(bets).filter((b) => b && b.status === 'open');
+  const openParlays = myParlays.filter((p) => p && p.status === 'open');
+  const openTotal = openBets.reduce((s, b) => s + (b.stake || 0), 0) + openParlays.reduce((s, p) => s + (p.stake || 0), 0);
+  const openCount = openBets.length + openParlays.length;
 
   const dotEl = (color, pulse) => <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: color, marginLeft: 5, verticalAlign: 'middle', animation: pulse ? 'mb-pulse-live 1s var(--ease-out) infinite' : 'none' }} />;
   const jLabel = (md) => {
@@ -277,53 +378,108 @@ function Partidos() {
       </span>
     );
   };
+
+  const chips = [
+    { k: 'all', label: 'Todos' },
+    { k: 'live', label: '🔴 En vivo', count: liveMatches.length },
+    { k: 'soon', label: '⏱ Por cerrar', count: soonMatches.length },
+    { k: 'mine', label: '🎟 Mis apuestas', count: mineMatches.length + myParlays.length },
+  ];
+
   return (
     <div style={{ padding: '0 16px 16px', animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
-      <div style={{ marginBottom: 16 }}>
-        <SegTabs accent="var(--info)" value={tab} onChange={setTab}
-          options={[{ v: 'J1', label: jLabel(1) }, { v: 'J2', label: jLabel(2) }, { v: 'J3', label: jLabel(3) }, { v: 'KO', label: 'Elim.' }]} />
+      {filter === 'all' && featured && <FeaturedMatchCard m={featured} />}
+      <ActivityTicker />
+      {/* Filtros rápidos: buscan en todo el torneo, no solo en la jornada activa */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, overflowX: 'auto', paddingBottom: 2 }}>
+        {chips.map((c) => {
+          const active = filter === c.k;
+          return (
+            <button key={c.k} onClick={() => setFilter(c.k)} className="mb-press" style={{
+              flexShrink: 0, padding: '7px 12px', borderRadius: 'var(--r-pill)', cursor: 'pointer',
+              background: active ? 'var(--coin-bg)' : 'var(--surface-2)', border: active ? '1.5px solid var(--gold)' : '1px solid var(--border-2)',
+              color: active ? 'var(--gold-light)' : 'var(--muted)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap',
+            }}>
+              {c.label}{c.count != null && c.count > 0 ? ' · ' + c.count : ''}
+            </button>
+          );
+        })}
+        {window.MB_ParlayModeToggle ? <window.MB_ParlayModeToggle /> : null}
       </div>
-      {tab !== 'KO' ? (
+
+      {filter !== 'all' ? (
         <>
-          <SectionHead title={`Fase de grupos · Jornada ${mdMap[tab]}`} />
-          {fx.filter(m => m.md === mdMap[tab]).map(m => <MobileFixtureCard key={m.id} m={m} />)}
+          <SectionHead title={FILTER_LABEL[filter]} />
+          {filter === 'mine' && myParlays.length > 0 && myParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
+          {FILTER_LIST[filter].length === 0 ? (
+            myParlays.length === 0 && <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>{FILTER_EMPTY[filter]}</div>
+          ) : (
+            FILTER_LIST[filter].slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)
+          )}
         </>
       ) : (
         <>
-          {/* Partidos de eliminatorias ya conocidos (tienen equipos definidos) */}
-          {(() => {
-            const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
-            const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', final: 'Final' };
-            const koFx = fx.filter((m) => m.stage && m.stage !== 'Grupos');
-            const byStage = {};
-            koFx.forEach((m) => { (byStage[m.stage] = byStage[m.stage] || []).push(m); });
-            const hasKoFx = koFx.length > 0;
-            return (
-              <>
-                {hasKoFx && stageOrder.filter((s) => byStage[s]).map((s) => (
-                  <React.Fragment key={s}>
-                    <SectionHead title={stageLabel[s] || s} />
-                    {byStage[s].map((m) => <MobileFixtureCard key={m.id} m={m} />)}
-                  </React.Fragment>
-                ))}
-                {/* Rondas aún sin equipos definidos */}
-                {ko.filter((k) => {
-                  const key = k.stage === 'Dieciseisavos (R32)' ? 'r32' : k.stage === 'Octavos de final' ? 'r16' : k.stage === 'Cuartos de final' ? 'qf' : k.stage === 'Semifinales' ? 'sf' : k.stage === 'FINAL' ? 'final' : null;
-                  return !key || !byStage[key];
-                }).map((k, i) => (
-                  <Card key={i} style={{ marginBottom: 10, padding: '12px 14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <Chip tone="gold">{k.stage}</Chip>
-                      <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{k.fechas}</span>
-                    </div>
-                    <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{k.partidos} {k.partidos === 1 ? 'partido' : 'partidos'} · {k.sedes}</div>
-                  </Card>
-                ))}
-              </>
-            );
-          })()}
+          <div style={{ marginBottom: 16 }}>
+            <SegTabs accent="var(--info)" value={tab} onChange={setTab}
+              options={[{ v: 'J1', label: jLabel(1) }, { v: 'J2', label: jLabel(2) }, { v: 'J3', label: jLabel(3) }, { v: 'KO', label: 'Elim.' }]} />
+          </div>
+          {tab !== 'KO' ? (
+            <>
+              <SectionHead title={`Fase de grupos · Jornada ${mdMap[tab]}`} />
+              {fx.filter(m => m.md === mdMap[tab]).map(m => <MobileFixtureCard key={m.id} m={m} />)}
+            </>
+          ) : (
+            <>
+              {/* Partidos de eliminatorias ya conocidos (tienen equipos definidos) */}
+              {(() => {
+                const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
+                const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', final: 'Final' };
+                const koFx = fx.filter((m) => m.stage && m.stage !== 'Grupos');
+                const byStage = {};
+                koFx.forEach((m) => { (byStage[m.stage] = byStage[m.stage] || []).push(m); });
+                const hasKoFx = koFx.length > 0;
+                return (
+                  <>
+                    {hasKoFx && stageOrder.filter((s) => byStage[s]).map((s) => (
+                      <React.Fragment key={s}>
+                        <SectionHead title={stageLabel[s] || s} />
+                        {byStage[s].map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                      </React.Fragment>
+                    ))}
+                    {/* Rondas aún sin equipos definidos */}
+                    {ko.filter((k) => {
+                      const key = k.stage === 'Dieciseisavos (R32)' ? 'r32' : k.stage === 'Octavos de final' ? 'r16' : k.stage === 'Cuartos de final' ? 'qf' : k.stage === 'Semifinales' ? 'sf' : k.stage === 'FINAL' ? 'final' : null;
+                      return !key || !byStage[key];
+                    }).map((k, i) => (
+                      <Card key={i} style={{ marginBottom: 10, padding: '12px 14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <Chip tone="gold">{k.stage}</Chip>
+                          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{k.fechas}</span>
+                        </div>
+                        <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{k.partidos} {k.partidos === 1 ? 'partido' : 'partidos'} · {k.sedes}</div>
+                      </Card>
+                    ))}
+                  </>
+                );
+              })()}
+            </>
+          )}
         </>
       )}
+
+      {/* Ticket flotante: resumen de apuestas abiertas (simples + combinadas), siempre visible mientras scrolleas */}
+      {openCount > 0 && filter !== 'mine' && (
+        <div onClick={() => setFilter('mine')} className="mb-press" style={{
+          position: 'sticky', bottom: 10, marginTop: 14, padding: '12px 14px', borderRadius: 'var(--r-pill)',
+          background: 'linear-gradient(135deg, var(--gold-light), var(--gold))', color: '#1a1206',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer',
+          boxShadow: 'var(--sh-3)', fontWeight: 800, fontSize: 'var(--t-2xs)', zIndex: 5,
+        }}>
+          <span>🎟 {openCount} apuesta{openCount === 1 ? '' : 's'} abierta{openCount === 1 ? '' : 's'}</span>
+          <span className="num">{Db.fmt(openTotal)} en juego ›</span>
+        </div>
+      )}
+      {window.MB_ParlaySlip ? <window.MB_ParlaySlip /> : null}
     </div>
   );
 }
