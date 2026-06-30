@@ -169,6 +169,11 @@ function espnToFd(e) {
     const ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
     return { side: side, name: ath ? (ath.displayName || ath.shortName || '') : '', scored: x.scoringPlay !== false };
   }).filter((k) => k.side && k.name);
+  // DEBUG TEMPORAL: volcar el detalle crudo de ESPN cuando hubo penales, para
+  // confirmar los nombres de campo reales antes de afinar la extracción de penKicks.
+  if (penalties) {
+    try { console.log('DEBUG_PENDETAILS ' + e.id + ' ' + JSON.stringify(c.details)); } catch (err) {}
+  }
   return {
     status: status,
     minute: (e.status && (e.status.displayClock || e.status.period)) || null,
