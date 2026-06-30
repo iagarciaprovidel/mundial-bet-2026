@@ -374,12 +374,22 @@ function Root() {
   // hasta que estén disponibles para que SIEMPRE queden montados.
   const [, force] = React.useState(0);
   React.useEffect(() => {
-    if (window.MB_HelpLauncher && window.MB_TeamMembersLauncher) return undefined;
-    const t = setInterval(() => {
-      if (window.MB_HelpLauncher && window.MB_TeamMembersLauncher) { force(function (x) { return x + 1; }); clearInterval(t); }
+    const allReady = function () { return window.MB_HelpLauncher && window.MB_TeamMembersLauncher; };
+    if (allReady()) return undefined;
+    const t = setInterval(function () {
+      if (allReady()) { force(function (x) { return x + 1; }); clearInterval(t); }
     }, 80);
     return function () { clearInterval(t); };
   }, []);
+  // En escritorio: si AppWeb aún no cargó al primer render (Babel asíncrono),
+  // reintentar hasta que esté disponible para mostrar el layout correcto.
+  React.useEffect(function () {
+    if (!wide || window.AppWeb) return undefined;
+    var t = setInterval(function () {
+      if (window.AppWeb) { force(function (x) { return x + 1; }); clearInterval(t); }
+    }, 80);
+    return function () { clearInterval(t); };
+  }, [wide]);
   const Cmp = (wide && window.AppWeb) ? window.AppWeb : window.App;
   const AdminLauncher = window.MB_AdminLauncher;
   const TeamGate = window.MB_TeamGate;

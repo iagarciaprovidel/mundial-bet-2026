@@ -198,11 +198,7 @@ function MobileFixtureCard({ m }) {
         {r && <img src={`https://flagcdn.com/h20/${r.code}.png`} alt="" title={r.country} style={{ height: 9, width: 'auto', borderRadius: 1, flexShrink: 0 }} />}
         {r && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.name}</span>}
       </div>
-      {(() => {
-        const slipState = window.MB_useParlaySlip ? window.MB_useParlaySlip() : null;
-        if (slipState && slipState.on) return window.MB_ParlayPickStrip ? <window.MB_ParlayPickStrip m={m} /> : null;
-        return window.MB_BetBox ? <window.MB_BetBox m={m} /> : null;
-      })()}
+      {window.MB_BetBoxOrParlay ? <window.MB_BetBoxOrParlay m={m} /> : (window.MB_BetBox ? <window.MB_BetBox m={m} /> : null)}
     </Card>
   );
 }

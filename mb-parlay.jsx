@@ -244,4 +244,13 @@
     );
   }
   window.MB_ParlayCard = ParlayCard;
+
+  // ── Componente que envuelve BetBox + modo combinada en uno solo ──
+  // Usar esto en lugar de llamar useParlaySlip dentro de un IIFE en las tarjetas.
+  function BetBoxOrParlay({ m }) {
+    const s = useParlaySlip();
+    if (s.on) return <ParlayPickStrip m={m} />;
+    return window.MB_BetBox ? <window.MB_BetBox m={m} /> : null;
+  }
+  window.MB_BetBoxOrParlay = BetBoxOrParlay;
 })();
