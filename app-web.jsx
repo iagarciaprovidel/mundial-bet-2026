@@ -5,6 +5,10 @@
    monta el bootstrap responsive de index.html.
    ============================================================ */
 (function () {
+// En móvil (<1024px) saltar la compilación pesada del layout de escritorio.
+// Se hace aquí (dentro del IIFE) para evitar race conditions con la eliminación
+// del <script> desde el DOM antes de que Babel termine de leer la lista.
+if (!window.matchMedia('(min-width:1024px)').matches) return;
 const { useState: useStateW, useEffect: useEffectW, useRef: useRefW } = React;
 const Dw = window.MB;
 const Mw = Dw.MASCOTS;
