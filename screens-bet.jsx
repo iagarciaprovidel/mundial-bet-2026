@@ -167,6 +167,16 @@ function MobileFixtureCard({ m }) {
   const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
   const openTeam = (name) => { if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
   const r = window.MB.refForMatch && window.MB.refForMatch(m);
+  // Lee el store para mostrar marcador directamente en la cabecera del partido
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const odds = store && store.odds && store.odds[m.id];
+  const gh = odds && odds.gh != null ? odds.gh : null;
+  const ga = odds && odds.ga != null ? odds.ga : null;
+  const hasScore = gh !== null && ga !== null;
+  const isFinished = !!(odds && odds.finished);
+  const ko = new Date(m.kickoff).getTime();
+  const isLiveNow = !!(odds && odds.live && !odds.finished) || (Date.now() >= ko + 5 * 60000 && Date.now() < ko + 150 * 60000);
+  const showScore = hasScore && (isFinished || isLiveNow || Date.now() >= ko + 5 * 60000);
   return (
     <Card style={{ marginBottom: 10, padding: '11px 13px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -183,11 +193,19 @@ function MobileFixtureCard({ m }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
         <div onClick={() => openTeam(m.home)} className="mb-press" title={`Ver ${m.home}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, cursor: 'pointer' }}>
           <img src={`https://flagcdn.com/h40/${m.homeCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
-          <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
+          <span style={{ fontWeight: showScore ? 900 : 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: showScore && gh > ga ? 'var(--gold-light)' : 'var(--text)' }}>{m.home}</span>
         </div>
-        <span style={{ color: 'var(--muted-2)', fontWeight: 700, padding: '0 8px' }}>vs</span>
+        {showScore ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 6px', flexShrink: 0 }}>
+            <span className="num" style={{ fontSize: 'var(--t-xl)', fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>{gh} <span style={{ color: 'var(--muted-2)', fontWeight: 400 }}>–</span> {ga}</span>
+            {isFinished && <span style={{ fontSize: 7, color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 1 }}>Final{odds.penWinner ? ' · Pen.' : odds.extraTime ? ' · Prórr.' : ''}</span>}
+            {isLiveNow && !isFinished && <span style={{ fontSize: 7, color: '#ff6b6b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 1, animation: 'mb-pulse-live 1.5s ease infinite' }}>En vivo</span>}
+          </div>
+        ) : (
+          <span style={{ color: 'var(--muted-2)', fontWeight: 700, padding: '0 8px' }}>vs</span>
+        )}
         <div onClick={() => openTeam(m.away)} className="mb-press" title={`Ver ${m.away}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, justifyContent: 'flex-end', cursor: 'pointer' }}>
-          <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.away}</span>
+          <span style={{ fontWeight: showScore ? 900 : 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: showScore && ga > gh ? 'var(--gold-light)' : 'var(--text)' }}>{m.away}</span>
           <img src={`https://flagcdn.com/h40/${m.awayCode}.png`} alt="" style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0 }} />
         </div>
       </div>
