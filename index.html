@@ -256,12 +256,7 @@ if (!window.matchMedia('(min-width:1024px)').matches) {
 
 <!-- Data (plain JS) -->
 <script src="data.js"></script>
-<script>
-// players.js solo lo usa app-web.jsx (escritorio) — no cargar en móvil
-if (window.matchMedia('(min-width:1024px)').matches) {
-  document.write('<scr'+'ipt src="players.js"><\/scr'+'ipt>');
-}
-</script>
+<script src="players.js"></script>
 <script src="wc2026.js"></script>
 <script src="figuritas-2026.js"></script>
 <script src="figuritas-codec.js"></script>
