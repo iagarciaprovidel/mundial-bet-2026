@@ -982,13 +982,29 @@
     const [claiming, setClaiming] = useState(false);
     const [claimDone, setClaimDone] = useState(false);
     const [claimErr, setClaimErr] = useState('');
+    // ── Premios de racha reclamables independientemente ──
+    const currentStreakMe = (me && typeof me.currentStreak === 'number') ? me.currentStreak : 0;
+    const claimedStreakTiers = (me && me.rewards && Array.isArray(me.rewards.streakTiers)) ? me.rewards.streakTiers : [];
+    const [claimedStreakLocal, setClaimedStreakLocal] = useState([]);
+    const [claimingStreakTier, setClaimingStreakTier] = useState(null);
+    const doClaimStreak = (tier, amount) => {
+      const fb = window.MBFirebase;
+      if (!fb || !fb.claimStreakTier) return;
+      setClaimingStreakTier(tier);
+      fb.claimStreakTier(tier, amount)
+        .then(() => { setClaimedStreakLocal((prev) => [...prev, tier]); setClaimingStreakTier(null); })
+        .catch(() => { setClaimingStreakTier(null); });
+    };
+    const claimableStreaks = STREAK_TIERS.filter((t) =>
+      currentStreakMe >= t[0] && !claimedStreakTiers.includes(t[0]) && !claimedStreakLocal.includes(t[0])
+    );
     const doClaim = () => {
       const fb = window.MBFirebase;
       if (!fb || !fb.claimGroupBonuses) return;
       setClaiming(true); setClaimErr('');
       fb.claimGroupBonuses({ ...bd, champBonus: champEarnedTotal, total: securedTotal })
         .then(() => { setClaimDone(true); setClaiming(false); })
-        .catch((e) => { setClaimErr(e === 'ya-reclamado' ? 'Ya reclamaste estos premios.' : 'Error al reclamar. Intenta de nuevo.'); setClaiming(false); });
+        .catch((e) => { if (e === 'ya-reclamado') { setClaimDone(true); } else { setClaimErr('Error al reclamar. Intenta de nuevo.'); } setClaiming(false); });
     };
 
     // ── Avance del campeón elegido ──
@@ -1088,6 +1104,29 @@
                 {claimErr ? <div style={{ fontSize: 'var(--t-3xs)', color: '#f87171', marginTop: 5, textAlign: 'center' }}>{claimErr}</div> : null}
               </>
             )}
+          </div>
+        )}
+
+        {/* 🔥 Premios por racha (independientes del bono de grupos) */}
+        {claimableStreaks.length > 0 && (
+          <div style={{ marginTop: 9, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(255,120,0,0.08)', border: '1px solid rgba(255,120,0,0.35)' }}>
+            <div style={{ fontSize: 'var(--t-2xs)', color: '#ff9e57', fontWeight: 800, marginBottom: 6 }}>🔥 Premios por racha desbloqueados</div>
+            {claimableStreaks.map((t) => {
+              const isBusy = claimingStreakTier === t[0];
+              return (
+                <div key={t[0]} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '5px 0', borderTop: '1px solid rgba(255,120,0,0.15)' }}>
+                  <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)' }}>{t[0]} victorias seguidas</span>
+                  <button onClick={() => doClaimStreak(t[0], t[1])} disabled={isBusy || claimingStreakTier !== null} className="mb-press" style={{ padding: '5px 12px', borderRadius: 'var(--r-sm)', border: 'none', background: isBusy ? 'rgba(255,120,0,0.4)' : 'linear-gradient(135deg,#ff9e57,#e06a10)', color: '#1A0A00', fontWeight: 800, fontSize: 'var(--t-3xs)', cursor: isBusy ? 'not-allowed' : 'pointer', opacity: (claimingStreakTier !== null && !isBusy) ? 0.5 : 1, transition: 'opacity var(--dur-base)', fontFamily: 'var(--font-body)' }}>
+                    {isBusy ? '…' : `+${fmt(t[1])} pts`}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {claimedStreakLocal.length > 0 && claimableStreaks.length === 0 && currentStreakMe >= 1 && (
+          <div style={{ marginTop: 9, padding: '8px 11px', borderRadius: 'var(--r-md)', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', textAlign: 'center', fontSize: 'var(--t-3xs)', color: 'var(--success)', fontWeight: 700 }}>
+            ✅ Premios de racha reclamados
           </div>
         )}
 

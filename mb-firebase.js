@@ -36,7 +36,7 @@
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       subscribeActivity(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
-      notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, claimGroupBonuses: noFB, watchMatch: noFB,
+      notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, claimGroupBonuses: noFB, claimStreakTier: noFB, watchMatch: noFB,
       subscribeTeamAlbum(gid, cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       teamOwnerUid() { return Promise.resolve(null); }, albumMark: noFB, albumAddMany: noFB, setAlbumLock: noFB,
       subscribeGroups(cb) { cb([]); return () => {}; },
@@ -329,6 +329,25 @@
             streak: bd.streak || 0,
             champBonus: bd.champBonus || 0,
           }),
+        }, { merge: true });
+      });
+    },
+
+    async claimStreakTier(tier, amount) {
+      const u = auth.currentUser;
+      if (!u) return Promise.reject('no-auth');
+      const ref = db.collection('users').doc(u.uid);
+      return db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        const data = snap.exists ? snap.data() : {};
+        const claimedTiers = (data.rewards && data.rewards.streakTiers) || [];
+        if (claimedTiers.includes(tier)) throw 'ya-reclamado';
+        const curStreak = typeof data.currentStreak === 'number' ? data.currentStreak : 0;
+        if (curStreak < tier) throw 'streak-insuficiente';
+        const saldo = typeof data.saldo === 'number' ? data.saldo : 90000;
+        tx.set(ref, {
+          saldo: saldo + amount,
+          rewards: Object.assign({}, data.rewards || {}, { streakTiers: [...claimedTiers, tier] }),
         }, { merge: true });
       });
     },
