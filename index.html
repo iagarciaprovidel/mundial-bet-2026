@@ -376,12 +376,14 @@ function Root() {
     }, 80);
     return function () { clearInterval(t); };
   }, []);
-  // En escritorio: si AppWeb aún no cargó al primer render (Babel asíncrono),
-  // reintentar hasta que esté disponible para mostrar el layout correcto.
+  // Si la app principal (App o AppWeb) aún no cargó al primer render (Babel
+  // compila los scripts externos de forma asíncrona), reintentar hasta que
+  // el componente correcto esté disponible para no renderizar undefined.
   React.useEffect(function () {
-    if (!wide || window.AppWeb) return undefined;
+    var needed = wide ? 'AppWeb' : 'App';
+    if (window[needed]) return undefined;
     var t = setInterval(function () {
-      if (window.AppWeb) { force(function (x) { return x + 1; }); clearInterval(t); }
+      if (window[needed]) { force(function (x) { return x + 1; }); clearInterval(t); }
     }, 80);
     return function () { clearInterval(t); };
   }, [wide]);
@@ -392,6 +394,11 @@ function Root() {
   const TeamMembers = window.MB_TeamMembersLauncher;
   const Figuritas = window.MB_FiguritasLauncher;
   const OfflineBanner = window.MB_OfflineBanner;
+  if (typeof Cmp !== 'function') {
+    return React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#06080F' } },
+      React.createElement('span', { style: { width: 8, height: 8, borderRadius: '50%', background: '#FFB81C', animation: 'mb-pulse-live 1s ease infinite' } })
+    );
+  }
   return (
     <React.Fragment>
       {OfflineBanner ? <OfflineBanner /> : null}
