@@ -403,17 +403,28 @@ function Partidos() {
               options={[{ v: 'J1', label: jLabel(1) }, { v: 'J2', label: jLabel(2) }, { v: 'J3', label: jLabel(3) }, { v: 'KO', label: 'Elim.' }]} />
           </div>
           {tab !== 'KO' ? (
-            <>
-              <SectionHead title={`Fase de grupos · Jornada ${mdMap[tab]}`} />
-              {fx.filter(m => m.md === mdMap[tab]).map(m => <MobileFixtureCard key={m.id} m={m} />)}
-            </>
+            (() => {
+              const bettable = fx.filter((m) => m.md === mdMap[tab] && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now && !isDoneS(m));
+              return bettable.length === 0 ? (
+                <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                  <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800, marginBottom: 4 }}>Jornada {mdMap[tab]} completada</div>
+                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Todos los partidos de esta jornada ya se jugaron.<br />Revisa <strong>Hoy</strong> para ver los resultados o cambia de jornada para apostar.</div>
+                </div>
+              ) : (
+                <>
+                  <SectionHead title={`Fase de grupos · Jornada ${mdMap[tab]}`} />
+                  {bettable.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                </>
+              );
+            })()
           ) : (
             <>
               {/* Partidos de eliminatorias ya conocidos (tienen equipos definidos) */}
               {(() => {
                 const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
                 const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', final: 'Final' };
-                const koFx = fx.filter((m) => m.stage && m.stage !== 'Grupos');
+                const koFx = fx.filter((m) => m.stage && m.stage !== 'Grupos' && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now && !isDoneS(m));
                 const byStage = {};
                 koFx.forEach((m) => { (byStage[m.stage] = byStage[m.stage] || []).push(m); });
                 const hasKoFx = koFx.length > 0;

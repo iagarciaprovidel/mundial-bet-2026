@@ -158,13 +158,36 @@
                   <button onClick={() => setOpen(false)} className="mb-press" style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 18, cursor: 'pointer' }}>✕</button>
                 </div>
               </div>
-              <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.5, marginBottom: 12 }}>
-                Elige el resultado de <strong style={{ color: 'var(--text)' }}>2 a 6 partidos</strong> distintos. Las cuotas se <strong style={{ color: '#61DAFB' }}>multiplican entre sí</strong> → premio mayor. Pero si fallas <strong style={{ color: '#e98b8b' }}>aunque sea uno</strong>, pierdes toda la apuesta.
+              {/* Explicación visual de qué es una combinada */}
+              <div style={{ marginBottom: 14, padding: '11px 13px', borderRadius: 'var(--r-md)', background: 'rgba(97,218,251,0.07)', border: '1px solid rgba(97,218,251,0.2)' }}>
+                <div style={{ fontSize: 'var(--t-2xs)', color: '#61DAFB', fontWeight: 800, marginBottom: 6 }}>¿Qué es una apuesta combinada?</div>
+                <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.6, marginBottom: 10 }}>
+                  Juntas el resultado de <strong style={{ color: 'var(--text)' }}>2 a 6 partidos</strong> en un solo ticket. Las cuotas <strong style={{ color: '#61DAFB' }}>se multiplican entre sí</strong>, así el premio puede ser mucho mayor que apostando partido por partido. La trampa: si <strong style={{ color: '#e98b8b' }}>fallas aunque sea uno</strong>, pierdes toda la apuesta.
+                </div>
+                {/* Ejemplo visual */}
+                <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>Ejemplo</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+                  {[['Argentina gana', '×1.80'], ['Francia gana', '×2.10'], ['España gana', '×1.95']].map(([label, odd], i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>
+                      <span>⚽ {label}</span>
+                      <span style={{ color: 'var(--gold-light)', fontWeight: 800 }}>{odd}</span>
+                    </div>
+                  ))}
+                  <div style={{ borderTop: '1px solid rgba(97,218,251,0.15)', marginTop: 2, paddingTop: 5, display: 'flex', justifyContent: 'space-between', fontSize: 'var(--t-2xs)', fontWeight: 800 }}>
+                    <span style={{ color: '#61DAFB' }}>Cuota combinada</span>
+                    <span style={{ color: '#61DAFB' }}>×7.37</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--t-2xs)', fontWeight: 800 }}>
+                    <span style={{ color: 'var(--muted)' }}>Apostando 5.000 pts → ganás</span>
+                    <span style={{ color: 'var(--success)' }}>36.850 pts</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 8, color: '#e98b8b', lineHeight: 1.5 }}>⚠ Si España empata, pierdes los 5.000 aunque Argentina y Francia hayan ganado.</div>
               </div>
               {legs.length === 0 ? (
-                <div style={{ padding: '14px 0 6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, marginBottom: 6 }}>👇</div>
-                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Cierra este panel y toca los botones de resultado en cada partido para agregarlos aquí.</div>
+                <div style={{ padding: '10px 0 6px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700, marginBottom: 3 }}>¿Cómo armo mi combinada?</div>
+                  <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', lineHeight: 1.5 }}>1. Cierra este panel<br />2. Elige el resultado de cada partido (Local · Empate · Visita)<br />3. Vuelve aquí para confirmar y apostar</div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 12 }}>
