@@ -301,13 +301,23 @@ function Partidos() {
   const curTab = !st[1].done ? 'J1' : !st[2].done ? 'J2' : !st[3].done ? 'J3' : 'KO';
 
   const [tab, setTab] = useStateB(curTab); // abre por defecto en la jornada actual
-  const [filter, setFilter] = useStateB('all'); // 'all' | 'hoy' | 'mine' — filtro rápido
+  const [filter, setFilter] = useStateB('all'); // 'all' | 'hoy' | 'mine'
 
-  // "Hoy": partidos en vivo + los que cierran en ≤3h (del día)
-  const closingSoon = (m) => { if (matchLive(m) || matchDone(m)) return false; const k = new Date(m.kickoff).getTime(); return k > now && k - now <= 3 * 3600e3; };
-  const liveMatches = fx.filter(matchLive);
-  const soonMatches = fx.filter(closingSoon);
-  const hoyMatches = [...liveMatches, ...soonMatches.filter((m) => !liveMatches.find((l) => l.id === m.id))];
+  const BET_GRACE_MS_S = 5 * 60 * 1000;
+  const MATCH_MS_S = 150 * 60 * 1000; // 2.5h — duración máxima estimada
+  // Live: flag del agente O reloj (empieza tras la gracia, termina a las 2.5h)
+  const isLiveS = (m) => { const o = odds[m.id]; const k = new Date(m.kickoff).getTime(); return !!(o && o.live && !o.finished) || (now >= k + BET_GRACE_MS_S && now < k + MATCH_MS_S); };
+  // Done: flag finished del agente O más de 2.5h desde kickoff
+  const isDoneS = (m) => { const o = odds[m.id]; if (o && o.finished) return true; return new Date(m.kickoff).getTime() + MATCH_MS_S < now; };
+  // Hoy: cualquier partido cuyo kickoff (local) es el día de hoy
+  const todayMs = (() => { const d = new Date(now); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); })();
+  const isToday = (m) => { const k = new Date(m.kickoff).getTime(); return k >= todayMs && k < todayMs + 86400e3; };
+  const hoyAll = fx.filter(isToday).slice().sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+  const hoyLive     = hoyAll.filter((m) => isLiveS(m));
+  const hoyDone     = hoyAll.filter((m) => isDoneS(m) && !isLiveS(m));
+  const hoyUpcoming = hoyAll.filter((m) => !isLiveS(m) && !isDoneS(m));
+  // Para el chip legacy
+  const liveMatches = fx.filter((m) => { const o = odds[m.id]; const k = new Date(m.kickoff).getTime(); return !!(o && o.live && !o.finished) || (now >= k + BET_GRACE_MS_S && now < k + MATCH_MS_S); });
   const mineMatches = fx.filter((m) => bets[m.id]);
   const byKickoffAsc = (a, b) => new Date(a.kickoff) - new Date(b.kickoff);
 
@@ -330,7 +340,7 @@ function Partidos() {
 
   const chips = [
     { k: 'all',  label: 'Todos' },
-    { k: 'hoy',  label: liveMatches.length > 0 ? '🔴 Hoy' : '🗓 Hoy', count: hoyMatches.length },
+    { k: 'hoy',  label: liveMatches.length > 0 ? '🔴 Hoy' : '🗓 Hoy', count: hoyAll.length },
     { k: 'mine', label: '🎟 Mis apuestas', count: mineMatches.length + myParlays.length },
   ];
 
@@ -358,14 +368,20 @@ function Partidos() {
         <>
           {filter === 'hoy' && (
             <>
-              {hoyMatches.length === 0 ? (
-                <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>No hay partidos en vivo ni por cerrar en las próximas 3 horas.</div>
+              {hoyAll.length === 0 ? (
+                <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
+                  <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800, marginBottom: 4 }}>Hoy no se juegan partidos del Mundial</div>
+                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Revisa la pestaña <strong>Todos</strong> para ver el calendario completo y apostar con anticipación.</div>
+                </div>
               ) : (
                 <>
-                  {liveMatches.length > 0 && <SectionHead title="🔴 En vivo ahora" />}
-                  {liveMatches.slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)}
-                  {soonMatches.length > 0 && <SectionHead title="⏱ Por cerrar (≤3h)" />}
-                  {soonMatches.slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  {hoyLive.length > 0 && <SectionHead title="🔴 En vivo" />}
+                  {hoyLive.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  {hoyUpcoming.length > 0 && <SectionHead title="⏳ Por jugar" />}
+                  {hoyUpcoming.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  {hoyDone.length > 0 && <SectionHead title="✓ Jugados hoy" />}
+                  {hoyDone.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
                 </>
               )}
             </>
