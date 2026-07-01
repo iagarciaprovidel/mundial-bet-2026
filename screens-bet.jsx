@@ -319,7 +319,20 @@ function Partidos() {
   const curTab = !st[1].done ? 'J1' : !st[2].done ? 'J2' : !st[3].done ? 'J3' : 'KO';
 
   const [tab, setTab] = useStateB(curTab); // abre por defecto en la jornada actual
-  const [filter, setFilter] = useStateB('all'); // 'all' | 'hoy' | 'mine'
+  const [filter, setFilter] = useStateB('all'); // 'all' | 'hoy' | 'parlay' | 'mine'
+  // Partidos de hoy apostables (para la sección combinada — solo mismo día)
+  const hoyOpen = hoyAll.filter((m) => !isLiveS(m) && !isDoneS(m));
+  // Sync chip ↔ modo combinada
+  const parlaySlip = window.MB_useParlaySlip ? window.MB_useParlaySlip() : null;
+  const prevFilter = React.useRef(filter);
+  React.useEffect(() => {
+    if (filter === 'parlay' && prevFilter.current !== 'parlay') {
+      if (window.MB_setParlayMode) window.MB_setParlayMode(true);
+    } else if (filter !== 'parlay' && prevFilter.current === 'parlay') {
+      if (window.MB_setParlayMode) window.MB_setParlayMode(false);
+    }
+    prevFilter.current = filter;
+  }, [filter]);
 
   const BET_GRACE_MS_S = 5 * 60 * 1000;
   const MATCH_MS_S = 150 * 60 * 1000; // 2.5h — duración máxima estimada
@@ -356,10 +369,12 @@ function Partidos() {
     );
   };
 
+  const parlayLegs = (parlaySlip && parlaySlip.legs) ? parlaySlip.legs.length : 0;
   const chips = [
-    { k: 'all',  label: 'Todos' },
-    { k: 'hoy',  label: liveMatches.length > 0 ? '🔴 Hoy' : '🗓 Hoy', count: hoyAll.length },
-    { k: 'mine', label: '🎟 Mis apuestas', count: mineMatches.length + myParlays.length },
+    { k: 'all',    label: 'Todos' },
+    { k: 'hoy',    label: liveMatches.length > 0 ? '🔴 Hoy' : '🗓 Hoy', count: hoyAll.length },
+    { k: 'parlay', label: '🎰 Combinada', count: parlayLegs, accent: true },
+    { k: 'mine',   label: '🎟 Mis apuestas', count: mineMatches.length + myParlays.length },
   ];
 
   return (
@@ -369,17 +384,19 @@ function Partidos() {
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, overflowX: 'auto', paddingBottom: 2 }}>
         {chips.map((c) => {
           const active = filter === c.k;
+          const isParlay = c.k === 'parlay';
           return (
             <button key={c.k} onClick={() => setFilter(c.k)} className="mb-press" style={{
               flexShrink: 0, padding: '7px 12px', borderRadius: 'var(--r-pill)', cursor: 'pointer',
-              background: active ? 'var(--coin-bg)' : 'var(--surface-2)', border: active ? '1.5px solid var(--gold)' : '1px solid var(--border-2)',
-              color: active ? 'var(--gold-light)' : 'var(--muted)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap',
+              background: active ? (isParlay ? 'linear-gradient(135deg,#61DAFB,#4A90E2)' : 'var(--coin-bg)') : 'var(--surface-2)',
+              border: active ? (isParlay ? '1.5px solid #61DAFB' : '1.5px solid var(--gold)') : '1px solid var(--border-2)',
+              color: active ? (isParlay ? '#06141f' : 'var(--gold-light)') : 'var(--muted)',
+              fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--t-2xs)', whiteSpace: 'nowrap',
             }}>
               {c.label}{c.count != null && c.count > 0 ? ' · ' + c.count : ''}
             </button>
           );
         })}
-        {window.MB_ParlayModeToggle ? <window.MB_ParlayModeToggle /> : null}
       </div>
 
       {filter !== 'all' ? (
@@ -404,13 +421,41 @@ function Partidos() {
               )}
             </>
           )}
+          {filter === 'parlay' && (
+            <>
+              {hoyOpen.length === 0 ? (
+                <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>🎰</div>
+                  <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800, marginBottom: 4 }}>No hay partidos disponibles hoy para combinada</div>
+                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Las combinadas solo incluyen partidos del mismo día que aún no comenzaron.<br />Vuelve cuando haya partidos por jugar.</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 'var(--r-md)', background: 'rgba(97,218,251,0.07)', border: '1px solid rgba(97,218,251,0.2)', fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.5 }}>
+                    🎰 <strong style={{ color: '#61DAFB' }}>Modo combinada activo</strong> · Elige el resultado de <strong style={{ color: 'var(--text)' }}>2 a 6 partidos</strong> de hoy. Las cuotas se multiplican — pero debes acertar <strong style={{ color: '#e98b8b' }}>TODOS</strong>.
+                  </div>
+                  <SectionHead title={`Partidos disponibles hoy · ${hoyOpen.length}`} />
+                  {hoyOpen.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                </>
+              )}
+            </>
+          )}
           {filter === 'mine' && (
             <>
-              {myParlays.length > 0 && myParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
-              {mineMatches.length === 0 && myParlays.length === 0 && (
-                <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>Todavía no tienes apuestas. ¡Elige un partido y arranca!</div>
+              {myParlays.length > 0 && (
+                <>
+                  <SectionHead title="🎰 Combinadas" />
+                  {myParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
+                </>
               )}
-              {mineMatches.slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+              {mineMatches.length === 0 && myParlays.length === 0 ? (
+                <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>Todavía no tienes apuestas. ¡Elige un partido y arranca!</div>
+              ) : mineMatches.length > 0 && (
+                <>
+                  <SectionHead title="🎟 Apuestas simples" />
+                  {mineMatches.slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                </>
+              )}
             </>
           )}
         </>
@@ -475,8 +520,8 @@ function Partidos() {
         </>
       )}
 
-      {/* Ticket flotante: resumen de apuestas abiertas (simples + combinadas), siempre visible mientras scrolleas */}
-      {openCount > 0 && filter !== 'mine' && (
+      {/* Ticket flotante de apuestas abiertas (excepto en "Mis apuestas") */}
+      {openCount > 0 && filter !== 'mine' && filter !== 'parlay' && (
         <div onClick={() => setFilter('mine')} className="mb-press" style={{
           position: 'sticky', bottom: 10, marginTop: 14, padding: '12px 14px', borderRadius: 'var(--r-pill)',
           background: 'linear-gradient(135deg, var(--gold-light), var(--gold))', color: '#1a1206',
@@ -487,7 +532,8 @@ function Partidos() {
           <span className="num">{Db.fmt(openTotal)} en juego ›</span>
         </div>
       )}
-      {window.MB_ParlaySlip ? <window.MB_ParlaySlip /> : null}
+      {/* Slip de combinada: solo visible en modo combinada */}
+      {filter === 'parlay' && window.MB_ParlaySlip ? <window.MB_ParlaySlip /> : null}
     </div>
   );
 }

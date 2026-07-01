@@ -49,6 +49,8 @@
     return slip;
   }
   window.MB_useParlaySlip = useParlaySlip;
+  window.MB_setParlayMode = setMode;
+  window.MB_clearParlaySlip = clearSlip;
 
   // ── Chip para entrar/salir del modo combinada ──
   // El tooltip resume el concepto en una línea para que el usuario entienda antes de activarlo.
