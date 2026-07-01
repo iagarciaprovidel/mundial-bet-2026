@@ -27,7 +27,10 @@
   window.MB_worth = (u) => window.MB_avail(u) + window.MB_staked(u);                        // patrimonio (ranking)
 
   // ── Store compartido: una sola suscripción a cuotas + mis apuestas + mi saldo ──
-  const store = { odds: {}, bets: {}, parlays: [], saldo: null, watch: [], notif: false, ready: false, listeners: new Set() };
+  const STREAK_MULT = (s) => s >= 7 ? 2.0 : s >= 5 ? 1.75 : s >= 4 ? 1.5 : s >= 3 ? 1.35 : s >= 2 ? 1.2 : s >= 1 ? 1.1 : 1.0;
+  window.MB_streakMult = STREAK_MULT;
+
+  const store = { odds: {}, bets: {}, parlays: [], saldo: null, streak: 0, watch: [], notif: false, ready: false, listeners: new Set() };
   function emit() { store.listeners.forEach((fn) => { try { fn(); } catch (e) {} }); }
   let started = false, unsubs = [];
   // (Re)crea las suscripciones a cuotas/apuestas/saldo. Las cuotas requieren
@@ -43,6 +46,7 @@
     if (fb.subscribeMyParlays) unsubs.push(fb.subscribeMyParlays((list) => { store.parlays = list || []; emit(); }));
     if (fb.subscribeMe) unsubs.push(fb.subscribeMe((u) => {
       store.saldo = (u && typeof u.saldo === 'number') ? u.saldo : (u ? SALDO_INICIAL : null);
+      store.streak = (u && typeof u.currentStreak === 'number') ? u.currentStreak : 0;
       store.watch = (u && Array.isArray(u.watchMatches)) ? u.watchMatches : [];
       store.notif = !!(u && u.notifEnabled); emit();
     }));
@@ -229,8 +233,8 @@
           {cardsEl(odds.cards)}
           {settledBet && (
             <div style={{ marginTop: 6, padding: '7px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (won ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: won ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: won ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}{exactLabel(bet)}</span>
-              <span className="num">{won ? '+' + fmt(Math.round(bet.stake * bet.odd)) : '−' + fmt(bet.stake)}</span>
+              <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}{exactLabel(bet)}{won && bet.streakMult > 1 ? ' 🔥×' + Number(bet.streakMult).toFixed(2) : ''}</span>
+              <span className="num">{won ? '+' + fmt(bet.payout || Math.round(bet.stake * bet.odd)) : '−' + fmt(bet.stake)}</span>
             </div>
           )}
         </div>
@@ -435,8 +439,14 @@
                 </div>
               );
             })()}
+            {s.streak > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 9px', background: 'rgba(255,120,0,0.10)', border: '1px solid rgba(255,120,0,0.3)', borderRadius: 'var(--r-md)', marginBottom: 6 }}>
+                <span style={{ fontSize: 8.5, color: '#ff9e57', fontWeight: 800 }}>🔥 Racha {s.streak} · ×{STREAK_MULT(s.streak).toFixed(2)}</span>
+                {sel && <span className="num" style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(Math.round(win * STREAK_MULT(s.streak)))}</span>}
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 11px', background: 'var(--success-bg)', borderRadius: 'var(--r-md)', marginBottom: 9 }}>
-              <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)' }}>Ganancia si aciertas</span>
+              <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)' }}>Ganancia base si aciertas</span>
               <span className="num" style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: 'var(--success)' }}>{fmt(win)}</span>
             </div>
 

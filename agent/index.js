@@ -470,9 +470,14 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       const userData = us.exists ? us.data() : {};
       const saldo = (typeof userData.saldo === 'number') ? userData.saldo : SALDO_INICIAL;
       const staked0 = (typeof userData.staked === 'number') ? userData.staked : 0;
+      // Multiplicador de racha: ×1.1 al 1er acierto seguido, hasta ×2.0 en racha 7+
+      const streakNow = (typeof userData.currentStreak === 'number') ? userData.currentStreak : 0;
+      const SMULT = (s) => s >= 7 ? 2.0 : s >= 5 ? 1.75 : s >= 4 ? 1.5 : s >= 3 ? 1.35 : s >= 2 ? 1.2 : s >= 1 ? 1.1 : 1.0;
+      const sm = w ? SMULT(streakNow) : 1.0;
+      const pay = w ? Math.round((bet.stake || 0) * (bet.odd || 0) * m * sm) : 0;
       // Actualizar saldo y marcar la apuesta
       tx.set(userRef, { prevSaldo: saldo, saldo: saldo + pay, staked: Math.max(0, staked0 - (bet.stake || 0)) }, { merge: true });
-      tx.set(doc.ref, { status: w ? 'won' : 'lost', result: ourResult, payout: pay, exactCorrect: exOk, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      tx.set(doc.ref, { status: w ? 'won' : 'lost', result: ourResult, payout: pay, exactCorrect: exOk, streakMult: sm, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     });
 
     // Actualizar currentStreak en el usuario (para el badge 🔥 en el ranking)
@@ -487,7 +492,7 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
 
     const notifTitle = exactCorrect ? '🎯 ¡Marcador exacto! 🎉' : (won ? '¡Ganaste! 🎉' : 'Apuesta perdida 😕');
     await notify(bet0.uid, notifTitle,
-      our.home + ' vs ' + our.away + ': ' + (won ? '+' + payout + (exactCorrect ? ' (¡exacto! ×3)' : '') : '−' + (bet0.stake || 0)) + ' puntos');
+      our.home + ' vs ' + our.away + ': ' + (won ? '+' + payout + (exactCorrect ? ' (¡exacto! ×3)' : '') + (payout > Math.round((bet0.stake || 0) * (bet0.odd || 0)) ? ' (🔥 racha bonus)' : '') : '−' + (bet0.stake || 0)) + ' puntos');
     n++;
   }
   return n;
