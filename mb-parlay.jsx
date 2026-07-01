@@ -51,10 +51,11 @@
   window.MB_useParlaySlip = useParlaySlip;
 
   // ── Chip para entrar/salir del modo combinada ──
+  // El tooltip resume el concepto en una línea para que el usuario entienda antes de activarlo.
   function ParlayModeToggle() {
     const s = useParlaySlip();
     return (
-      <button onClick={() => setMode(!s.on)} className="mb-press" style={{
+      <button onClick={() => setMode(!s.on)} className="mb-press" title="Junta 2-6 partidos en una sola apuesta — las cuotas se multiplican, pero debes acertar TODOS" style={{
         flexShrink: 0, padding: '7px 12px', borderRadius: 'var(--r-pill)', cursor: 'pointer',
         background: s.on ? 'linear-gradient(135deg, #61DAFB, #4A90E2)' : 'var(--surface-2)',
         border: s.on ? '1.5px solid #61DAFB' : '1px solid var(--border-2)',
@@ -82,7 +83,10 @@
     ];
     return (
       <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-        <div style={{ fontSize: 9, color: '#61DAFB', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>🎰 Agregar a combinada</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+          <span style={{ fontSize: 9, color: '#61DAFB', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>🎰 Agregar a combinada</span>
+          <span style={{ fontSize: 8, color: 'var(--muted-2)' }}>elige 1 resultado por partido</span>
+        </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {picks.map((p) => {
             const active = leg && leg.pick === p.k;
@@ -147,15 +151,21 @@
         {open && (
           <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 1150, background: 'rgba(6,8,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
             <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, maxHeight: '85vh', overflow: 'auto', background: 'var(--bg)', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 18, border: '1px solid var(--border-2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <h3 className="display" style={{ margin: 0, fontSize: 'var(--t-lg)' }}>🎰 Combinada</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {legs.length > 0 && <button onClick={clearSlip} style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 700, cursor: 'pointer' }}>Vaciar</button>}
                   <button onClick={() => setOpen(false)} className="mb-press" style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 18, cursor: 'pointer' }}>✕</button>
                 </div>
               </div>
+              <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.5, marginBottom: 12 }}>
+                Elige el resultado de <strong style={{ color: 'var(--text)' }}>2 a 6 partidos</strong> distintos. Las cuotas se <strong style={{ color: '#61DAFB' }}>multiplican entre sí</strong> → premio mayor. Pero si fallas <strong style={{ color: '#e98b8b' }}>aunque sea uno</strong>, pierdes toda la apuesta.
+              </div>
               {legs.length === 0 ? (
-                <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)' }}>Toca picks en los partidos para agregarlos acá.</div>
+                <div style={{ padding: '14px 0 6px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>👇</div>
+                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>Cierra este panel y toca los botones de resultado en cada partido para agregarlos aquí.</div>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 12 }}>
                   {legs.map((l) => (

@@ -301,21 +301,15 @@ function Partidos() {
   const curTab = !st[1].done ? 'J1' : !st[2].done ? 'J2' : !st[3].done ? 'J3' : 'KO';
 
   const [tab, setTab] = useStateB(curTab); // abre por defecto en la jornada actual
-  const [filter, setFilter] = useStateB('all'); // 'all' | 'live' | 'soon' | 'mine' — filtro rápido (busca en TODO el torneo, no solo la jornada activa)
+  const [filter, setFilter] = useStateB('all'); // 'all' | 'hoy' | 'mine' — filtro rápido
 
-  // Apuestas en cuotas exactamente como cierran pronto: aún no empezó, falta ≤3h.
+  // "Hoy": partidos en vivo + los que cierran en ≤3h (del día)
   const closingSoon = (m) => { if (matchLive(m) || matchDone(m)) return false; const k = new Date(m.kickoff).getTime(); return k > now && k - now <= 3 * 3600e3; };
   const liveMatches = fx.filter(matchLive);
   const soonMatches = fx.filter(closingSoon);
+  const hoyMatches = [...liveMatches, ...soonMatches.filter((m) => !liveMatches.find((l) => l.id === m.id))];
   const mineMatches = fx.filter((m) => bets[m.id]);
   const byKickoffAsc = (a, b) => new Date(a.kickoff) - new Date(b.kickoff);
-  const FILTER_LIST = { live: liveMatches, soon: soonMatches, mine: mineMatches };
-  const FILTER_LABEL = { live: '🔴 En vivo ahora', soon: '⏱ Por cerrar (≤3h)', mine: '🎟 Mis apuestas' };
-  const FILTER_EMPTY = {
-    live: 'No hay partidos en vivo en este momento.',
-    soon: 'No hay apuestas por cerrar en las próximas 3 horas.',
-    mine: 'Todavía no tienes apuestas. ¡Elige un partido y arranca!',
-  };
 
   const openBets = Object.values(bets).filter((b) => b && b.status === 'open');
   const openParlays = myParlays.filter((p) => p && p.status === 'open');
@@ -335,9 +329,8 @@ function Partidos() {
   };
 
   const chips = [
-    { k: 'all', label: 'Todos' },
-    { k: 'live', label: '🔴 En vivo', count: liveMatches.length },
-    { k: 'soon', label: '⏱ Por cerrar', count: soonMatches.length },
+    { k: 'all',  label: 'Todos' },
+    { k: 'hoy',  label: liveMatches.length > 0 ? '🔴 Hoy' : '🗓 Hoy', count: hoyMatches.length },
     { k: 'mine', label: '🎟 Mis apuestas', count: mineMatches.length + myParlays.length },
   ];
 
@@ -363,12 +356,28 @@ function Partidos() {
 
       {filter !== 'all' ? (
         <>
-          <SectionHead title={FILTER_LABEL[filter]} />
-          {filter === 'mine' && myParlays.length > 0 && myParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
-          {FILTER_LIST[filter].length === 0 ? (
-            myParlays.length === 0 && <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>{FILTER_EMPTY[filter]}</div>
-          ) : (
-            FILTER_LIST[filter].slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)
+          {filter === 'hoy' && (
+            <>
+              {hoyMatches.length === 0 ? (
+                <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>No hay partidos en vivo ni por cerrar en las próximas 3 horas.</div>
+              ) : (
+                <>
+                  {liveMatches.length > 0 && <SectionHead title="🔴 En vivo ahora" />}
+                  {liveMatches.slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  {soonMatches.length > 0 && <SectionHead title="⏱ Por cerrar (≤3h)" />}
+                  {soonMatches.slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                </>
+              )}
+            </>
+          )}
+          {filter === 'mine' && (
+            <>
+              {myParlays.length > 0 && myParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
+              {mineMatches.length === 0 && myParlays.length === 0 && (
+                <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>Todavía no tienes apuestas. ¡Elige un partido y arranca!</div>
+              )}
+              {mineMatches.slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+            </>
           )}
         </>
       ) : (
