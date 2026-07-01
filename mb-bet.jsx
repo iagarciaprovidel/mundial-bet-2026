@@ -982,6 +982,7 @@
     const [claiming, setClaiming] = useState(false);
     const [claimDone, setClaimDone] = useState(false);
     const [claimErr, setClaimErr] = useState('');
+    const [histOpen, setHistOpen] = useState(false);
     // ── Premios de racha reclamables independientemente ──
     // Se usan contra bestStreak (máximo histórico) para que no se pierdan al romper la racha.
     const bestStreakMe = (me && typeof me.bestStreak === 'number') ? me.bestStreak : ((me && typeof me.currentStreak === 'number') ? me.currentStreak : 0);
@@ -1125,11 +1126,44 @@
             })}
           </div>
         )}
-        {claimedStreakLocal.length > 0 && claimableStreaks.length === 0 && bestStreakMe >= 1 && (
-          <div style={{ marginTop: 9, padding: '8px 11px', borderRadius: 'var(--r-md)', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', textAlign: 'center', fontSize: 'var(--t-3xs)', color: 'var(--success)', fontWeight: 700 }}>
-            ✅ Premios de racha reclamados
-          </div>
-        )}
+        {/* 📋 Historial de premios cobrados */}
+        {(() => {
+          const r = me && me.rewards;
+          const rows = [];
+          // Bono de grupos
+          if (r && r.groupsClosed) {
+            if (r.recarga)    rows.push(['🎟️', 'Recarga de apuestas',     r.recarga]);
+            if (r.precision)  rows.push(['🎯', 'Precisión de aciertos',  r.precision]);
+            if (r.streak)     rows.push(['🔥', 'Bono de racha (grupos)', r.streak]);
+            if (r.champBonus) rows.push(['🏆', 'Bono campeón',           r.champBonus]);
+          }
+          // Rachas individuales (Firestore + las reclamadas en esta sesión)
+          const allClaimedTiers = [...new Set([...claimedStreakTiers, ...claimedStreakLocal])];
+          allClaimedTiers.forEach((tier) => {
+            const t = STREAK_TIERS.find((x) => x[0] === tier);
+            if (t) rows.push(['🔥', `Premio racha ${t[0]} victorias`, t[1]]);
+          });
+          if (!rows.length) return null;
+          const total = rows.reduce((s, r) => s + r[2], 0);
+          return (
+            <div style={{ marginTop: 9, borderRadius: 'var(--r-md)', border: '1px solid rgba(34,197,94,0.25)', overflow: 'hidden' }}>
+              <button onClick={() => setHistOpen((o) => !o)} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 11px', background: 'rgba(34,197,94,0.08)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800 }}>✅ Premios cobrados · +{fmt(total)} pts</span>
+                <span style={{ fontSize: 10, color: 'var(--muted)', transition: 'transform 0.2s', display: 'inline-block', transform: histOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+              </button>
+              {histOpen && (
+                <div style={{ padding: '4px 11px 8px' }}>
+                  {rows.map((it, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', borderTop: i ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                      <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{it[0]} {it[1]}</span>
+                      <span className="num" style={{ fontSize: 'var(--t-3xs)', color: 'var(--success)', fontWeight: 800 }}>+{fmt(it[2])}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ⏳ Por asegurar */}
         <div style={{ marginTop: 9, padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.22)', border: '1px solid var(--border)' }}>
