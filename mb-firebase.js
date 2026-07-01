@@ -342,8 +342,9 @@
         const data = snap.exists ? snap.data() : {};
         const claimedTiers = (data.rewards && data.rewards.streakTiers) || [];
         if (claimedTiers.includes(tier)) throw 'ya-reclamado';
-        const curStreak = typeof data.currentStreak === 'number' ? data.currentStreak : 0;
-        if (curStreak < tier) throw 'streak-insuficiente';
+        // bestStreak = máximo histórico; fallback a currentStreak para usuarios sin el campo aún.
+        const bestStr = typeof data.bestStreak === 'number' ? data.bestStreak : (typeof data.currentStreak === 'number' ? data.currentStreak : 0);
+        if (bestStr < tier) throw 'streak-insuficiente';
         const saldo = typeof data.saldo === 'number' ? data.saldo : 90000;
         tx.set(ref, {
           saldo: saldo + amount,

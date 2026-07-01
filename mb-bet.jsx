@@ -983,7 +983,8 @@
     const [claimDone, setClaimDone] = useState(false);
     const [claimErr, setClaimErr] = useState('');
     // ── Premios de racha reclamables independientemente ──
-    const currentStreakMe = (me && typeof me.currentStreak === 'number') ? me.currentStreak : 0;
+    // Se usan contra bestStreak (máximo histórico) para que no se pierdan al romper la racha.
+    const bestStreakMe = (me && typeof me.bestStreak === 'number') ? me.bestStreak : ((me && typeof me.currentStreak === 'number') ? me.currentStreak : 0);
     const claimedStreakTiers = (me && me.rewards && Array.isArray(me.rewards.streakTiers)) ? me.rewards.streakTiers : [];
     const [claimedStreakLocal, setClaimedStreakLocal] = useState([]);
     const [claimingStreakTier, setClaimingStreakTier] = useState(null);
@@ -996,7 +997,7 @@
         .catch(() => { setClaimingStreakTier(null); });
     };
     const claimableStreaks = STREAK_TIERS.filter((t) =>
-      currentStreakMe >= t[0] && !claimedStreakTiers.includes(t[0]) && !claimedStreakLocal.includes(t[0])
+      bestStreakMe >= t[0] && !claimedStreakTiers.includes(t[0]) && !claimedStreakLocal.includes(t[0])
     );
     const doClaim = () => {
       const fb = window.MBFirebase;
@@ -1124,7 +1125,7 @@
             })}
           </div>
         )}
-        {claimedStreakLocal.length > 0 && claimableStreaks.length === 0 && currentStreakMe >= 1 && (
+        {claimedStreakLocal.length > 0 && claimableStreaks.length === 0 && bestStreakMe >= 1 && (
           <div style={{ marginTop: 9, padding: '8px 11px', borderRadius: 'var(--r-md)', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', textAlign: 'center', fontSize: 'var(--t-3xs)', color: 'var(--success)', fontWeight: 700 }}>
             ✅ Premios de racha reclamados
           </div>

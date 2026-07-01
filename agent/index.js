@@ -439,11 +439,18 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
     return pick === ourResult;
   };
 
-  // Calcular racha actual de un usuario dado sus apuestas liquidadas (cronológicas)
-  const currentStreak = (bets) => {
-    const settled = bets.filter((b) => b.status === 'won' || b.status === 'lost');
-    settled.sort((a, b) => { const ta = (a.settledAt && a.settledAt.seconds) ? a.settledAt.seconds : 0; const tb = (b.settledAt && b.settledAt.seconds) ? b.settledAt.seconds : 0; return tb - ta; });
-    let s = 0; for (const b of settled) { if (b.status === 'won') s++; else break; } return s;
+  // Calcular racha actual y mejor racha de un usuario dado sus apuestas liquidadas.
+  // Solo se cuentan apuestas con settledAt válido: las antiguas sin timestamp quedan
+  // excluidas para que no inflen artificialmente la racha por caer al final del sort.
+  const computeStreaks = (bets) => {
+    const settled = bets.filter((b) => (b.status === 'won' || b.status === 'lost') && b.settledAt && b.settledAt.seconds > 0);
+    settled.sort((a, b) => b.settledAt.seconds - a.settledAt.seconds); // desc → más reciente primero
+    let cur = 0; for (const b of settled) { if (b.status === 'won') cur++; else break; }
+    // bestStreak: racha más larga en toda la historia
+    let best = 0, run = 0;
+    const asc = settled.slice().reverse(); // asc → más antiguo primero
+    for (const b of asc) { if (b.status === 'won') { run++; if (run > best) best = run; } else run = 0; }
+    return { cur, best: Math.max(best, cur) };
   };
 
   let n = 0;
@@ -480,14 +487,16 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       tx.set(doc.ref, { status: w ? 'won' : 'lost', result: ourResult, payout: pay, exactCorrect: exOk, streakMult: sm, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     });
 
-    // Actualizar currentStreak en el usuario (para el badge 🔥 en el ranking)
+    // Actualizar currentStreak y bestStreak en el usuario (para badge 🔥 y premios de racha)
     try {
       const allBets = await db.collection('bets').where('uid', '==', bet0.uid).get();
       const betsData = allBets.docs.map((d) => d.data());
-      // Incluye la apuesta que acaba de liquidarse
-      betsData.forEach((b) => { if (b.matchId === our.id) { b.status = won ? 'won' : 'lost'; b.settledAt = { seconds: Math.floor(Date.now() / 1000) }; } });
-      const streak = currentStreak(betsData);
-      await db.collection('users').doc(bet0.uid).set({ currentStreak: streak }, { merge: true });
+      // Incluye la apuesta que acaba de liquidarse con timestamp real
+      const nowSec = Math.floor(Date.now() / 1000);
+      betsData.forEach((b) => { if (b.matchId === our.id && (!b.settledAt || !b.settledAt.seconds)) { b.status = won ? 'won' : 'lost'; b.settledAt = { seconds: nowSec }; } });
+      const { cur, best } = computeStreaks(betsData);
+      const prevBest = (typeof userData.bestStreak === 'number') ? userData.bestStreak : 0;
+      await db.collection('users').doc(bet0.uid).set({ currentStreak: cur, bestStreak: Math.max(best, prevBest) }, { merge: true });
     } catch (e) { /* no crítico */ }
 
     const notifTitle = exactCorrect ? '🎯 ¡Marcador exacto! 🎉' : (won ? '¡Ganaste! 🎉' : 'Apuesta perdida 😕');
@@ -1185,20 +1194,13 @@ async function recomputeAllStreaks() {
     if (!b.uid) return;
     (byUid[b.uid] = byUid[b.uid] || []).push(b);
   });
-  const streakOf = (bets) => {
-    const settled = bets.slice().sort((a, b) => {
-      const ta = (a.settledAt && a.settledAt.seconds) ? a.settledAt.seconds : 0;
-      const tb = (b.settledAt && b.settledAt.seconds) ? b.settledAt.seconds : 0;
-      return tb - ta;
-    });
-    let s = 0;
-    for (const b of settled) { if (b.status === 'won') s++; else break; }
-    return s;
-  };
   const uids = Object.keys(byUid);
   let batch = db.batch(), ops = 0;
   for (const uid of uids) {
-    batch.set(db.collection('users').doc(uid), { currentStreak: streakOf(byUid[uid]) }, { merge: true });
+    const { cur, best } = computeStreaks(byUid[uid]);
+    // Leer bestStreak previo para no retrocederlo (solo avanza)
+    // (no leemos Firestore aquí para mantener el batch eficiente; el agente lo protege en el settle individual)
+    batch.set(db.collection('users').doc(uid), { currentStreak: cur, bestStreak: best }, { merge: true });
     ops++;
     if (ops >= 400) { await batch.commit(); batch = db.batch(); ops = 0; }
   }
