@@ -401,6 +401,11 @@ function Partidos() {
   const openParlays = myParlays.filter((p) => p && p.status === 'open');
   const openTotal = openBets.reduce((s, b) => s + (b.stake || 0), 0) + openParlays.reduce((s, p) => s + (p.stake || 0), 0);
   const openCount = openBets.length + openParlays.length;
+  const _getTs = (obj) => obj && obj.creado && obj.creado.seconds ? obj.creado.seconds : 0;
+  const sortedBetItems = [
+    ...myParlays.map((p) => ({ type: 'parlay', data: p, ts: _getTs(p) })),
+    ...mineMatches.map((m) => ({ type: 'bet', data: m, ts: _getTs(bets[m.id]) })),
+  ].sort((a, b) => b.ts - a.ts);
 
   const dotEl = (color, pulse) => <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: color, marginLeft: 5, verticalAlign: 'middle', animation: pulse ? 'mb-pulse-live 1s var(--ease-out) infinite' : 'none' }} />;
   const jLabel = (md) => {
@@ -487,19 +492,13 @@ function Partidos() {
           )}
           {filter === 'mine' && (
             <>
-              {mineMatches.length === 0 && myParlays.length === 0 ? (
+              {mineMatches.length === 0 && myParlays.length === 0 && (
                 <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>Todavía no tienes apuestas. ¡Elige un partido y arranca!</div>
-              ) : (() => {
-                const getTs = (obj) => obj && obj.creado && obj.creado.seconds ? obj.creado.seconds : 0;
-                const items = [
-                  ...myParlays.map((p) => ({ type: 'parlay', data: p, ts: getTs(p) })),
-                  ...mineMatches.map((m) => ({ type: 'bet', data: m, ts: getTs(bets[m.id]) })),
-                ].sort((a, b) => b.ts - a.ts);
-                return items.map((item) => item.type === 'parlay'
-                  ? (window.MB_ParlayCard ? <window.MB_ParlayCard key={'p_' + item.data.id} p={item.data} /> : null)
-                  : <MobileFixtureCard key={'b_' + item.data.id} m={item.data} />
-                );
-              })()}
+              )}
+              {sortedBetItems.map((item) => item.type === 'parlay'
+                ? (window.MB_ParlayCard ? <window.MB_ParlayCard key={'p_' + item.data.id} p={item.data} /> : null)
+                : <MobileFixtureCard key={'b_' + item.data.id} m={item.data} />
+              )}
             </>
           )}
         </>
