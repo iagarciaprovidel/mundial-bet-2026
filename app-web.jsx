@@ -102,15 +102,12 @@ const ALL_TEAMS = window.MB_ALL_TEAMS || [];
 // Busca la ficha completa de una selección por nombre (para abrir el modal desde partidos)
 const teamByName = (name) => ALL_TEAMS.find(t => t.name === name) || null;
 
-// CSS para el marquee y el hover de banderas
+// CSS para hover de banderas (sin animación CSS — el marquee lo hace RAF en JS)
 (function injectWebCSS() {
   if (document.getElementById('mb-web-css')) return;
   const s = document.createElement('style');
   s.id = 'mb-web-css';
   s.textContent = `
-    @keyframes mb-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-    .mb-ticker { animation: mb-marquee 55s linear infinite; }
-    .mb-ticker-wrap:hover .mb-ticker, .mb-ticker:hover { animation-play-state: paused !important; }
     .mb-flagbtn img { transition: transform .15s var(--ease-out), box-shadow .15s; }
     .mb-flagbtn:hover img { transform: scale(1.22) translateY(-1px); box-shadow: 0 0 0 2px var(--gold), 0 3px 10px rgba(0,0,0,0.55); }
     .mb-team-row { transition: background .15s var(--ease-out); }
@@ -122,10 +119,10 @@ const teamByName = (name) => ALL_TEAMS.find(t => t.name === name) || null;
 })();
 
 // Ticker de banderas en movimiento, clickeable, con popover al hover
+// La animación usa requestAnimationFrame (no CSS animation) para máxima fiabilidad.
 function FlagTicker({ onSelect, onGroup }) {
   const teams = window.MB_ALL_TEAMS || ALL_TEAMS;
   const items = teams.concat(teams); // duplicado para bucle continuo
-  // white = visible en modo alpha Y luminance; transparent = oculto en ambos
   const mask = 'linear-gradient(90deg, transparent, white 3%, white 97%, transparent)';
   const allFxT = (window.MB && window.MB.WC_FIXTURES) || [];
   const r32CodesT = new Set(allFxT.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
@@ -134,6 +131,34 @@ function FlagTicker({ onSelect, onGroup }) {
   const groupsClosedT = r32CodesT.size > 0 && isFinite(lastKOT) && Date.now() >= lastKOT + 2 * 60 * 60 * 1000;
   const [hov, setHov] = useStateW(null);
   const timer = useRefW(null);
+  const tickerRef = useRefW(null);
+  const posRef = useRefW(0);
+  const rafRef = useRefW(null);
+  const pausedRef = useRefW(false);
+
+  // Animación RAF: 40 px/s, pausa en hover, bucle infinito sin CSS animation
+  useEffectW(() => {
+    const SPEED = 40; // px por segundo
+    let last = null;
+    function tick(ts) {
+      const el = tickerRef.current;
+      if (el && !pausedRef.current) {
+        if (last !== null) {
+          posRef.current -= SPEED * (ts - last) / 1000;
+          const half = el.scrollWidth / 2;
+          if (half > 0 && posRef.current <= -half) posRef.current += half;
+          el.style.transform = 'translateX(' + posRef.current + 'px)';
+        }
+        last = ts;
+      } else {
+        last = null; // reset time cuando está pausado para evitar salto al reanudar
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    }
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
+
   const cancelClose = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
   const open = (team, e) => {
     cancelClose();
@@ -151,14 +176,17 @@ function FlagTicker({ onSelect, onGroup }) {
   };
 
   return (
-    <div className="mb-ticker-wrap" style={{
-      flex: 1, minWidth: 0, alignSelf: 'stretch', overflow: 'hidden',
-      display: 'flex', alignItems: 'center',
-      WebkitMaskImage: mask, maskImage: mask,
-    }}>
-      <div className="mb-ticker" style={{
-        display: 'flex', alignItems: 'center', gap: 16, width: 'max-content',
-        flexShrink: 0, animation: 'mb-marquee 55s linear infinite',
+    <div className="mb-ticker-wrap"
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+      style={{
+        flex: 1, minWidth: 0, alignSelf: 'stretch', overflow: 'hidden',
+        display: 'flex', alignItems: 'center',
+        WebkitMaskImage: mask, maskImage: mask,
+      }}>
+      <div ref={tickerRef} className="mb-ticker" style={{
+        display: 'flex', alignItems: 'center', gap: 16,
+        flexShrink: 0, willChange: 'transform',
       }}>
         {items.map((t, i) => {
           const elimT = groupsClosedT && !r32CodesT.has(teamCode(t));
