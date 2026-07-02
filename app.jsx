@@ -117,16 +117,40 @@ function MobileFlagTicker({ onSelect }) {
   const lastKO = groupFx.length ? Math.max.apply(null, groupFx.map(f => new Date(f.kickoff).getTime())) : Infinity;
   const groupsClosed = r32Codes.size > 0 && isFinite(lastKO) && Date.now() >= lastKO + 2 * 60 * 60 * 1000;
   const items = teams.concat(teams);
-  const mask = 'linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent)';
+  const mask = 'linear-gradient(90deg, transparent, white 4%, white 96%, transparent)';
+  const tickerRef = useRefA(null);
+  const posRef = useRefA(0);
+  const rafRef = useRefA(null);
+
+  useEffectA(() => {
+    const SPEED = 35; // px/s en móvil
+    let last = null;
+    function tick(ts) {
+      const el = tickerRef.current;
+      if (el) {
+        if (last !== null) {
+          posRef.current -= SPEED * (ts - last) / 1000;
+          const half = el.scrollWidth / 2;
+          if (half > 0 && posRef.current <= -half) posRef.current += half;
+          el.style.transform = 'translateX(' + posRef.current + 'px)';
+        }
+        last = ts;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    }
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
+
   if (!teams.length) return null;
   return (
-    <div className="mb-ticker-wrap" style={{
+    <div style={{
       flexShrink: 0, overflow: 'hidden', borderBottom: '1px solid var(--border)',
       background: 'rgba(7,20,12,0.6)', WebkitMaskImage: mask, maskImage: mask,
     }}>
-      <div className="mb-ticker" style={{
-        display: 'flex', alignItems: 'center', gap: 14, width: 'max-content',
-        padding: '7px 12px',
+      <div ref={tickerRef} style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '7px 12px', flexShrink: 0, willChange: 'transform',
       }}>
         {items.map((tm, i) => {
           const code = tm.code || toCode(tm.flag);
