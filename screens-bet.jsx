@@ -487,20 +487,19 @@ function Partidos() {
           )}
           {filter === 'mine' && (
             <>
-              {myParlays.length > 0 && (
-                <>
-                  <SectionHead title="🎰 Combinadas" />
-                  {myParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
-                </>
-              )}
               {mineMatches.length === 0 && myParlays.length === 0 ? (
                 <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--muted-2)', fontSize: 'var(--t-2xs)', fontStyle: 'italic' }}>Todavía no tienes apuestas. ¡Elige un partido y arranca!</div>
-              ) : mineMatches.length > 0 && (
-                <>
-                  <SectionHead title="🎟 Apuestas simples" />
-                  {mineMatches.slice().sort(byKickoffAsc).map((m) => <MobileFixtureCard key={m.id} m={m} />)}
-                </>
-              )}
+              ) : (() => {
+                const getTs = (obj) => obj && obj.creado && obj.creado.seconds ? obj.creado.seconds : 0;
+                const items = [
+                  ...myParlays.map((p) => ({ type: 'parlay', data: p, ts: getTs(p) })),
+                  ...mineMatches.map((m) => ({ type: 'bet', data: m, ts: getTs(bets[m.id]) })),
+                ].sort((a, b) => b.ts - a.ts);
+                return items.map((item) => item.type === 'parlay'
+                  ? (window.MB_ParlayCard ? <window.MB_ParlayCard key={'p_' + item.data.id} p={item.data} /> : null)
+                  : <MobileFixtureCard key={'b_' + item.data.id} m={item.data} />
+                );
+              })()}
             </>
           )}
         </>
