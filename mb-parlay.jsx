@@ -132,7 +132,7 @@
       if (legs.length < 2) { setErr('Necesitas al menos 2 partidos.'); return; }
       setErr(''); setOk(''); setBusy(true);
       FB().placeParlay(legs.map((l) => ({ matchId: l.matchId, pick: l.pick, home: l.home, away: l.away, kickoff: l.kickoff })), stake)
-        .then(() => { setOk('¡Combinada registrada!'); clearSlip(); setTimeout(() => setOpen(false), 900); })
+        .then(() => { setOk('¡Combinada registrada!'); clearSlip(); setTimeout(() => { setOpen(false); setMode(false); }, 900); })
         .catch((e) => { const code = (e && e.code) || e; setErr(PARLAY_ERR[code] || ('No se pudo: ' + ((e && e.message) || code))); })
         .then(() => setBusy(false));
     };

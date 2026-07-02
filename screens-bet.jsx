@@ -383,6 +383,11 @@ function Partidos() {
   // Sync chip ↔ modo combinada
   const parlaySlip = window.MB_useParlaySlip ? window.MB_useParlaySlip() : null;
   const prevFilter = React.useRef(filter);
+  // Al montar: resetear modo combinada por si quedó pegado de una sesión anterior
+  React.useEffect(() => {
+    if (window.MB_setParlayMode) window.MB_setParlayMode(false);
+    return () => { if (window.MB_setParlayMode) window.MB_setParlayMode(false); };
+  }, []);
   React.useEffect(() => {
     if (filter === 'parlay' && prevFilter.current !== 'parlay') {
       if (window.MB_setParlayMode) window.MB_setParlayMode(true);
