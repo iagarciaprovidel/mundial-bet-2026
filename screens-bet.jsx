@@ -265,8 +265,7 @@ function BetHowTo() {
   );
 }
 
-// Ticker horizontal con las últimas apuestas de cualquier jugador (meta/activity,
-// lo arma el agente cada 5 min). Da sensación de comunidad activa.
+// Ticker horizontal con las últimas apuestas — se desplaza automáticamente (RAF).
 function ActivityTicker() {
   const [items, setItems] = useStateB([]);
   useEffectB(() => {
@@ -275,6 +274,37 @@ function ActivityTicker() {
     const un = fb.subscribeActivity(setItems);
     return () => { if (typeof un === 'function') un(); };
   }, []);
+
+  const wrapRef = React.useRef(null);
+  const posRef = React.useRef(0);
+  const rafRef = React.useRef(null);
+  const pausedRef = React.useRef(false);
+
+  useEffectB(() => {
+    if (!items.length) return;
+    const SPEED = 32; // px/s
+    let last = null;
+    function tick(ts) {
+      const el = wrapRef.current;
+      if (el && !pausedRef.current) {
+        if (last !== null) {
+          posRef.current -= SPEED * (ts - last) / 1000;
+          const half = el.scrollWidth / 2;
+          if (half > 0 && posRef.current <= -half) posRef.current += half;
+          el.style.transform = 'translateX(' + posRef.current + 'px)';
+        }
+        last = ts;
+      } else {
+        last = null;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    }
+    posRef.current = 0;
+    if (wrapRef.current) wrapRef.current.style.transform = 'translateX(0)';
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [items.length]);
+
   if (!items.length) return null;
   const ago = (ts) => {
     const m = Math.max(0, Math.round((Date.now() - ts) / 60000));
@@ -283,18 +313,27 @@ function ActivityTicker() {
     return `hace ${Math.round(m / 60)}h`;
   };
   const teamFor = (it) => it.pick === 'home' ? it.home : it.pick === 'away' ? it.away : 'Empate/Pen.';
+  const doubled = items.concat(items); // duplicar para bucle sin salto
+  const mask = 'linear-gradient(90deg, transparent, white 4%, white 96%, transparent)';
   return (
-    <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 4, marginBottom: 12 }}>
-      {items.map((it, i) => (
-        <div key={i} style={{
-          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 11px',
-          borderRadius: 'var(--r-pill)', background: 'var(--surface-2)', border: '1px solid var(--border-2)',
-          fontSize: 'var(--t-3xs)', color: 'var(--muted)', whiteSpace: 'nowrap',
-        }}>
-          <span style={{ fontWeight: 700, color: 'var(--text)' }}>{it.nombre}</span> apostó <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{Db.fmt(it.stake)}</span> a <span style={{ fontWeight: 700 }}>{teamFor(it)}</span>
-          <span style={{ color: 'var(--muted-2)' }}>· {ago(it.ts)}</span>
-        </div>
-      ))}
+    <div
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+      style={{ overflow: 'hidden', marginBottom: 12, WebkitMaskImage: mask, maskImage: mask }}>
+      <div ref={wrapRef} style={{
+        display: 'flex', gap: 7, paddingBottom: 4, flexShrink: 0, willChange: 'transform',
+      }}>
+        {doubled.map((it, i) => (
+          <div key={i} style={{
+            flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 11px',
+            borderRadius: 'var(--r-pill)', background: 'var(--surface-2)', border: '1px solid var(--border-2)',
+            fontSize: 'var(--t-3xs)', color: 'var(--muted)', whiteSpace: 'nowrap',
+          }}>
+            <span style={{ fontWeight: 700, color: 'var(--text)' }}>{it.nombre}</span> apostó <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{Db.fmt(it.stake)}</span> a <span style={{ fontWeight: 700 }}>{teamFor(it)}</span>
+            <span style={{ color: 'var(--muted-2)' }}>· {ago(it.ts)}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
