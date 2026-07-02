@@ -320,19 +320,6 @@ function Partidos() {
 
   const [tab, setTab] = useStateB(curTab); // abre por defecto en la jornada actual
   const [filter, setFilter] = useStateB('all'); // 'all' | 'hoy' | 'parlay' | 'mine'
-  // Partidos de hoy apostables (para la sección combinada — solo mismo día)
-  const hoyOpen = hoyAll.filter((m) => !isLiveS(m) && !isDoneS(m));
-  // Sync chip ↔ modo combinada
-  const parlaySlip = window.MB_useParlaySlip ? window.MB_useParlaySlip() : null;
-  const prevFilter = React.useRef(filter);
-  React.useEffect(() => {
-    if (filter === 'parlay' && prevFilter.current !== 'parlay') {
-      if (window.MB_setParlayMode) window.MB_setParlayMode(true);
-    } else if (filter !== 'parlay' && prevFilter.current === 'parlay') {
-      if (window.MB_setParlayMode) window.MB_setParlayMode(false);
-    }
-    prevFilter.current = filter;
-  }, [filter]);
 
   const BET_GRACE_MS_S = 5 * 60 * 1000;
   const MATCH_MS_S = 150 * 60 * 1000; // 2.5h — duración máxima estimada
@@ -347,10 +334,24 @@ function Partidos() {
   const hoyLive     = hoyAll.filter((m) => isLiveS(m));
   const hoyDone     = hoyAll.filter((m) => isDoneS(m) && !isLiveS(m));
   const hoyUpcoming = hoyAll.filter((m) => !isLiveS(m) && !isDoneS(m));
+  // Partidos de hoy apostables (para la sección combinada — solo mismo día)
+  const hoyOpen = hoyUpcoming;
   // Para el chip legacy
   const liveMatches = fx.filter((m) => { const o = odds[m.id]; const k = new Date(m.kickoff).getTime(); return !!(o && o.live && !o.finished) || (now >= k + BET_GRACE_MS_S && now < k + MATCH_MS_S); });
   const mineMatches = fx.filter((m) => bets[m.id]);
   const byKickoffAsc = (a, b) => new Date(a.kickoff) - new Date(b.kickoff);
+
+  // Sync chip ↔ modo combinada
+  const parlaySlip = window.MB_useParlaySlip ? window.MB_useParlaySlip() : null;
+  const prevFilter = React.useRef(filter);
+  React.useEffect(() => {
+    if (filter === 'parlay' && prevFilter.current !== 'parlay') {
+      if (window.MB_setParlayMode) window.MB_setParlayMode(true);
+    } else if (filter !== 'parlay' && prevFilter.current === 'parlay') {
+      if (window.MB_setParlayMode) window.MB_setParlayMode(false);
+    }
+    prevFilter.current = filter;
+  }, [filter]);
 
   const openBets = Object.values(bets).filter((b) => b && b.status === 'open');
   const openParlays = myParlays.filter((p) => p && p.status === 'open');
