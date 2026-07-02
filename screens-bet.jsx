@@ -406,6 +406,8 @@ function Partidos() {
     ...myParlays.map((p) => ({ type: 'parlay', data: p, ts: _getTs(p) })),
     ...mineMatches.map((m) => ({ type: 'bet', data: m, ts: _getTs(bets[m.id]) })),
   ].sort((a, b) => b.ts - a.ts);
+  const _todayStr = new Date(now).toLocaleDateString('sv');
+  const todayParlays = myParlays.filter((p) => (p.legs || []).some((l) => new Date(l.kickoff).toLocaleDateString('sv') === _todayStr));
 
   const dotEl = (color, pulse) => <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: color, marginLeft: 5, verticalAlign: 'middle', animation: pulse ? 'mb-pulse-live 1s var(--ease-out) infinite' : 'none' }} />;
   const jLabel = (md) => {
@@ -473,16 +475,49 @@ function Partidos() {
           )}
           {filter === 'parlay' && (
             <>
+              {/* Combinada(s) de hoy ya registradas */}
+              {todayParlays.length > 0 && (
+                <>
+                  <SectionHead title="🎰 Tu combinada de hoy" />
+                  {todayParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
+                </>
+              )}
+
+              {/* Banner + partidos disponibles */}
               {hoyOpen.length === 0 ? (
-                <div style={{ padding: '28px 16px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🎰</div>
-                  <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800, marginBottom: 4 }}>No hay partidos disponibles hoy para combinada</div>
-                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Las combinadas solo incluyen partidos del mismo día que aún no comenzaron.<br />Vuelve cuando haya partidos por jugar.</div>
-                </div>
+                todayParlays.length === 0 && (
+                  <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>🎰</div>
+                    <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800, marginBottom: 4 }}>No hay partidos disponibles hoy para combinada</div>
+                    <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Las combinadas solo incluyen partidos del mismo día que aún no comenzaron.<br />Vuelve cuando haya partidos por jugar.</div>
+                  </div>
+                )
               ) : (
                 <>
-                  <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 'var(--r-md)', background: 'rgba(97,218,251,0.07)', border: '1px solid rgba(97,218,251,0.2)', fontSize: 'var(--t-3xs)', color: 'var(--muted)', lineHeight: 1.5 }}>
-                    🎰 <strong style={{ color: '#61DAFB' }}>Modo combinada activo</strong> · Elige el resultado de <strong style={{ color: 'var(--text)' }}>2 a 6 partidos</strong> de hoy. Las cuotas se multiplican — pero debes acertar <strong style={{ color: '#e98b8b' }}>TODOS</strong>.
+                  {/* Banner rediseñado */}
+                  <div style={{ marginBottom: 12, borderRadius: 'var(--r-lg)', overflow: 'hidden', border: '1px solid rgba(97,218,251,0.35)', background: 'rgba(13,20,15,0.92)' }}>
+                    <div style={{ padding: '10px 14px', background: 'linear-gradient(135deg, rgba(97,218,251,0.15), rgba(74,144,226,0.10))', borderBottom: '1px solid rgba(97,218,251,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 16 }}>🎰</span>
+                      <span style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: '#61DAFB' }}>Modo combinada activo</span>
+                    </div>
+                    <div style={{ padding: '10px 14px' }}>
+                      <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', lineHeight: 1.5, marginBottom: 8 }}>
+                        Elige el resultado de cada partido de hoy y confírmalos en un solo ticket.
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                        <div style={{ padding: '7px 10px', borderRadius: 'var(--r-md)', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.25)', textAlign: 'center', minWidth: 60 }}>
+                          <div className="num" style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: '#61DAFB', lineHeight: 1 }}>2–6</div>
+                          <div style={{ fontSize: 8, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>Partidos</div>
+                        </div>
+                        <div style={{ flex: 1, padding: '7px 10px', borderRadius: 'var(--r-md)', background: 'rgba(233,139,139,0.08)', border: '1px solid rgba(233,139,139,0.3)' }}>
+                          <div style={{ fontSize: 'var(--t-xs)', fontWeight: 800, color: '#e98b8b' }}>⚠ Debes acertar TODOS</div>
+                          <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 2, lineHeight: 1.4 }}>Si fallas uno solo, pierdes toda la combinada</div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 9, color: 'var(--muted-2)', lineHeight: 1.4 }}>
+                        Las cuotas se <strong style={{ color: '#61DAFB' }}>multiplican entre sí</strong> · Solo partidos de hoy que aún no empezaron
+                      </div>
+                    </div>
                   </div>
                   <SectionHead title={`Partidos disponibles hoy · ${hoyOpen.length}`} />
                   {hoyOpen.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
