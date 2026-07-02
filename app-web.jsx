@@ -123,8 +123,10 @@ const teamByName = (name) => ALL_TEAMS.find(t => t.name === name) || null;
 
 // Ticker de banderas en movimiento, clickeable, con popover al hover
 function FlagTicker({ onSelect, onGroup }) {
-  const items = ALL_TEAMS.concat(ALL_TEAMS); // duplicado para bucle continuo
-  const mask = 'linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent)';
+  const teams = window.MB_ALL_TEAMS || ALL_TEAMS;
+  const items = teams.concat(teams); // duplicado para bucle continuo
+  // white = visible en modo alpha Y luminance; transparent = oculto en ambos
+  const mask = 'linear-gradient(90deg, transparent, white 3%, white 97%, transparent)';
   const allFxT = (window.MB && window.MB.WC_FIXTURES) || [];
   const r32CodesT = new Set(allFxT.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFxT = allFxT.filter(f => !f.stage || f.stage === 'Grupos');
@@ -156,6 +158,7 @@ function FlagTicker({ onSelect, onGroup }) {
     }}>
       <div className="mb-ticker" style={{
         display: 'flex', alignItems: 'center', gap: 16, width: 'max-content',
+        flexShrink: 0, animation: 'mb-marquee 55s linear infinite',
       }}>
         {items.map((t, i) => {
           const elimT = groupsClosedT && !r32CodesT.has(teamCode(t));
