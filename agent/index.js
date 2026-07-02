@@ -471,7 +471,6 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       const hasEx = typeof bet.exactHome === 'number' && typeof bet.exactAway === 'number';
       const exOk = w && hasEx && ghOur != null && gaOur != null && bet.exactHome === ghOur && bet.exactAway === gaOur;
       const m = exOk ? 3 : 1;
-      const pay = w ? Math.round((bet.stake || 0) * (bet.odd || 0) * m) : 0;
       const userRef = db.collection('users').doc(bet.uid);
       const us = await tx.get(userRef);
       const userData = us.exists ? us.data() : {};
