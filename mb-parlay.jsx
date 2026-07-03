@@ -130,6 +130,15 @@
 
     const confirm = () => {
       if (legs.length < 2) { setErr('Necesitas al menos 2 partidos.'); return; }
+      // Prevenir duplicado: si ya existe una combinada abierta con las mismas selecciones, no registrar otra
+      const existingParlays = (store && store.parlays) || [];
+      const draftFp = legs.map((l) => l.matchId + ':' + l.pick).sort().join('|');
+      const alreadyPlaced = existingParlays.some((p) => {
+        if (p.status !== 'open') return false;
+        const fp = (p.legs || []).map((l) => l.matchId + ':' + l.pick).sort().join('|');
+        return fp === draftFp;
+      });
+      if (alreadyPlaced) { setErr('Ya tienes esta combinada registrada.'); return; }
       setErr(''); setOk(''); setBusy(true);
       FB().placeParlay(legs.map((l) => ({ matchId: l.matchId, pick: l.pick, home: l.home, away: l.away, kickoff: l.kickoff })), stake)
         .then(() => { setOk('¡Combinada registrada!'); clearSlip(); setTimeout(() => { setOpen(false); setMode(false); }, 900); })
