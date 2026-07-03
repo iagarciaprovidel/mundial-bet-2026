@@ -407,7 +407,10 @@ function Partidos() {
     ...mineMatches.map((m) => ({ type: 'bet', data: m, ts: _getTs(bets[m.id]) })),
   ].sort((a, b) => b.ts - a.ts);
   const _todayStr = new Date(now).toLocaleDateString('sv');
-  const todayParlays = myParlays.filter((p) => (p.legs || []).some((l) => new Date(l.kickoff).toLocaleDateString('sv') === _todayStr));
+  const todayParlays = myParlays.filter((p, i, arr) =>
+    arr.findIndex((x) => x.id === p.id) === i &&
+    (p.legs || []).some((l) => new Date(l.kickoff).toLocaleDateString('sv') === _todayStr)
+  );
 
   const dotEl = (color, pulse) => <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: color, marginLeft: 5, verticalAlign: 'middle', animation: pulse ? 'mb-pulse-live 1s var(--ease-out) infinite' : 'none' }} />;
   const jLabel = (md) => {
@@ -455,6 +458,12 @@ function Partidos() {
         <>
           {filter === 'hoy' && (
             <>
+              {todayParlays.length > 0 && (
+                <>
+                  <SectionHead title="🎰 Tu combinada de hoy" />
+                  {todayParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
+                </>
+              )}
               {hoyAll.length === 0 ? (
                 <div style={{ padding: '28px 16px', textAlign: 'center' }}>
                   <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
