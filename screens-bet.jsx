@@ -407,10 +407,20 @@ function Partidos() {
     ...mineMatches.map((m) => ({ type: 'bet', data: m, ts: _getTs(bets[m.id]) })),
   ].sort((a, b) => b.ts - a.ts);
   const _todayStr = new Date(now).toLocaleDateString('sv');
-  const todayParlays = myParlays.filter((p, i, arr) =>
-    arr.findIndex((x) => x.id === p.id) === i &&
-    (p.legs || []).some((l) => new Date(l.kickoff).toLocaleDateString('sv') === _todayStr)
-  );
+  const todayParlays = (() => {
+    const seenIds = new Set();
+    const seenFp = new Set();
+    return myParlays
+      .slice().sort((a, b) => _getTs(b) - _getTs(a))
+      .filter((p) => {
+        if (seenIds.has(p.id)) return false;
+        seenIds.add(p.id);
+        const fp = (p.legs || []).map((l) => l.matchId + ':' + l.pick).sort().join('|');
+        if (seenFp.has(fp)) return false;
+        seenFp.add(fp);
+        return (p.legs || []).some((l) => new Date(l.kickoff).toLocaleDateString('sv') === _todayStr);
+      });
+  })();
 
   const dotEl = (color, pulse) => <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: color, marginLeft: 5, verticalAlign: 'middle', animation: pulse ? 'mb-pulse-live 1s var(--ease-out) infinite' : 'none' }} />;
   const jLabel = (md) => {
