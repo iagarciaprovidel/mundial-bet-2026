@@ -343,7 +343,8 @@ function Partidos() {
   const odds = (store && store.odds) || {};
   const bets = (store && store.bets) || {};
   const myParlays = (store && store.parlays) || [];
-  const fx = (window.MB.WC_FIXTURES) || [];
+  const dynFx = (store && store.dynFixtures) || [];
+  const fx = [...((window.MB && window.MB.WC_FIXTURES) || []), ...dynFx.filter((d) => !((window.MB && window.MB.WC_FIXTURES) || []).some((s) => s.id === d.id))];
   const ko = (window.MB.WC_KNOCKOUTS) || [];
   const mdMap = { J1: 1, J2: 2, J3: 3 };
   const now = Date.now();
