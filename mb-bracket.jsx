@@ -725,9 +725,16 @@
     }
 
     // Slot que muestra ganadores de dos R32 (para R16 TBD)
-    function WSlotFromWinners({ x, y, m1, od1, m2, od2, champCode, r16m, r16od }) {
-      // Si hay fixture real para R16, usarlo
-      if (r16m) return <WSlot m={r16m} x={x} y={y} champCode={champCode} od={r16od || {}} />;
+    function WSlotFromWinners({ x, y, m1, od1, m2, od2, champCode, r16All, oddsAll }) {
+      // Busca el fixture real de R16 cuyas dos selecciones son los ganadores de m1 y m2
+      const w1c = m1 ? (getWinner(m1, od1, false) || null) : null;
+      const w2c = m2 ? (getWinner(m2, od2, false) || null) : null;
+      const r16m = (w1c && w2c && r16All) ? r16All.find(m => {
+        const s = new Set([m.homeCode, m.awayCode]);
+        return s.has(w1c.code) && s.has(w2c.code);
+      }) || null : null;
+      const r16od = r16m ? ((oddsAll && oddsAll[r16m.id]) || {}) : {};
+      if (r16m) return <WSlot m={r16m} x={x} y={y} champCode={champCode} od={r16od} />;
       const w1 = m1 ? getWinner(m1, od1, true) : null;
       const w2 = m2 ? getWinner(m2, od2, true) : null;
       return (
@@ -769,7 +776,6 @@
       r32.forEach((m, i) => { m._idx = i; });
 
       const L32 = r32.slice(0, 8), R32 = r32.slice(8, 16);
-      const L16 = r16.slice(0, 4), R16 = r16.slice(4, 8);
       const LQF = qf.slice(0, 2),  RQF = qf.slice(2, 4);
       const LSF = sf[0] || null,    RSF = sf[1] || null;
       const FIN = fin[0] || null;
@@ -923,7 +929,7 @@
                 <WSlotFromWinners key={`l16-${i}`} x={X16} y={y16(i)} champCode={champCode}
                   m1={L32[2*i]} od1={odds[L32[2*i]?.id]||{}}
                   m2={L32[2*i+1]} od2={odds[L32[2*i+1]?.id]||{}}
-                  r16m={L16[i]||null} r16od={L16[i]?odds[L16[i].id]||{}:{}} />
+                  r16All={r16} oddsAll={odds} />
               ))}
 
               {/* ─── QF LEFT ─── */}
@@ -968,7 +974,7 @@
                 <WSlotFromWinners key={`r16-${i}`} x={X16_R} y={y16(i)} champCode={champCode}
                   m1={R32[2*i]} od1={odds[R32[2*i]?.id]||{}}
                   m2={R32[2*i+1]} od2={odds[R32[2*i+1]?.id]||{}}
-                  r16m={R16[i]||null} r16od={R16[i]?odds[R16[i].id]||{}:{}} />
+                  r16All={r16} oddsAll={odds} />
               ))}
 
               {/* ─── R32 RIGHT ─── */}
