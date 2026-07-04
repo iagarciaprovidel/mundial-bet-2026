@@ -1153,6 +1153,7 @@ async function main() {
     }
 
     // Terminado: guarda resultado final + liquida.
+    if (isFinished) console.log(`  [settle-dbg] ${mm.our.id}: ftH=${ftH} ftA=${ftA} goals=${(m.goals||[]).length} ft=${JSON.stringify(ft)}`);
     if (ftH == null || ftA == null) continue;
     let apiResult = gh > ga ? 'home' : (gh < ga ? 'away' : 'draw');
     let ourResult = apiResult;
