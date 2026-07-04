@@ -776,6 +776,7 @@
       r32.forEach((m, i) => { m._idx = i; });
 
       const L32 = r32.slice(0, 8), R32 = r32.slice(8, 16);
+      const L16 = r16.slice(0, 4), R16 = r16.slice(4, 8);
       const LQF = qf.slice(0, 2),  RQF = qf.slice(2, 4);
       const LSF = sf[0] || null,    RSF = sf[1] || null;
       const FIN = fin[0] || null;
