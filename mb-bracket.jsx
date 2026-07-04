@@ -556,10 +556,13 @@
     const yQF = (i) => cYQF(i) - H / 2;
     const ySF = ()  => cYSF() - H / 2;
 
+    // Partido efectivamente terminado: por flag del agente O por reloj (kickoff +3.5h)
+    const isEffDoneW = (m, od) => !!(od && od.finished) || !!(m && m.kickoff && new Date(m.kickoff).getTime() + 3.5 * 3600000 < Date.now());
+
     // Colores de conector según estado
     const connColor = (m, od) => {
       if (!m || !od) return 'rgba(255,255,255,0.1)';
-      if (od.finished) return 'rgba(0,200,90,0.45)';
+      if (isEffDoneW(m, od)) return 'rgba(0,200,90,0.45)';
       if (isLive(m, od)) return 'rgba(255,82,82,0.45)';
       return 'rgba(255,255,255,0.1)';
     };
@@ -575,7 +578,7 @@
       }
 
       const live     = isLive(m, od);
-      const finished = !!(od && od.finished);
+      const finished = isEffDoneW(m, od);
       const onPens   = finished && od.result === 'draw' && !!od.penWinner;
       const r        = effResult(od);
       const homeWon  = finished && r === 'home';
@@ -660,7 +663,7 @@
 
     // Tarjeta de slot siguiente ronda (ganador provisional/confirmado o TBD)
     function WSlot({ m, x, y, champCode, od, label }) {
-      const finished = !!(od && od.finished);
+      const finished = m ? isEffDoneW(m, od) : !!(od && od.finished);
       const live_s   = m ? isLive(m, od) : false;
       const r = effResult(od);
       const t1 = m ? { name: m.home, code: m.homeCode, won: finished && r === 'home' } : null;
@@ -771,7 +774,7 @@
         const ty = m1 ? cY32(2*i) : 0, by = m2 ? cY32(2*i+1) : 0, my = cY16(i);
         const bx = X32 + W + CN/2;
         const c1 = connColor(m1,od1), c2 = connColor(m2,od2);
-        const cm = (od1.finished && od2.finished) ? 'rgba(0,200,90,0.4)' : (isLive(m1,od1)||isLive(m2,od2)) ? 'rgba(255,82,82,0.35)' : 'rgba(255,255,255,0.1)';
+        const cm = (isEffDoneW(m1,od1)&&isEffDoneW(m2,od2)) ? 'rgba(0,200,90,0.4)' : (isLive(m1,od1)||isLive(m2,od2)) ? 'rgba(255,82,82,0.35)' : 'rgba(255,255,255,0.1)';
         segs.push(
           { d: `M${X32+W} ${ty} H${bx}`, s: c1 },
           { d: `M${bx} ${ty} V${my}`, s: cm },
@@ -801,7 +804,7 @@
         const ty=cYQF(0), by=cYQF(1), my=cYSF();
         const bx=XQF+W+CN/2;
         const c1=connColor(m1,od1),c2=connColor(m2,od2);
-        const cm=(od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        const cm=(isEffDoneW(m1,od1)&&isEffDoneW(m2,od2))?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
         segs.push(
           { d: `M${XQF+W} ${ty} H${bx}`, s: c1 }, { d: `M${bx} ${ty} V${my}`, s: cm },
           { d: `M${XQF+W} ${by} H${bx}`, s: c2 }, { d: `M${bx} ${by} V${my}`, s: cm },
@@ -821,7 +824,7 @@
         const ty = m1?cY32(2*i):0, by = m2?cY32(2*i+1):0, my = cY16(i);
         const bx = X16_R + W + CN/2;
         const c1=connColor(m1,od1),c2=connColor(m2,od2);
-        const cm=(od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        const cm=(isEffDoneW(m1,od1)&&isEffDoneW(m2,od2))?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
         segs.push(
           { d:`M${X32_R} ${ty} H${bx}`, s:c1 }, { d:`M${bx} ${ty} V${my}`, s:cm },
           { d:`M${X32_R} ${by} H${bx}`, s:c2 }, { d:`M${bx} ${by} V${my}`, s:cm },
@@ -835,7 +838,7 @@
         const ty=cY16(2*i),by=cY16(2*i+1),my=cYQF(i);
         const bx=XQF_R+W+CN/2;
         const c1=connColor(m1,od1),c2=connColor(m2,od2);
-        const cm=(od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        const cm=(isEffDoneW(m1,od1)&&isEffDoneW(m2,od2))?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
         segs.push(
           { d:`M${X16_R} ${ty} H${bx}`, s:c1 }, { d:`M${bx} ${ty} V${my}`, s:cm },
           { d:`M${X16_R} ${by} H${bx}`, s:c2 }, { d:`M${bx} ${by} V${my}`, s:cm },
@@ -848,7 +851,7 @@
         const ty=cYQF(0),by=cYQF(1),my=cYSF();
         const bx=XSF_R+W+CN/2;
         const c1=connColor(m1,od1),c2=connColor(m2,od2);
-        const cm=(od1.finished&&od2.finished)?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
+        const cm=(isEffDoneW(m1,od1)&&isEffDoneW(m2,od2))?'rgba(0,200,90,0.4)':(isLive(m1,od1)||isLive(m2,od2))?'rgba(255,82,82,0.35)':'rgba(255,255,255,0.1)';
         segs.push(
           { d:`M${XQF_R} ${ty} H${bx}`, s:c1 }, { d:`M${bx} ${ty} V${my}`, s:cm },
           { d:`M${XQF_R} ${by} H${bx}`, s:c2 }, { d:`M${bx} ${by} V${my}`, s:cm },
