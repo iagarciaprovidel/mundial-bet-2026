@@ -18,18 +18,22 @@ function Num({ children, color, bold }) {
   return <div style={{ textAlign: 'center', color: color || 'var(--muted-2)', fontSize: 'var(--t-3xs)', fontWeight: bold ? 700 : 600 }}>{children}</div>;
 }
 
-function StandingRow({ team, qualified, eliminated }) {
-  const open = () => { if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(team.name); };
+function StandingRow({ team, qualified, eliminated, eliminatedR32 }) {
+  const open = () => {
+    if (team.code && window.MB_openTeamByCode) { window.MB_openTeamByCode(team.code); return; }
+    if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(team.name);
+  };
   const dg = team.dg || 0;
   return (
     <div onClick={open} className="mb-press" title={`Ver ${team.name}`} style={{
       display: 'grid', gridTemplateColumns: STANDING_COLS, gap: STANDING_GAP,
       alignItems: 'center', padding: '9px 2px', margin: '0 -2px', borderRadius: 'var(--r-sm)',
       cursor: 'pointer', borderBottom: '1px solid var(--border)',
-      borderLeft: qualified ? '3px solid var(--success)' : '3px solid transparent',
-      paddingLeft: qualified || eliminated ? 4 : 2,
-      opacity: eliminated ? 0.45 : 1,
-      background: qualified ? 'rgba(0,200,90,0.05)' : 'transparent',
+      borderLeft: qualified ? '3px solid var(--success)' : eliminatedR32 ? '3px solid rgba(255,165,0,0.5)' : '3px solid transparent',
+      paddingLeft: (qualified || eliminated || eliminatedR32) ? 4 : 2,
+      opacity: eliminated ? 0.3 : eliminatedR32 ? 0.6 : 1,
+      filter: eliminated ? 'grayscale(0.85)' : eliminatedR32 ? 'grayscale(0.4)' : 'none',
+      background: qualified ? 'rgba(0,200,90,0.05)' : eliminatedR32 ? 'rgba(255,165,0,0.03)' : 'transparent',
     }}>
       <div style={{ fontWeight: 700, color: 'var(--muted-2)', textAlign: 'center', fontSize: 'var(--t-2xs)' }}>{team.pos}</div>
       <img src={`https://flagcdn.com/h24/${team.code || ''}.png`} alt="" style={{ height: 14, width: 'auto', borderRadius: 2 }} />
@@ -60,7 +64,9 @@ function GroupCard({ groupId, color }) {
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const standings = (window.MB_standings ? window.MB_standings(store ? store.odds : {})[groupId] : Dt.GROUP_STANDINGS[groupId]) || [];
   const allFx = (window.MB && window.MB.WC_FIXTURES) || [];
+  const dynFx = (store && store.dynFixtures) || [];
   const r32Codes = new Set(allFx.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const r16Codes = new Set([...allFx, ...dynFx].filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFx = allFx.filter(f => !f.stage || f.stage === 'Grupos');
   const lastGroupKO = groupFx.length ? Math.max.apply(null, groupFx.map(f => new Date(f.kickoff).getTime())) : Infinity;
   const groupsClosed = isFinite(lastGroupKO) && Date.now() >= lastGroupKO + 2 * 60 * 60 * 1000;
@@ -89,7 +95,11 @@ function GroupCard({ groupId, color }) {
             <div style={{ textAlign: 'center' }} title="Diferencia de gol">DG</div>
             <div style={{ textAlign: 'center' }} title="Puntos">Pts</div>
           </div>
-          {standings.map((team, idx) => <StandingRow key={idx} team={team} qualified={groupsClosed && r32Codes.size > 0 && r32Codes.has(team.code)} eliminated={groupsClosed && r32Codes.size > 0 && !r32Codes.has(team.code)} />)}
+          {standings.map((team, idx) => <StandingRow key={idx} team={team}
+            qualified={groupsClosed && r32Codes.size > 0 && r32Codes.has(team.code) && (r16Codes.size === 0 || r16Codes.has(team.code))}
+            eliminated={groupsClosed && r32Codes.size > 0 && !r32Codes.has(team.code)}
+            eliminatedR32={r16Codes.size > 0 && r32Codes.has(team.code) && !r16Codes.has(team.code)}
+          />)}
         </div>
       )}
     </Card>
