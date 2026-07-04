@@ -39,12 +39,22 @@
     unsubs.forEach((u) => { try { if (typeof u === 'function') u(); } catch (e) {} });
     unsubs = [];
     const fb = FB();
-    if (fb.subscribeOdds) unsubs.push(fb.subscribeOdds((o) => { store.odds = o || {}; store.ready = true; emit(); }));
+    if (fb.subscribeOdds) unsubs.push(fb.subscribeOdds((o) => {
+      store.odds = o || {};
+      store.ready = true;
+      // Deriva dynFixtures de los docs de odds que tienen metadata de fixture dinámica.
+      // El agente escribe _homeCode/_awayCode/_kickoff en odds al cargar fixtures de la
+      // colección `fixtures`, que no tiene regla de lectura para clientes.
+      const derived = Object.entries(o || {})
+        .filter(([, d]) => d._homeCode && d._awayCode && d._kickoff)
+        .map(([id, d]) => ({ id, home: d._home || '', away: d._away || '', homeCode: d._homeCode, awayCode: d._awayCode, kickoff: d._kickoff, stage: d._stage || 'r16' }));
+      if (derived.length > 0) store.dynFixtures = derived;
+      emit();
+    }));
     if (fb.subscribeMyBets) unsubs.push(fb.subscribeMyBets((list) => {
       const map = {}; (list || []).forEach((b) => { map[b.matchId] = b; }); store.bets = map; emit();
     }));
     if (fb.subscribeMyParlays) unsubs.push(fb.subscribeMyParlays((list) => { store.parlays = list || []; emit(); }));
-    if (fb.subscribeFixtures) unsubs.push(fb.subscribeFixtures((list) => { store.dynFixtures = list || []; emit(); }));
     if (fb.subscribeMe) unsubs.push(fb.subscribeMe((u) => {
       store.saldo = (u && typeof u.saldo === 'number') ? u.saldo : (u ? SALDO_INICIAL : null);
       store.streak = (u && typeof u.currentStreak === 'number') ? u.currentStreak : 0;
