@@ -55,6 +55,12 @@ service cloud.firestore {
       allow write: if signedIn();
     }
 
+    // Fixtures dinámicos (octavos, cuartos, semis, final) descubiertos por el agente.
+    // Solo lectura para usuarios autenticados; el agente escribe con el service account.
+    match /fixtures/{fid} {
+      allow read: if signedIn();
+    }
+
     // Apuestas: cada quien crea/edita/borra las suyas. El agente liquida.
     // (resource == null permite leer un doc que aún no existe: necesario para
     //  la transacción de placeBet al apostar por primera vez en un partido.)
