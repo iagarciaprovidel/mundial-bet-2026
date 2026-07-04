@@ -284,17 +284,26 @@
     const PHASES = ['r32','r16','qf','sf','final'];
     const NAMES  = { r32:'Dieciseisavos', r16:'Octavos de Final', qf:'Cuartos de Final', sf:'Semifinales', final:'Final' };
 
+    // Un partido se considera terminado si el agente lo marcó (finished=true) O
+    // si su kickoff fue hace más de 3.5h (fallback por reloj para matches R32 viejos
+    // que ESPN ya no devuelve y el agente nunca pudo marcarlos).
+    const isEffDone = (m) => {
+      const od = odds[m.id] || {};
+      if (od.finished) return true;
+      return new Date(m.kickoff).getTime() + 3.5 * 3600000 < Date.now();
+    };
+
     let curPhase  = 'r32';
     let nextPhase = 'r16';
     for (let i = 0; i < PHASES.length; i++) {
       const ph = PHASES[i];
       const ms = byStage[ph];
-      if (ms.length > 0 && ms.some(m => !(odds[m.id] || {}).finished)) {
+      if (ms.length > 0 && ms.some(m => !isEffDone(m))) {
         curPhase  = ph;
         nextPhase = PHASES[i + 1] || null;
         break;
       }
-      if (ms.length > 0) { // esta fase está completa, la siguiente puede ser activa
+      if (ms.length > 0) {
         curPhase  = PHASES[i + 1] || ph;
         nextPhase = PHASES[i + 2] || null;
       }
