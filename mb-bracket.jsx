@@ -125,7 +125,7 @@
     const Row = ({ name, code, won, score }) => {
       const gold = !!(champCode && code === champCode);
       return (
-        <div onClick={() => openT(name)} title={name} style={{
+        <div onClick={() => openT(name, code)} title={name} style={{
           display: 'flex', alignItems: 'center', gap: 3, height: 15,
           opacity: finished && !won ? 0.3 : 1,
           cursor: name ? 'pointer' : 'default',
