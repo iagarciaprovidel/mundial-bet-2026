@@ -439,6 +439,17 @@ async function matchAlerts() {
 // extraTime: true si el partido fue a prórroga o penales (solo fase KO)
 // penWinner: 'home'|'away'|null — ganador final en caso de penales
 // ghOur/gaOur: marcador final en orientación nuestra (para exacto ×3)
+// Calcular racha actual y mejor racha de un usuario dado sus apuestas liquidadas.
+function computeStreaks(bets) {
+  const settled = bets.filter((b) => (b.status === 'won' || b.status === 'lost') && b.settledAt && b.settledAt.seconds > 0);
+  settled.sort((a, b) => b.settledAt.seconds - a.settledAt.seconds);
+  let cur = 0; for (const b of settled) { if (b.status === 'won') cur++; else break; }
+  let best = 0, run = 0;
+  const asc = settled.slice().reverse();
+  for (const b of asc) { if (b.status === 'won') { run++; if (run > best) best = run; } else run = 0; }
+  return { cur, best: Math.max(best, cur) };
+}
+
 async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
   const snap = await db.collection('bets').where('matchId', '==', our.id).where('status', '==', 'open').get();
   if (snap.empty) return 0;
@@ -451,20 +462,6 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       if (penWinner) return pick === penWinner;
     }
     return pick === ourResult;
-  };
-
-  // Calcular racha actual y mejor racha de un usuario dado sus apuestas liquidadas.
-  // Solo se cuentan apuestas con settledAt válido: las antiguas sin timestamp quedan
-  // excluidas para que no inflen artificialmente la racha por caer al final del sort.
-  const computeStreaks = (bets) => {
-    const settled = bets.filter((b) => (b.status === 'won' || b.status === 'lost') && b.settledAt && b.settledAt.seconds > 0);
-    settled.sort((a, b) => b.settledAt.seconds - a.settledAt.seconds); // desc → más reciente primero
-    let cur = 0; for (const b of settled) { if (b.status === 'won') cur++; else break; }
-    // bestStreak: racha más larga en toda la historia
-    let best = 0, run = 0;
-    const asc = settled.slice().reverse(); // asc → más antiguo primero
-    for (const b of asc) { if (b.status === 'won') { run++; if (run > best) best = run; } else run = 0; }
-    return { cur, best: Math.max(best, cur) };
   };
 
   let n = 0;
