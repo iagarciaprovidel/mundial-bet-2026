@@ -178,6 +178,9 @@ function espnToFd(e) {
     goals: goals,
     cards: cards,
     espnId: e.id, espnHomeId: hid, espnAwayId: aid,
+    kickoff: e.date || (c && c.date) || null,
+    espnRound: (c && c.notes && c.notes[0] && (c.notes[0].headline || c.notes[0].text)) || null,
+    espnSeasonType: (e.season && e.season.type && (e.season.type.slug || e.season.type.name)) || null,
     extraTime: extraTime || penalties, // fue a prórroga o penales
     penalties: penalties,              // fue específicamente a penales
     espnWinner: espnWinner,            // ganador según ESPN (sirve para penales)
@@ -258,6 +261,17 @@ async function espnMatches() {
   if (!res.ok) throw new Error('ESPN respondió ' + res.status);
   const j = await res.json().catch(() => ({}));
   return (j.events || []).map(espnToFd).filter(Boolean);
+}
+
+// Detecta el stage eliminatorio desde el texto que devuelve ESPN
+function stageFromEspn(roundText, seasonType) {
+  const t = String(roundText || seasonType || '').toLowerCase();
+  if (/round of 16|octavo|r16/i.test(t)) return 'r16';
+  if (/quarter|cuarto|qf/i.test(t)) return 'qf';
+  if (/semi/i.test(t)) return 'sf';
+  if (/final/i.test(t)) return 'final';
+  if (/round of 32|dieciseis|r32/i.test(t)) return 'r32';
+  return 'r16'; // default: si hay partido WC no en fixtures, asumimos r16
 }
 
 let db = null;
@@ -964,6 +978,23 @@ async function main() {
 
   initFirebase();
 
+  // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
+  try {
+    const dynSnap = await db.collection('fixtures').get();
+    dynSnap.docs.forEach((d) => {
+      const f = d.data();
+      if (f.homeCode && f.awayCode && f.kickoff && !OURS.some((o) => o.id === f.id)) {
+        OURS.push({ id: f.id, home: f.home || '', away: f.away || '', homeCode: f.homeCode, awayCode: f.awayCode, kickoff: f.kickoff, stage: f.stage || 'r16', group: null, md: null });
+        ALIASES[f.homeCode] = ALIASES[f.homeCode] || [];
+        ALIASES[f.awayCode] = ALIASES[f.awayCode] || [];
+        // Reconstruye ALIAS_TO_ISO para los nuevos entries
+        if (f.home && isoOf(f.home) !== f.homeCode) ALIAS_TO_ISO[norm(f.home)] = f.homeCode;
+        if (f.away && isoOf(f.away) !== f.awayCode) ALIAS_TO_ISO[norm(f.away)] = f.awayCode;
+      }
+    });
+    if (dynSnap.size) console.log(`Fixtures dinámicos cargados: ${dynSnap.size}`);
+  } catch (e) { console.warn('loadDynamicFixtures:', e && e.message); }
+
   // Estas NO dependen de football-data → corren SIEMPRE (aunque la API falle):
   const oddsN = await ensureOdds();
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
@@ -1010,8 +1041,39 @@ async function main() {
     const isLive = LIVE.indexOf(status) !== -1;
     if (!isFinished && !isLive) continue;
     const ft = m.score && m.score.fullTime;
-    const mm = matchOur(m.homeTeam.name, m.awayTeam.name);
-    if (!mm) { console.log(`  SIN MAPEAR (ESPN): ${m.homeTeam.name} vs ${m.awayTeam.name} [${status}]`); continue; }
+    let mm = matchOur(m.homeTeam.name, m.awayTeam.name);
+    if (!mm) {
+      // Intenta auto-registrar como fixture dinámico (solo si ambos ISOs son conocidos)
+      const hi = isoOf(m.homeTeam.name), ai = isoOf(m.awayTeam.name);
+      if (hi && ai && m.kickoff) {
+        const dynId = 'dyn_' + [hi, ai].sort().join('_');
+        try {
+          const existDoc = await db.collection('fixtures').doc(dynId).get();
+          if (!existDoc.exists) {
+            const stage = stageFromEspn(m.espnRound, m.espnSeasonType);
+            const dynFx = { id: dynId, home: m.homeTeam.name, away: m.awayTeam.name, homeCode: hi, awayCode: ai, kickoff: m.kickoff, stage: stage, espnId: m.espnId || null };
+            await db.collection('fixtures').doc(dynId).set(dynFx);
+            const od = modelOdds(hi, ai);
+            await db.collection('odds').doc(dynId).set({ home: od.home, draw: od.draw, away: od.away, fuente: 'modelo', actualizado: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            OURS.push(Object.assign({}, dynFx, { group: null, md: null }));
+            if (m.homeTeam.name && isoOf(m.homeTeam.name) !== hi) ALIAS_TO_ISO[norm(m.homeTeam.name)] = hi;
+            if (m.awayTeam.name && isoOf(m.awayTeam.name) !== ai) ALIAS_TO_ISO[norm(m.awayTeam.name)] = ai;
+            mm = matchOur(m.homeTeam.name, m.awayTeam.name);
+            console.log(`  Auto-registrado fixture dinámico: ${m.homeTeam.name} vs ${m.awayTeam.name} → ${dynId}`);
+          } else {
+            // Ya existe: asegura que está en OURS para esta corrida
+            const f = existDoc.data();
+            if (!OURS.some((o) => o.id === dynId)) {
+              OURS.push({ id: f.id, home: f.home, away: f.away, homeCode: f.homeCode, awayCode: f.awayCode, kickoff: f.kickoff, stage: f.stage || 'r16', group: null, md: null });
+              if (f.home) ALIAS_TO_ISO[norm(f.home)] = f.homeCode;
+              if (f.away) ALIAS_TO_ISO[norm(f.away)] = f.awayCode;
+            }
+            mm = matchOur(m.homeTeam.name, m.awayTeam.name);
+          }
+        } catch (e) { console.warn('  auto-registro fixture:', e && e.message); }
+      }
+      if (!mm) { console.log(`  SIN MAPEAR (ESPN): ${m.homeTeam.name} vs ${m.awayTeam.name} [${status}]`); continue; }
+    }
     const gh = (ft && ft.home != null) ? ft.home : 0;
     const ga = (ft && ft.away != null) ? ft.away : 0;
     // Goles en NUESTRA orientación (local/visita como en la app).
