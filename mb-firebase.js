@@ -32,6 +32,7 @@
       approveRequest: noFB, rejectRequest: noFB,
       placeBet: noFB, cancelBet: noFB, setOdds: noFB,
       placeParlay: noFB, cancelParlay: noFB, subscribeMyParlays(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
+      subscribeFixtures(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeOdds(cb) { if (typeof cb === 'function') cb({}); return () => {}; },
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
@@ -552,6 +553,10 @@
     subscribeMyParlays(cb) {
       const u = auth.currentUser; if (!u) { cb([]); return function () {}; }
       return db.collection('parlays').where('uid', '==', u.uid)
+        .onSnapshot(function (s) { cb(s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { cb([]); });
+    },
+    subscribeFixtures(cb) {
+      return db.collection('fixtures')
         .onSnapshot(function (s) { cb(s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })); }, function () { cb([]); });
     },
     // Cancela una combinada abierta (solo si NINGÚN partido de la combinada empezó).
