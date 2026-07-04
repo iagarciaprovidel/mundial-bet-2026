@@ -256,7 +256,7 @@ async function espnPenKicksFromSummary(eventId, homeId, awayId) {
 async function espnMatches() {
   const d = new Date();
   const ymd = (off) => new Date(d.getTime() + off * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
-  const url = `${ESPN_URL}?dates=${ymd(-1)}-${ymd(1)}&limit=100`; // ventana ayer→mañana; limit=100 para que ESPN no corte partidos del mismo día
+  const url = `${ESPN_URL}?dates=${ymd(-3)}-${ymd(4)}&limit=100`; // ventana 3 días atrás → 4 adelante para capturar toda la semana KO
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
   if (!res.ok) throw new Error('ESPN respondió ' + res.status);
   const j = await res.json().catch(() => ({}));
@@ -1153,7 +1153,6 @@ async function main() {
     }
 
     // Terminado: guarda resultado final + liquida.
-    if (isFinished) console.log(`  [settle-dbg] ${mm.our.id}: ftH=${ftH} ftA=${ftA} goals=${(m.goals||[]).length} ft=${JSON.stringify(ft)}`);
     if (ftH == null || ftA == null) continue;
     let apiResult = gh > ga ? 'home' : (gh < ga ? 'away' : 'draw');
     let ourResult = apiResult;
