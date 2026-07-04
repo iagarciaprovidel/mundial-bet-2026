@@ -117,7 +117,10 @@
     const isChamp  = champCode && (hCode === champCode || aCode === champCode);
     const hs  = od && od.gh  != null ? od.gh  : null;
     const as_ = od && od.ga  != null ? od.ga  : null;
-    const openT = (n) => n && window.MB_openTeam && window.MB_openTeam(n);
+    const openT = (n, c) => {
+      if (c && window.MB_openTeamByCode) { window.MB_openTeamByCode(c); return; }
+      if (n && window.MB_openTeam) window.MB_openTeam(n);
+    };
 
     const Row = ({ name, code, won, score }) => {
       const gold = !!(champCode && code === champCode);
@@ -597,7 +600,10 @@
       const as_ = (od && od.ga  != null) ? od.ga  : null;
       const hCode = m.homeCode, aCode = m.awayCode;
       const isChamp = champCode && (hCode === champCode || aCode === champCode);
-      const openT = (n) => n && window.MB_openTeam && window.MB_openTeam(n);
+      const openT = (n, c) => {
+      if (c && window.MB_openTeamByCode) { window.MB_openTeamByCode(c); return; }
+      if (n && window.MB_openTeam) window.MB_openTeam(n);
+    };
 
       // ¿quién pasa (para mostrar indicador "→ Pasa")?
       const winner = getWinner(m, od, true);
@@ -606,7 +612,7 @@
         const gold = !!(champCode && code === champCode);
         const advancing = winner && winner.name === name;
         return (
-          <div onClick={() => openT(name)} title={name} style={{
+          <div onClick={() => openT(name, code)} title={name} style={{
             display: 'flex', alignItems: 'center', gap: 4, height: 16,
             opacity: finished && !won ? 0.28 : 1,
             cursor: name ? 'pointer' : 'default',
@@ -688,7 +694,7 @@
         );
         const gold = !!(champCode && t.code === champCode);
         return (
-          <div onClick={() => t.name && window.MB_openTeam && window.MB_openTeam(t.name)} title={t.name} style={{
+          <div onClick={() => t && (t.code && window.MB_openTeamByCode ? window.MB_openTeamByCode(t.code) : (t.name && window.MB_openTeam && window.MB_openTeam(t.name)))} title={t && t.name} style={{
             display: 'flex', alignItems: 'center', gap: 4, height: 15,
             opacity: finished && !t.won ? 0.3 : 1, cursor: t.name ? 'pointer' : 'default',
           }}>
@@ -742,7 +748,7 @@
           {[w1, w2].map((w, i) => (
             <React.Fragment key={i}>
               {i === 1 && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '1px -6px' }} />}
-              <div onClick={() => w && window.MB_openTeam && window.MB_openTeam(w.name)} style={{ display: 'flex', alignItems: 'center', gap: 4, height: 15, opacity: w && w.prov ? 0.6 : 1, cursor: w ? 'pointer' : 'default' }}>
+              <div onClick={() => w && (w.code && window.MB_openTeamByCode ? window.MB_openTeamByCode(w.code) : (w.name && window.MB_openTeam && window.MB_openTeam(w.name)))} style={{ display: 'flex', alignItems: 'center', gap: 4, height: 15, opacity: w && w.prov ? 0.6 : 1, cursor: w ? 'pointer' : 'default' }}>
                 {w && w.code
                   ? <img src={`https://flagcdn.com/h20/${w.code}.png`} alt="" style={{ height: 11, width: 'auto', flexShrink: 0 }} />
                   : <span style={{ width: 14, height: 11, background: 'rgba(255,255,255,0.06)', borderRadius: 1, display: 'inline-block', flexShrink: 0 }} />}
