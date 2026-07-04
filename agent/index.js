@@ -1085,8 +1085,15 @@ async function main() {
     }
     // Partidos pre-partido (TIMED): ya registrados/con cuotas, no hay marcador que procesar
     if (!isFinished && !isLive) continue;
-    const gh = (ft && ft.home != null) ? ft.home : 0;
-    const ga = (ft && ft.away != null) ? ft.away : 0;
+    // Si ESPN terminó el partido pero fullTime no tiene scores, derivar de los goles individuales
+    const cntGoals = (side) => (m.goals || []).reduce((n, g) => {
+      const eff = g.og ? (g.side === 'home' ? 'away' : 'home') : g.side;
+      return n + (eff === side ? 1 : 0);
+    }, 0);
+    const ftH = (ft && ft.home != null) ? ft.home : (isFinished ? cntGoals('home') : null);
+    const ftA = (ft && ft.away != null) ? ft.away : (isFinished ? cntGoals('away') : null);
+    const gh = ftH != null ? ftH : 0;
+    const ga = ftA != null ? ftA : 0;
     // Goles en NUESTRA orientación (local/visita como en la app).
     const ghOur = mm.sameOrient ? gh : ga;
     const gaOur = mm.sameOrient ? ga : gh;
@@ -1146,7 +1153,7 @@ async function main() {
     }
 
     // Terminado: guarda resultado final + liquida.
-    if (!ft || ft.home == null || ft.away == null) continue;
+    if (ftH == null || ftA == null) continue;
     let apiResult = gh > ga ? 'home' : (gh < ga ? 'away' : 'draw');
     let ourResult = apiResult;
     if (!mm.sameOrient && apiResult !== 'draw') ourResult = apiResult === 'home' ? 'away' : 'home';
