@@ -121,11 +121,14 @@ const teamByName = (name) => ALL_TEAMS.find(t => t.name === name) || null;
 // Ticker de banderas en movimiento, clickeable, con popover al hover
 // La animación usa requestAnimationFrame (no CSS animation) para máxima fiabilidad.
 function FlagTicker({ onSelect, onGroup }) {
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const teams = window.MB_ALL_TEAMS || ALL_TEAMS;
   const items = teams.concat(teams); // duplicado para bucle continuo
   const mask = 'linear-gradient(90deg, transparent, white 3%, white 97%, transparent)';
   const allFxT = (window.MB && window.MB.WC_FIXTURES) || [];
+  const dynFxT = (store && store.dynFixtures) || [];
   const r32CodesT = new Set(allFxT.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const r16CodesT = new Set([...allFxT, ...dynFxT].filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFxT = allFxT.filter(f => !f.stage || f.stage === 'Grupos');
   const lastKOT = groupFxT.length ? Math.max.apply(null, groupFxT.map(f => new Date(f.kickoff).getTime())) : Infinity;
   const groupsClosedT = r32CodesT.size > 0 && isFinite(lastKOT) && Date.now() >= lastKOT + 2 * 60 * 60 * 1000;
@@ -189,11 +192,13 @@ function FlagTicker({ onSelect, onGroup }) {
         flexShrink: 0, willChange: 'transform',
       }}>
         {items.map((t, i) => {
-          const elimT = groupsClosedT && !r32CodesT.has(teamCode(t));
+          const tc = teamCode(t);
+          const elimGroup = groupsClosedT && r32CodesT.size > 0 && !r32CodesT.has(tc);
+          const elimR32 = !elimGroup && r16CodesT.size > 0 && r32CodesT.has(tc) && !r16CodesT.has(tc);
           return (
             <button key={i} className="mb-flagbtn" title={t.name}
               onMouseEnter={(e) => open(t, e)} onMouseLeave={scheduleClose} onClick={() => onSelect(t)}
-              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0, opacity: elimT ? 0.45 : 1, filter: elimT ? 'grayscale(0.7)' : 'none', transition: 'opacity 0.2s' }}>
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0, opacity: elimGroup ? 0.28 : elimR32 ? 0.55 : 1, filter: elimGroup ? 'grayscale(0.9)' : elimR32 ? 'grayscale(0.45)' : 'none', transition: 'opacity 0.2s' }}>
               <img src={`https://flagcdn.com/h40/${teamCode(t)}.png`} alt={t.name}
                 style={{ height: 22, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
             </button>
@@ -666,6 +671,14 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
     if (highlighted && ref.current) ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [highlighted]);
   const hlStyle = highlighted ? { boxShadow: 'var(--glow-gold)', border: '1px solid var(--gold)' } : {};
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const dynFxW = (store && store.dynFixtures) || [];
+  const allFxW = (window.MB && window.MB.WC_FIXTURES) || [];
+  const r32CodesW = new Set(allFxW.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const r16CodesW = new Set([...allFxW, ...dynFxW].filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const groupFxW = allFxW.filter(f => !f.stage || f.stage === 'Grupos');
+  const lastKOW = groupFxW.length ? Math.max.apply(null, groupFxW.map(f => new Date(f.kickoff).getTime())) : Infinity;
+  const groupsClosedW = r32CodesW.size > 0 && isFinite(lastKOW) && Date.now() >= lastKOW + 2 * 60 * 60 * 1000;
   return (
     <div ref={ref}>
     <Card style={{ padding: '14px 16px', transition: 'box-shadow var(--dur-base) var(--ease-out)', ...hlStyle }}>
@@ -683,10 +696,14 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
         <span style={{ width: 24, textAlign: 'center' }} title="Diferencia de gol">DG</span>
         <span style={{ width: 26, textAlign: 'center' }} title="Puntos">Pts</span>
       </div>
-      {rows.map(r => (
+      {rows.map(r => {
+        const rc = r.code || '';
+        const elimGroupW = groupsClosedW && r32CodesW.size > 0 && !r32CodesW.has(rc);
+        const elimR32W = !elimGroupW && r16CodesW.size > 0 && r32CodesW.has(rc) && !r16CodesW.has(rc);
+        return (
         <div key={r.name} onClick={() => onTeam && onTeam(Object.assign({}, r, { group: letter }))} className={onTeam ? 'mb-press mb-team-row' : ''}
           title={onTeam ? `Ver ficha de ${r.name}` : undefined}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 4px', margin: '0 -4px', borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: onTeam ? 'pointer' : 'default' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 4px', margin: '0 -4px', borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: onTeam ? 'pointer' : 'default', opacity: elimGroupW ? 0.35 : elimR32W ? 0.6 : 1, filter: elimGroupW ? 'grayscale(0.8)' : elimR32W ? 'grayscale(0.35)' : 'none' }}>
           <span style={{ width: 14, color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{r.pos}</span>
           <img src={`https://flagcdn.com/h24/${r.code || ''}.png`} alt="" style={{ height: 15, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
           <span style={{ flex: 1, minWidth: 0 }}>
@@ -708,7 +725,8 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
           <span style={{ width: 24, textAlign: 'center', fontSize: 'var(--t-2xs)', fontWeight: 700, color: (r.dg || 0) > 0 ? 'var(--success)' : (r.dg || 0) < 0 ? '#e98b8b' : 'var(--muted)' }}>{(r.dg || 0) > 0 ? '+' + r.dg : (r.dg || 0)}</span>
           <span className="num" style={{ width: 26, textAlign: 'center', color: 'var(--gold-light)', fontWeight: 700 }}>{r.pts}</span>
         </div>
-      ))}
+        );
+      })}
     </Card>
     </div>
   );
@@ -1052,10 +1070,16 @@ function AppWeb() {
       const found = (window.MB_ALL_TEAMS || []).find(x => x.name === name);
       if (found) { setTeam(found); window.__mbPendingTeam = null; if (window.__mbHideSplash) window.__mbHideSplash(); }
     };
+    const openByCode = (code) => {
+      if (!code) return;
+      const found = (window.MB_ALL_TEAMS || []).find(x => x.code === code);
+      if (found) { setTeam(found); if (window.__mbHideSplash) window.__mbHideSplash(true); }
+    };
     window.__mbOpenTeamByName = openByName;
     window.MB_openTeam = openByName;
+    window.MB_openTeamByCode = openByCode;
     if (window.__mbPendingTeam) openByName(window.__mbPendingTeam);
-    return () => { window.__mbOpenTeamByName = null; window.MB_openTeam = null; };
+    return () => { window.__mbOpenTeamByName = null; window.MB_openTeam = null; window.MB_openTeamByCode = null; };
   }, []);
 
   const goTab = (id) => { setTab(id); if (mainRef.current) mainRef.current.scrollTop = 0; };
