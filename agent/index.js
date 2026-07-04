@@ -1039,7 +1039,9 @@ async function main() {
     const status = m.status || '';
     const isFinished = status === 'FINISHED';
     const isLive = LIVE.indexOf(status) !== -1;
-    if (!isFinished && !isLive) continue;
+    const isTimed = status === 'TIMED';
+    // Ignora partidos que no son del Mundial u otros estados irrelevantes
+    if (!isFinished && !isLive && !isTimed) continue;
     const ft = m.score && m.score.fullTime;
     let mm = matchOur(m.homeTeam.name, m.awayTeam.name);
     if (!mm) {
@@ -1074,6 +1076,8 @@ async function main() {
       }
       if (!mm) { console.log(`  SIN MAPEAR (ESPN): ${m.homeTeam.name} vs ${m.awayTeam.name} [${status}]`); continue; }
     }
+    // Partidos pre-partido (TIMED): ya registrados/con cuotas, no hay marcador que procesar
+    if (!isFinished && !isLive) continue;
     const gh = (ft && ft.home != null) ? ft.home : 0;
     const ga = (ft && ft.away != null) ? ft.away : 0;
     // Goles en NUESTRA orientación (local/visita como en la app).
