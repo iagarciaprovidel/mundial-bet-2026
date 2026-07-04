@@ -274,7 +274,10 @@
     const champName = meRec ? meRec.champion    : null;
     const odds      = (store && store.odds) || {};
 
-    const fx   = (window.MB && window.MB.WC_FIXTURES) || [];
+    const store    = window.MB_useBetStore ? window.MB_useBetStore() : null;
+    const dynFx    = (store && store.dynFixtures) || [];
+    const staticFx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const fx       = [...staticFx, ...dynFx.filter((d) => !staticFx.some((s) => s.id === d.id))];
     const byStage = {};
     ['r32','r16','qf','sf','final'].forEach(s => { byStage[s] = fx.filter(m => m.stage === s); });
 
@@ -298,7 +301,16 @@
       }
     }
 
-    const curMatches = byStage[curPhase] || [];
+    // Si la fase derivada no tiene fixtures aún, retroceder a la última fase con datos
+    let curMatches = byStage[curPhase] || [];
+    if (curMatches.length === 0) {
+      const prevIdx = PHASES.indexOf(curPhase) - 1;
+      if (prevIdx >= 0) {
+        curPhase  = PHASES[prevIdx];
+        nextPhase = PHASES[prevIdx + 1] || null;
+        curMatches = byStage[curPhase] || [];
+      }
+    }
     const nxtMatches = nextPhase ? (byStage[nextPhase] || []) : [];
 
     const half = Math.ceil(curMatches.length / 2);
@@ -725,7 +737,10 @@
       const champName = meRec ? meRec.champion    : null;
       const odds      = (store && store.odds) || {};
 
-      const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+      const storeW   = window.MB_useBetStore ? window.MB_useBetStore() : null;
+      const dynFxW   = (storeW && storeW.dynFixtures) || [];
+      const staticFxW = (window.MB && window.MB.WC_FIXTURES) || [];
+      const fx = [...staticFxW, ...dynFxW.filter((d) => !staticFxW.some((s) => s.id === d.id))];
       const byS = {};
       ['r32','r16','qf','sf','final'].forEach(s => { byS[s] = fx.filter(m => m.stage === s); });
 
