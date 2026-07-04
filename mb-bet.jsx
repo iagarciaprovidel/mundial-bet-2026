@@ -48,7 +48,7 @@
       const derived = Object.entries(o || {})
         .filter(([, d]) => d._homeCode && d._awayCode && d._kickoff)
         .map(([id, d]) => ({ id, home: d._home || '', away: d._away || '', homeCode: d._homeCode, awayCode: d._awayCode, kickoff: d._kickoff, stage: d._stage || 'r16' }));
-      if (derived.length > 0) store.dynFixtures = derived;
+      if (derived.length > 0) { store.dynFixtures = derived; window.MB_dynFixtures = derived; }
       emit();
     }));
     if (fb.subscribeMyBets) unsubs.push(fb.subscribeMyBets((list) => {
@@ -615,13 +615,15 @@
   const MATCH_MS = 150 * 60 * 1000;
   window.MB_liveMatches = function (oddsMap) {
     oddsMap = oddsMap || {};
-    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const staticFx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const dyn = (window.MB_dynFixtures || []).filter(function (d) { return !staticFx.some(function (s) { return s.id === d.id; }); });
+    const fx = staticFx.concat(dyn);
     const now = Date.now();
     return fx.map((m) => ({ m: m, o: oddsMap[m.id] || {} })).filter(function (x) {
       if (x.o.finished) return false;
       if (x.o.live) return true;
       const ko = new Date(x.m.kickoff).getTime();
-      return now >= ko + BET_GRACE_MS && now < ko + MATCH_MS; // tras cerrar apuestas (no durante la gracia)
+      return now >= ko + BET_GRACE_MS && now < ko + MATCH_MS;
     });
   };
 
@@ -686,7 +688,9 @@
   // Estable por partido (no parpadea entre renders) gracias al hash del id.
   window.MB_homeVibe = function (oddsMap) {
     oddsMap = oddsMap || {};
-    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const staticFx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const dyn = (window.MB_dynFixtures || []).filter(function (d) { return !staticFx.some(function (s) { return s.id === d.id; }); });
+    const fx = staticFx.concat(dyn);
     if (!fx.length) return null;
     const now = Date.now();
     const hash = (s) => { let h = 0; s = String(s || ''); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
@@ -1270,7 +1274,9 @@
   // eliminatorias), el próximo día con partidos.
   // oddsMap (del store) sirve para saber cuáles ya terminaron (finished).
   window.MB_dayFixtures = function (oddsMap) {
-    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const staticFx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const dyn = (window.MB_dynFixtures || []).filter(function (d) { return !staticFx.some(function (s) { return s.id === d.id; }); });
+    const fx = staticFx.concat(dyn);
     if (!fx.length) return { list: [], today: false };
     const now = Date.now();
     const dstr = (ms) => new Date(ms).toLocaleDateString('sv'); // YYYY-MM-DD local
@@ -1293,7 +1299,9 @@
   // hoy hay partidos o no — se usa para mostrar "Próximos partidos" debajo de
   // "Partidos de hoy" cuando ambos días tienen juegos.
   window.MB_tomorrowFixtures = function () {
-    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const staticFx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const dyn = (window.MB_dynFixtures || []).filter(function (d) { return !staticFx.some(function (s) { return s.id === d.id; }); });
+    const fx = staticFx.concat(dyn);
     if (!fx.length) return [];
     const now = Date.now();
     const dstr = (ms) => new Date(ms).toLocaleDateString('sv');
