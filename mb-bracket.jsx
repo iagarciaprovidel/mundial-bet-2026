@@ -274,7 +274,6 @@
     const champName = meRec ? meRec.champion    : null;
     const odds      = (store && store.odds) || {};
 
-    const store    = window.MB_useBetStore ? window.MB_useBetStore() : null;
     const dynFx    = (store && store.dynFixtures) || [];
     const staticFx = (window.MB && window.MB.WC_FIXTURES) || [];
     const fx       = [...staticFx, ...dynFx.filter((d) => !staticFx.some((s) => s.id === d.id))];
@@ -737,8 +736,7 @@
       const champName = meRec ? meRec.champion    : null;
       const odds      = (store && store.odds) || {};
 
-      const storeW   = window.MB_useBetStore ? window.MB_useBetStore() : null;
-      const dynFxW   = (storeW && storeW.dynFixtures) || [];
+      const dynFxW   = (store && store.dynFixtures) || [];
       const staticFxW = (window.MB && window.MB.WC_FIXTURES) || [];
       const fx = [...staticFxW, ...dynFxW.filter((d) => !staticFxW.some((s) => s.id === d.id))];
       const byS = {};
