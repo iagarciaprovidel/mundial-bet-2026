@@ -981,17 +981,27 @@ async function main() {
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
     const dynSnap = await db.collection('fixtures').get();
+    const oddsMetaWrites = [];
     dynSnap.docs.forEach((d) => {
       const f = d.data();
-      if (f.homeCode && f.awayCode && f.kickoff && !OURS.some((o) => o.id === f.id)) {
-        OURS.push({ id: f.id, home: f.home || '', away: f.away || '', homeCode: f.homeCode, awayCode: f.awayCode, kickoff: f.kickoff, stage: f.stage || 'r16', group: null, md: null });
-        ALIASES[f.homeCode] = ALIASES[f.homeCode] || [];
-        ALIASES[f.awayCode] = ALIASES[f.awayCode] || [];
-        // Reconstruye ALIAS_TO_ISO para los nuevos entries
-        if (f.home && isoOf(f.home) !== f.homeCode) ALIAS_TO_ISO[norm(f.home)] = f.homeCode;
-        if (f.away && isoOf(f.away) !== f.awayCode) ALIAS_TO_ISO[norm(f.away)] = f.awayCode;
+      if (f.homeCode && f.awayCode && f.kickoff) {
+        if (!OURS.some((o) => o.id === f.id)) {
+          OURS.push({ id: f.id, home: f.home || '', away: f.away || '', homeCode: f.homeCode, awayCode: f.awayCode, kickoff: f.kickoff, stage: f.stage || 'r16', group: null, md: null });
+          ALIASES[f.homeCode] = ALIASES[f.homeCode] || [];
+          ALIASES[f.awayCode] = ALIASES[f.awayCode] || [];
+          if (f.home && isoOf(f.home) !== f.homeCode) ALIAS_TO_ISO[norm(f.home)] = f.homeCode;
+          if (f.away && isoOf(f.away) !== f.awayCode) ALIAS_TO_ISO[norm(f.away)] = f.awayCode;
+        }
+        // Copia metadata de fixture en el doc de odds para que el cliente pueda leerla
+        // (la colección `fixtures` no tiene regla de seguridad de lectura para clientes).
+        oddsMetaWrites.push(db.collection('odds').doc(d.id).set({
+          _home: f.home || '', _away: f.away || '',
+          _homeCode: f.homeCode, _awayCode: f.awayCode,
+          _kickoff: f.kickoff, _stage: f.stage || 'r16',
+        }, { merge: true }));
       }
     });
+    if (oddsMetaWrites.length) await Promise.all(oddsMetaWrites);
     if (dynSnap.size) console.log(`Fixtures dinámicos cargados: ${dynSnap.size}`);
   } catch (e) { console.warn('loadDynamicFixtures:', e && e.message); }
 
