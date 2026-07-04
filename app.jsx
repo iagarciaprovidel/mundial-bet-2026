@@ -224,8 +224,9 @@ function App() {
     window.__mbOpenTeamByName = openByName;
     window.__mbOpenTeamByCode = openByCode;
     window.MB_openTeam = openByName;
+    window.MB_openTeamByCode = openByCode;
     if (window.__mbPendingTeam) openByName(window.__mbPendingTeam);
-    return () => { window.__mbOpenTeamByName = null; window.__mbOpenTeamByCode = null; window.MB_openTeam = null; };
+    return () => { window.__mbOpenTeamByName = null; window.__mbOpenTeamByCode = null; window.MB_openTeam = null; window.MB_openTeamByCode = null; };
   }, []);
 
   // loaders por sección (primera visita)
