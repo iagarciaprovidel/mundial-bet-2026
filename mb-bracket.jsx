@@ -266,6 +266,7 @@
 
   // ── Pantalla principal ────────────────────────────────────
   function BracketScreen() {
+    const [tab, setTab] = React.useState(null);
     const store     = window.MB_useBetStore ? window.MB_useBetStore() : null;
     const users     = (store && store.users) || [];
     const authUser  = store ? store.authUser : null;
@@ -309,25 +310,20 @@
       }
     }
 
-    // Si la fase derivada no tiene fixtures aún, retroceder a la última fase con datos
-    let curMatches = byStage[curPhase] || [];
-    if (curMatches.length === 0) {
-      const prevIdx = PHASES.indexOf(curPhase) - 1;
-      if (prevIdx >= 0) {
-        curPhase  = PHASES[prevIdx];
-        nextPhase = PHASES[prevIdx + 1] || null;
-        curMatches = byStage[curPhase] || [];
-      }
-    }
-    const nxtMatches = nextPhase ? (byStage[nextPhase] || []) : [];
+    // El usuario puede navegar a cualquier ronda con los tabs
+    const activePhase = tab || curPhase;
+    const activeNxtPhase = PHASES[PHASES.indexOf(activePhase) + 1] || null;
+    let activeMatches = byStage[activePhase] || [];
+    if (activeMatches.length === 0) activeMatches = byStage[curPhase] || [];
+    const activeNxt = activeNxtPhase ? (byStage[activeNxtPhase] || []) : [];
 
-    const half = Math.ceil(curMatches.length / 2);
-    const leftCur  = curMatches.slice(0, half);
-    const rightCur = curMatches.slice(half);
+    const half = Math.ceil(activeMatches.length / 2);
+    const leftCur  = activeMatches.slice(0, half);
+    const rightCur = activeMatches.slice(half);
 
     // Slots fase siguiente: usar fixtures reales si existen, si no calcular de ganadores
     const buildSlots = (matches) => {
-      if (nxtMatches.length > 0) return null; // se manejan como fixtures reales
+      if (activeNxt.length > 0) return null;
       const slots = [];
       for (let i = 0; i < matches.length; i += 2) {
         const m1 = matches[i], m2 = matches[i + 1];
@@ -343,23 +339,37 @@
 
     const leftNxtSlots  = buildSlots(leftCur);
     const rightNxtSlots = buildSlots(rightCur);
-    const leftNxtFix    = nxtMatches.slice(0, Math.ceil(nxtMatches.length / 2));
-    const rightNxtFix   = nxtMatches.slice(Math.ceil(nxtMatches.length / 2));
+    const leftNxtFix    = activeNxt.slice(0, Math.ceil(activeNxt.length / 2));
+    const rightNxtFix   = activeNxt.slice(Math.ceil(activeNxt.length / 2));
 
     const TOTAL_H   = half * SH - GAP;
     const connectors = buildConnectors(half);
 
     return (
       <div>
+        {/* Tabs de ronda */}
+        <div style={{ display: 'flex', gap: 5, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
+          {PHASES.filter(ph => byStage[ph].length > 0 || ph === curPhase).map(ph => (
+            <button key={ph} onClick={() => setTab(tab === ph ? null : ph)}
+              style={{
+                padding: '5px 11px', borderRadius: 20, border: 'none', cursor: 'pointer', flexShrink: 0,
+                background: activePhase === ph ? 'var(--accent)' : 'rgba(255,255,255,0.09)',
+                color: activePhase === ph ? '#fff' : 'var(--muted)', fontWeight: activePhase === ph ? 800 : 600,
+                fontSize: 'var(--t-3xs)',
+              }}>
+              {NAMES[ph]}
+            </button>
+          ))}
+        </div>
         {/* Encabezado de fase */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div>
             <span style={{ fontSize: 'var(--t-xs)', fontWeight: 800, color: 'var(--text)' }}>
-              {NAMES[curPhase]}
+              {NAMES[activePhase]}
             </span>
-            {nextPhase && (
+            {activeNxtPhase && (
               <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginLeft: 8 }}>
-                → {NAMES[nextPhase]}
+                → {NAMES[activeNxtPhase]}
               </span>
             )}
           </div>
