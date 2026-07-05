@@ -1198,11 +1198,16 @@
   // Banner de inicio: "Elige tu campeón" + "Reclamar premios"
   // Aparece en la pantalla Inicio si el usuario tiene pendientes alguna de las dos acciones.
   function ClaimBonusBanner() {
+    const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
     const bs = useBetStore();
     const store = bs || {};
-    const authUser = store.authUser;
-    const users = store.users || [];
-    const me = authUser ? (users.find(u => u.uid === authUser.uid) || null) : null;
+    const [meRaw, setMeRaw] = useState(null);
+    useEffect(() => {
+      if (!authUser || !FB().subscribeMe) { setMeRaw(null); return undefined; }
+      const un = FB().subscribeMe((u) => setMeRaw(u || null));
+      return () => { if (typeof un === 'function') un(); };
+    }, [authUser]);
+    const me = meRaw;
     const bets = store.bets ? Object.values(store.bets) : [];
     const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
     const wonN = settled.filter(b => b.status === 'won').length;
