@@ -181,7 +181,8 @@ function Dashboard({ user, onNav, onPredict }) {
   const me = user;
   const top3 = Dc.USERS.slice(0, 3);
   const _now = Date.now();
-  const _fx = ((window.MB.WC_FIXTURES) || []).slice().sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
+  const _staticFxD = (window.MB && window.MB.WC_FIXTURES) || [];
+  const _fx = [..._staticFxD, ...(window.MB_dynFixtures || []).filter(d => !_staticFxD.some(s => s.id === d.id))].sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
   const upcoming = _fx.filter(m => new Date(m.kickoff).getTime() > _now).slice(0, 3);
   const fallback = upcoming.length ? upcoming : _fx.slice(0, 3);
   const _msNext = fallback[0] ? (new Date(fallback[0].kickoff).getTime() - _now) : -1;
