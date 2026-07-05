@@ -217,7 +217,6 @@ function MobileFixtureCard({ m }) {
         {r && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.name}</span>}
       </div>
       {window.MB_BetBoxOrParlay ? <window.MB_BetBoxOrParlay m={m} /> : (window.MB_BetBox ? <window.MB_BetBox m={m} /> : null)}
-      {window.MB_MatchChallenges ? <window.MB_MatchChallenges match={m} /> : null}
     </Card>
   );
 }
