@@ -127,7 +127,7 @@ function FlagTicker({ onSelect, onGroup }) {
   const mask = 'linear-gradient(90deg, transparent, white 3%, white 97%, transparent)';
   const allFxT = (window.MB && window.MB.WC_FIXTURES) || [];
   const dynFxT = (store && store.dynFixtures) || [];
-  const r32CodesT = new Set(allFxT.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const r32CodesT = new Set([...allFxT, ...dynFxT].filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const r16CodesT = new Set([...allFxT, ...dynFxT].filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFxT = allFxT.filter(f => !f.stage || f.stage === 'Grupos');
   const lastKOT = groupFxT.length ? Math.max.apply(null, groupFxT.map(f => new Date(f.kickoff).getTime())) : Infinity;
@@ -674,7 +674,7 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const dynFxW = (store && store.dynFixtures) || [];
   const allFxW = (window.MB && window.MB.WC_FIXTURES) || [];
-  const r32CodesW = new Set(allFxW.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const r32CodesW = new Set([...allFxW, ...dynFxW].filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const r16CodesW = new Set([...allFxW, ...dynFxW].filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFxW = allFxW.filter(f => !f.stage || f.stage === 'Grupos');
   const lastKOW = groupFxW.length ? Math.max.apply(null, groupFxW.map(f => new Date(f.kickoff).getTime())) : Infinity;
