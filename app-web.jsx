@@ -823,9 +823,14 @@ function PodiumWeb({ top3 }) {
 }
 
 function RankingWeb() {
+  const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
-  const authUser = store ? store.authUser : null;
-  const users = (store && store.users) || [];
+  const [users, setUsers] = useStateW([]);
+  useEffectW(() => {
+    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setUsers([]); return undefined; }
+    const un = window.MBFirebase.subscribeUsers(setUsers);
+    return () => { if (typeof un === 'function') un(); };
+  }, [authUser]);
   const meRec = authUser ? (users.find(u => u.uid === authUser.uid) || null) : null;
   const bets = store ? Object.values(store.bets || {}) : [];
   const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
