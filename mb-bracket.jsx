@@ -741,6 +741,10 @@
       }) || null : null;
       const r16od = r16m ? ((oddsAll && oddsAll[r16m.id]) || {}) : {};
       if (r16m) return <WSlot m={r16m} x={x} y={y} champCode={champCode} od={r16od} />;
+      const r16w1 = (w1c && r16All) ? r16All.find(fx => fx.homeCode === w1c.code || fx.awayCode === w1c.code) : null;
+      if (r16w1) { const od_w1 = (oddsAll && oddsAll[r16w1.id]) || {}; return <WSlot m={r16w1} x={x} y={y} champCode={champCode} od={od_w1} />; }
+      const r16w2 = (w2c && r16All) ? r16All.find(fx => fx.homeCode === w2c.code || fx.awayCode === w2c.code) : null;
+      if (r16w2) { const od_w2 = (oddsAll && oddsAll[r16w2.id]) || {}; return <WSlot m={r16w2} x={x} y={y} champCode={champCode} od={od_w2} />; }
       const w1 = m1 ? getWinner(m1, od1, true) : null;
       const w2 = m2 ? getWinner(m2, od2, true) : null;
       return (
