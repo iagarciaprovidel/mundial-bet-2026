@@ -1063,7 +1063,7 @@ async function main() {
             const dynFx = { id: dynId, home: m.homeTeam.name, away: m.awayTeam.name, homeCode: hi, awayCode: ai, kickoff: m.kickoff, stage: stage, espnId: m.espnId || null };
             await db.collection('fixtures').doc(dynId).set(dynFx);
             const od = modelOdds(hi, ai);
-            await db.collection('odds').doc(dynId).set({ home: od.home, draw: od.draw, away: od.away, fuente: 'modelo', actualizado: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            await db.collection('odds').doc(dynId).set({ home: od.home, draw: od.draw, away: od.away, fuente: 'modelo', actualizado: admin.firestore.FieldValue.serverTimestamp(), _home: dynFx.home, _away: dynFx.away, _homeCode: hi, _awayCode: ai, _kickoff: dynFx.kickoff, _stage: stage }, { merge: true });
             OURS.push(Object.assign({}, dynFx, { group: null, md: null }));
             if (m.homeTeam.name && isoOf(m.homeTeam.name) !== hi) ALIAS_TO_ISO[norm(m.homeTeam.name)] = hi;
             if (m.awayTeam.name && isoOf(m.awayTeam.name) !== ai) ALIAS_TO_ISO[norm(m.awayTeam.name)] = ai;
