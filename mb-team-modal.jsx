@@ -73,14 +73,16 @@
     const standings = (window.MB_standings ? window.MB_standings(store ? store.odds : {})[team.group]
                        : (window.MB.GROUP_STANDINGS && window.MB.GROUP_STANDINGS[team.group])) || [];
     const fmtKO = (iso) => new Date(iso).toLocaleString('es-CL', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-    const teamFixtures = ((window.MB.WC_FIXTURES) || [])
-      .filter(m => m.home === team.name || m.away === team.name)
+    const allFxM = (window.MB && window.MB.WC_FIXTURES) || [];
+    const dynFxM = (store && store.dynFixtures) || [];
+    const allFxCombined = [...allFxM, ...dynFxM.filter(d => !allFxM.some(s => s.id === d.id))];
+    const teamFixtures = allFxCombined
+      .filter(m => m.home === team.name || m.away === team.name || (code && (m.homeCode === code || m.awayCode === code)))
       .sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
     const squad = (window.MB.PLAYERS && window.MB.PLAYERS[team.name]) || [];
     const titulares = squad.filter(p => p.t);
     const suplentes = squad.filter(p => !p.t);
-    const allFxM = (window.MB && window.MB.WC_FIXTURES) || [];
-    const r32CodesM = new Set(allFxM.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+    const r32CodesM = new Set(allFxCombined.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
     const groupFxM = allFxM.filter(f => !f.stage || f.stage === 'Grupos');
     const lastKOM = groupFxM.length ? Math.max.apply(null, groupFxM.map(f => new Date(f.kickoff).getTime())) : Infinity;
     const groupsClosedM = r32CodesM.size > 0 && isFinite(lastKOM) && Date.now() >= lastKOM + 2 * 60 * 60 * 1000;
