@@ -29,7 +29,8 @@
 
   // Detecta si el cierre ya ocurrió: cuando el primer QF tiene kickoff <= now
   function isPickLocked() {
-    const FX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const staticFX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const FX = [...staticFX, ...(window.MB_dynFixtures || []).filter(d => !staticFX.some(s => s.id === d.id))];
     const qf = FX.filter((f) => f.stage === 'qf');
     if (!qf.length) return false;
     const first = qf.slice().sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1))[0];
