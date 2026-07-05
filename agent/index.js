@@ -597,7 +597,7 @@ async function settleChallengePicks(our, oddsData) {
       const correct = results[qkey]; // bool: la respuesta correcta
       for (const doc of snap.docs) {
         const pick = doc.data();
-        const won = (pick.pick === 'si') === correct;
+        const won = (pick.pick === 'yes') === correct;
         const payout = won ? pts : 0;
         const userRef = db.collection('users').doc(pick.uid);
         await db.runTransaction(async (tx) => {
@@ -1221,6 +1221,23 @@ async function main() {
       if (typeof od.penalties === 'undefined') {
         await db.collection('odds').doc(mm.our.id).set({ penalties: !!(extraTime && penWinner) }, { merge: true });
         od.penalties = !!(extraTime && penWinner);
+      }
+      // Escribir htGoal (true/false): hubo gol en el primer tiempo
+      // Minuto ESPN viene como "MM:SS" o "MM+SS:SS"; comparamos la parte entera base con 45.
+      if (typeof od.htGoal === 'undefined') {
+        let htGoal;
+        if (ghOur + gaOur === 0) {
+          htGoal = false; // sin goles en todo el partido → sin gol en 1T
+        } else if (scorers.length > 0) {
+          htGoal = scorers.some(function(s) {
+            const base = parseInt(String(s.minute || '').split(':')[0].split('+')[0], 10);
+            return !isNaN(base) && base <= 45;
+          });
+        }
+        if (typeof htGoal === 'boolean') {
+          await db.collection('odds').doc(mm.our.id).set({ htGoal: htGoal }, { merge: true });
+          od.htGoal = htGoal;
+        }
       }
       await settleChallengePicks(mm.our, od);
     }
