@@ -109,10 +109,12 @@ function BottomNav({ tab, onTab, accent }) {
 
 // ── Ticker de banderas móvil (tap → ficha del equipo) ─────
 function MobileFlagTicker({ onSelect }) {
+  const storeA = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const teams = window.MB_ALL_TEAMS || [];
   const toCode = window.MB_flagToCode || (() => 'xx');
   const allFx = (window.MB && window.MB.WC_FIXTURES) || [];
-  const r32Codes = new Set(allFx.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const dynFxA = (storeA && storeA.dynFixtures) || [];
+  const r32Codes = new Set([...allFx, ...dynFxA].filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFx = allFx.filter(f => !f.stage || f.stage === 'Grupos');
   const lastKO = groupFx.length ? Math.max.apply(null, groupFx.map(f => new Date(f.kickoff).getTime())) : Infinity;
   const groupsClosed = r32Codes.size > 0 && isFinite(lastKO) && Date.now() >= lastKO + 2 * 60 * 60 * 1000;
