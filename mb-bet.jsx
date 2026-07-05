@@ -633,7 +633,7 @@
     const live = window.MB_liveMatches ? window.MB_liveMatches(s.odds) : [];
     if (!live.length) return null;
     const go = () => { if (window.__mbNav) window.__mbNav('partidos'); };
-    const openTeam = (e, name) => { if (e) e.stopPropagation(); if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
+    const openTeam = (e, name, code) => { if (e) e.stopPropagation(); if (code && window.MB_openTeamByCode) { window.MB_openTeamByCode(code); return; } if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
     const minTxt = (o) => o.minute == null ? 'EN VIVO' : (typeof o.minute === 'number' ? o.minute + "'" : String(o.minute));
     return (
       <div style={{ background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(220,80,80,0.5)', borderRadius: 'var(--r-lg)', padding: '13px 16px', boxShadow: 'var(--sh-1)' }}>
@@ -646,7 +646,7 @@
           {live.map(({ m, o }) => (
             <div key={m.id} onClick={go} className="mb-press" title="Ver el partido" style={{ padding: '9px 11px', borderRadius: 'var(--r-md)', background: 'rgba(220,80,80,0.10)', border: '1px solid rgba(220,80,80,0.28)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div onClick={(e) => openTeam(e, m.home)} title={'Ver ' + m.home} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                <div onClick={(e) => openTeam(e, m.home, m.homeCode)} title={'Ver ' + m.home} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
                   <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.home}</span>
                   <img src={'https://flagcdn.com/h40/' + m.homeCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
                 </div>
@@ -654,7 +654,7 @@
                   <div className="num" style={{ fontSize: 'var(--t-lg)', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{o.gh != null ? o.gh : 0} <span style={{ color: 'var(--muted-2)' }}>-</span> {o.ga != null ? o.ga : 0}</div>
                   <div style={{ fontSize: 8.5, color: '#ff6b6b', fontWeight: 800, marginTop: 2, whiteSpace: 'nowrap' }}>🔴 {minTxt(o)}</div>
                 </div>
-                <div onClick={(e) => openTeam(e, m.away)} title={'Ver ' + m.away} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                <div onClick={(e) => openTeam(e, m.away, m.awayCode)} title={'Ver ' + m.away} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
                   <img src={'https://flagcdn.com/h40/' + m.awayCode + '.png'} alt="" style={{ height: 18, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
                   <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.away}</span>
                 </div>
