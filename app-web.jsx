@@ -627,7 +627,10 @@ function RefLineWeb({ m }) {
 const KO_STAGE_NAMES = { r32: 'Dieciseisavos de Final', r16: 'Octavos de Final', qf: 'Cuartos de Final', sf: 'Semifinales', final: 'Final' };
 
 function PartidosWeb({ onTeam }) {
-  const fx = (window.MB.WC_FIXTURES) || [];
+  const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+  const staticFxP = (window.MB && window.MB.WC_FIXTURES) || [];
+  const dynFxP = (store && store.dynFixtures) || [];
+  const fx = [...staticFxP, ...dynFxP.filter(d => !staticFxP.some(s => s.id === d.id))];
   const byMd = { 1: [], 2: [], 3: [] };
   const byKO = { r32: [], r16: [], qf: [], sf: [], final: [] };
   fx.forEach(m => {
