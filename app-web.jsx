@@ -170,9 +170,11 @@ function FlagTicker({ onSelect, onGroup }) {
   };
   const scheduleClose = () => { cancelClose(); timer.current = setTimeout(() => setHov(null), 180); };
   // Próximo partido del equipo (el más cercano a futuro; si no, el primero del fixture)
-  const nextMatch = (name) => {
-    const fx = (window.MB.WC_FIXTURES) || [];
-    const mine = fx.filter(m => m.home === name || m.away === name)
+  const nextMatch = (name, code) => {
+    const staticNM = (window.MB && window.MB.WC_FIXTURES) || [];
+    const dynNM = (store && store.dynFixtures) || [];
+    const fx = [...staticNM, ...dynNM.filter(d => !staticNM.some(s => s.id === d.id))];
+    const mine = fx.filter(m => m.home === name || m.away === name || (code && (m.homeCode === code || m.awayCode === code)))
       .sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
     const now = Date.now();
     return mine.find(m => new Date(m.kickoff).getTime() > now) || mine[0] || null;
@@ -237,9 +239,10 @@ function FlagTicker({ onSelect, onGroup }) {
             <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>Grupo {hov.team.group} · #{hov.team.pos}{hov.team.j > 0 ? ` · ${hov.team.pts} pts` : ''}</span>
           </div>
           {(() => {
-            const nm = nextMatch(hov.team.name);
+            const myCode = teamCode(hov.team);
+            const nm = nextMatch(hov.team.name, myCode);
             if (!nm) return null;
-            const home = nm.home === hov.team.name;
+            const home = myCode ? nm.homeCode === myCode : nm.home === hov.team.name;
             const rivalName = home ? nm.away : nm.home;
             const rivalCode = home ? nm.awayCode : nm.homeCode;
             const d = new Date(nm.kickoff);
@@ -429,8 +432,9 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
   const top3 = Dw.USERS.slice(0, 3);
   const openTeam = (name) => { const t = teamByName(name); if (t && onTeam) onTeam(t); };
   const _now = Date.now();
-  const _fx = (window.MB.WC_FIXTURES) || [];
-  const next = _fx.filter(m => new Date(m.kickoff).getTime() > _now).sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1))[0] || _fx[0];
+  const _staticFxDW = (window.MB && window.MB.WC_FIXTURES) || [];
+  const _allFxDW = [..._staticFxDW, ...(window.MB_dynFixtures || []).filter(d => !_staticFxDW.some(s => s.id === d.id))];
+  const next = _allFxDW.filter(m => new Date(m.kickoff).getTime() > _now).sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1))[0] || _allFxDW[0];
   const _msNext = next ? (new Date(next.kickoff).getTime() - _now) : -1;
   const daysLeft = Math.max(0, Math.floor(_msNext / 86400000)); // mismo redondeo que la cuenta regresiva
   const hr = new Date().getHours();
