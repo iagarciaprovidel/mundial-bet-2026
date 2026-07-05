@@ -91,6 +91,18 @@ service cloud.firestore {
       allow write: if signedIn() && request.resource.data.uid == request.auth.uid;
     }
 
+    // Desafíos por partido (challenge_picks). ID = uid_matchId_q1|q2.
+    match /challenge_picks/{id} {
+      allow read:   if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Pronóstico de semifinalistas. ID = uid del usuario.
+    match /semi_picks/{uid} {
+      allow read:           if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid;
+    }
+
     // Álbum de figuritas COMPARTIDO por equipo (co-op). Aparte de las apuestas.
     // Desbloqueado: cualquier integrante edita o pone candado.
     // Bloqueado: nadie edita; SOLO quien lo puso (lockedBy) puede quitar el candado.
