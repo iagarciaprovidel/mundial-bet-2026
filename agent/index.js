@@ -1359,6 +1359,20 @@ async function settleFdFallback() {
         await db.collection('odds').doc(mm.our.id).set({ penalties: !!(extraTime && penWinner) }, { merge: true });
         od2.penalties = !!(extraTime && penWinner);
       }
+      // htGoal desde marcador de 1T de football-data.org (más directo que ESPN)
+      if (typeof od2.htGoal === 'undefined') {
+        const ht = m.score && m.score.halfTime;
+        let htGoal;
+        if (ghOur + gaOur === 0) {
+          htGoal = false;
+        } else if (ht && ht.home != null && ht.away != null) {
+          htGoal = (ht.home + ht.away) > 0;
+        }
+        if (typeof htGoal === 'boolean') {
+          await db.collection('odds').doc(mm.our.id).set({ htGoal: htGoal }, { merge: true });
+          od2.htGoal = htGoal;
+        }
+      }
       await settleChallengePicks(mm.our, od2);
     }
   }
