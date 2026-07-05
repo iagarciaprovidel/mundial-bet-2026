@@ -17,7 +17,8 @@
 
   // Los 8 equipos de QF: se derivan de los fixtures con stage === 'qf'
   function getQFTeams() {
-    const FX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const staticFX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const FX = [...staticFX, ...(window.MB_dynFixtures || []).filter(d => !staticFX.some(s => s.id === d.id))];
     const qf = FX.filter((f) => f.stage === 'qf');
     const seen = new Set(), teams = [];
     qf.forEach((f) => {
@@ -28,7 +29,8 @@
   }
 
   function isPickLocked() {
-    const FX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const staticFX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const FX = [...staticFX, ...(window.MB_dynFixtures || []).filter(d => !staticFX.some(s => s.id === d.id))];
     const qf = FX.filter((f) => f.stage === 'qf').sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
     return qf.length > 0 && new Date(qf[0].kickoff).getTime() <= Date.now();
   }
