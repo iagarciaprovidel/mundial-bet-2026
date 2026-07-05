@@ -577,7 +577,7 @@ function FixtureCardWeb({ m, onTeam }) {
   const d = new Date(m.kickoff);
   const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
   const hora = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-  const openTeam = (name) => { const t = teamByName(name); if (t && onTeam) onTeam(t); };
+  const openTeam = (name, code) => { const t = (code && (window.MB_ALL_TEAMS||[]).find(x=>x.code===code)) || teamByName(name); if (t && onTeam) onTeam(t); };
   const ref = window.MB.refForMatch && window.MB.refForMatch(m);
   const flag = (code) => <img src={`https://flagcdn.com/h40/${code}.png`} alt="" className={onTeam ? 'mb-flag-zoom' : ''} style={{ height: 22, width: 'auto', borderRadius: 3, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />;
   const nm = (name) => <span style={{ fontWeight: 700, fontSize: 'var(--t-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>;
@@ -592,11 +592,11 @@ function FixtureCardWeb({ m, onTeam }) {
       </div>
       {/* Equipos en una sola línea horizontal (compacto) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div onClick={() => openTeam(m.home)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ${m.home}` : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 7, justifyContent: 'flex-end', cursor: onTeam ? 'pointer' : 'default' }}>
+        <div onClick={() => openTeam(m.home, m.homeCode)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ${m.home}` : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 7, justifyContent: 'flex-end', cursor: onTeam ? 'pointer' : 'default' }}>
           {nm(m.home)}{flag(m.homeCode)}
         </div>
         <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', fontWeight: 700, flexShrink: 0 }}>vs</span>
-        <div onClick={() => openTeam(m.away)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ${m.away}` : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 7, cursor: onTeam ? 'pointer' : 'default' }}>
+        <div onClick={() => openTeam(m.away, m.awayCode)} className={onTeam ? 'mb-press' : ''} title={onTeam ? `Ver ${m.away}` : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 7, cursor: onTeam ? 'pointer' : 'default' }}>
           {flag(m.awayCode)}{nm(m.away)}
         </div>
       </div>
