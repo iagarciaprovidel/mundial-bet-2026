@@ -640,7 +640,7 @@
       if (!matchId || !qkey || !pick) return Promise.reject('pick-invalido');
       const id = u.uid + '_' + matchId + '_' + qkey;
       await db.collection('challenge_picks').doc(id).set({
-        uid: u.uid, matchId: matchId, qkey: qkey, pick: pick, ts: FV.serverTimestamp(),
+        uid: u.uid, matchId: matchId, qkey: qkey, pick: pick, status: 'open', ts: FV.serverTimestamp(),
       });
       return true;
     },
