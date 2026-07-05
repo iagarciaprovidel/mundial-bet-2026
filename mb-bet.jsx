@@ -563,7 +563,9 @@
   // ── Cuenta regresiva al próximo partido (se oculta si hay alguno EN VIVO) ──
   function NextMatchCountdown() {
     const bs = useBetStore();
-    const fx = (window.MB && window.MB.WC_FIXTURES) || [];
+    const staticFxNC = (window.MB && window.MB.WC_FIXTURES) || [];
+    const dynFxNC = (window.MB_dynFixtures || []).filter(function(d) { return !staticFxNC.some(function(s) { return s.id === d.id; }); });
+    const fx = staticFxNC.concat(dynFxNC);
     const [now, setNow] = useState(Date.now());
     useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
     // Si hay un partido en curso (live o por reloj), manda el bloque "EN VIVO": ocultamos la cuenta regresiva.
