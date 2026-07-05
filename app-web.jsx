@@ -611,7 +611,6 @@ function FixtureCardWeb({ m, onTeam }) {
         {ref && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>🧑‍⚖️ <img src={`https://flagcdn.com/h20/${ref.code}.png`} alt="" title={ref.country} style={{ height: 9, width: 'auto', borderRadius: 1 }} /> {ref.name}</span>}
       </div>
       {window.MB_BetBox ? <window.MB_BetBox m={m} /> : null}
-      {window.MB_MatchChallenges ? <window.MB_MatchChallenges match={m} /> : null}
     </Card>
   );
 }
