@@ -812,53 +812,29 @@
 
       const r32raw = byS.r32, r16 = byS.r16, qf = byS.qf, sf = byS.sf, fin = byS.final;
 
-      // Reordenar r32 para que los pares que se cruzan en el mismo octavo queden consecutivos.
-      // Cuando r16 tiene fixtures reales (del agente), usa homeCode/awayCode para buscar
-      // el partido de r32 que produjo cada equipo y agruparlos en pares correctos.
-      let r32 = r32raw.slice();
-      if (r16.length >= 2) {
+      // Función genérica: reordena `cur` tal que los equipos de cada fixture de `nxt`
+      // queden en pares consecutivos (primer equipo → un fixture cur, segundo → otro).
+      const dynReorder = (cur, nxt) => {
+        if (nxt.length < 2 || cur.length < 2) return cur;
         const used = new Set(), ordered = [];
-        r16.forEach(r16m => {
-          [r16m.homeCode, r16m.awayCode].filter(Boolean).forEach(code => {
-            const m = r32.find(m32 => !used.has(m32.id) && (m32.homeCode === code || m32.awayCode === code));
+        nxt.forEach(nxtM => {
+          [nxtM.homeCode, nxtM.awayCode].filter(Boolean).forEach(code => {
+            const m = cur.find(c => !used.has(c.id) && (c.homeCode === code || c.awayCode === code));
             if (m) { ordered.push(m); used.add(m.id); }
           });
         });
-        r32.forEach(m => { if (!used.has(m.id)) ordered.push(m); });
-        if (ordered.length === r32.length) r32 = ordered;
-      }
+        cur.forEach(m => { if (!used.has(m.id)) ordered.push(m); });
+        return ordered.length === cur.length ? ordered : cur;
+      };
+
+      // Cadena descendente: sf→qf→r16→r32
+      // Primero ordenar desde arriba para que cada nivel use el orden correcto del superior
+      const qfs  = dynReorder(qf, sf);   // qf ordenado según SF reales
+      const r16s = dynReorder(r16, qfs); // r16 ordenado según QF (ya ordenados por SF)
+      const r32  = dynReorder(r32raw, r16s); // r32 ordenado según R16 (ya ordenados)
 
       // Tag index for connector color calculation
       r32.forEach((m, i) => { m._idx = i; });
-
-      // Reordenar r16 según qf reales: para cada QF, sus equipos (homeCode/awayCode)
-      // vinieron de algún partido de R16. Colocar esos R16 consecutivos.
-      let r16s = r16.slice();
-      if (qf.length >= 2) {
-        const usedR16 = new Set(), orderedR16 = [];
-        qf.forEach(qfm => {
-          [qfm.homeCode, qfm.awayCode].filter(Boolean).forEach(code => {
-            const m16 = r16s.find(m => !usedR16.has(m.id) && (m.homeCode === code || m.awayCode === code));
-            if (m16) { orderedR16.push(m16); usedR16.add(m16.id); }
-          });
-        });
-        r16s.forEach(m => { if (!usedR16.has(m.id)) orderedR16.push(m); });
-        if (orderedR16.length === r16s.length) r16s = orderedR16;
-      }
-
-      // Reordenar qf según sf reales (misma lógica un nivel más arriba)
-      let qfs = qf.slice();
-      if (sf.length >= 2) {
-        const usedQF = new Set(), orderedQF = [];
-        sf.forEach(sfm => {
-          [sfm.homeCode, sfm.awayCode].filter(Boolean).forEach(code => {
-            const qfm = qfs.find(q => !usedQF.has(q.id) && (q.homeCode === code || q.awayCode === code));
-            if (qfm) { orderedQF.push(qfm); usedQF.add(qfm.id); }
-          });
-        });
-        qfs.forEach(q => { if (!usedQF.has(q.id)) orderedQF.push(q); });
-        if (orderedQF.length === qfs.length) qfs = orderedQF;
-      }
 
       const L32 = r32.slice(0, 8), R32 = r32.slice(8, 16);
       const L16 = r16s.slice(0, 4), R16 = r16s.slice(4, 8);
