@@ -325,13 +325,32 @@
     if (activeMatches.length === 0) activeMatches = byStage[curPhase] || [];
     const activeNxt = activeNxtPhase ? (byStage[activeNxtPhase] || []) : [];
 
-    const half = Math.ceil(activeMatches.length / 2);
-    const leftCur  = activeMatches.slice(0, half);
-    const rightCur = activeMatches.slice(half);
+    // Fixtures siguiente fase ordenados por kickoff para posicionamiento consistente
+    const nxtSorted = activeNxt.slice().sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime());
+
+    // Reordenar fase actual según fixtures reales de la siguiente fase:
+    // para cada partido siguiente, sus equipos vinieron de la fase actual → ordenar en pares.
+    // Aplica a R32→R16, R16→QF, QF→SF, etc.
+    let sortedCur = activeMatches.slice();
+    if (nxtSorted.length >= 2) {
+      const usedCur = new Set(), orderedCur = [];
+      nxtSorted.forEach(nxtM => {
+        [nxtM.homeCode, nxtM.awayCode].filter(Boolean).forEach(code => {
+          const mCur = sortedCur.find(m => !usedCur.has(m.id) && (m.homeCode === code || m.awayCode === code));
+          if (mCur) { orderedCur.push(mCur); usedCur.add(mCur.id); }
+        });
+      });
+      sortedCur.forEach(m => { if (!usedCur.has(m.id)) orderedCur.push(m); });
+      if (orderedCur.length === sortedCur.length) sortedCur = orderedCur;
+    }
+
+    const half = Math.ceil(sortedCur.length / 2);
+    const leftCur  = sortedCur.slice(0, half);
+    const rightCur = sortedCur.slice(half);
 
     // Slots fase siguiente: usar fixtures reales si existen, si no calcular de ganadores
     const buildSlots = (matches) => {
-      if (activeNxt.length > 0) return null;
+      if (nxtSorted.length > 0) return null;
       const slots = [];
       for (let i = 0; i < matches.length; i += 2) {
         const m1 = matches[i], m2 = matches[i + 1];
@@ -347,8 +366,8 @@
 
     const leftNxtSlots  = buildSlots(leftCur);
     const rightNxtSlots = buildSlots(rightCur);
-    const leftNxtFix    = activeNxt.slice(0, Math.ceil(activeNxt.length / 2));
-    const rightNxtFix   = activeNxt.slice(Math.ceil(activeNxt.length / 2));
+    const leftNxtFix    = nxtSorted.slice(0, Math.ceil(nxtSorted.length / 2));
+    const rightNxtFix   = nxtSorted.slice(Math.ceil(nxtSorted.length / 2));
 
     const TOTAL_H   = half * SH - GAP;
     const connectors = buildConnectors(half);
@@ -812,9 +831,38 @@
       // Tag index for connector color calculation
       r32.forEach((m, i) => { m._idx = i; });
 
+      // Reordenar r16 según qf reales: para cada QF, sus equipos (homeCode/awayCode)
+      // vinieron de algún partido de R16. Colocar esos R16 consecutivos.
+      let r16s = r16.slice();
+      if (qf.length >= 2) {
+        const usedR16 = new Set(), orderedR16 = [];
+        qf.forEach(qfm => {
+          [qfm.homeCode, qfm.awayCode].filter(Boolean).forEach(code => {
+            const m16 = r16s.find(m => !usedR16.has(m.id) && (m.homeCode === code || m.awayCode === code));
+            if (m16) { orderedR16.push(m16); usedR16.add(m16.id); }
+          });
+        });
+        r16s.forEach(m => { if (!usedR16.has(m.id)) orderedR16.push(m); });
+        if (orderedR16.length === r16s.length) r16s = orderedR16;
+      }
+
+      // Reordenar qf según sf reales (misma lógica un nivel más arriba)
+      let qfs = qf.slice();
+      if (sf.length >= 2) {
+        const usedQF = new Set(), orderedQF = [];
+        sf.forEach(sfm => {
+          [sfm.homeCode, sfm.awayCode].filter(Boolean).forEach(code => {
+            const qfm = qfs.find(q => !usedQF.has(q.id) && (q.homeCode === code || q.awayCode === code));
+            if (qfm) { orderedQF.push(qfm); usedQF.add(qfm.id); }
+          });
+        });
+        qfs.forEach(q => { if (!usedQF.has(q.id)) orderedQF.push(q); });
+        if (orderedQF.length === qfs.length) qfs = orderedQF;
+      }
+
       const L32 = r32.slice(0, 8), R32 = r32.slice(8, 16);
-      const L16 = r16.slice(0, 4), R16 = r16.slice(4, 8);
-      const LQF = qf.slice(0, 2),  RQF = qf.slice(2, 4);
+      const L16 = r16s.slice(0, 4), R16 = r16s.slice(4, 8);
+      const LQF = qfs.slice(0, 2),  RQF = qfs.slice(2, 4);
       const LSF = sf[0] || null,    RSF = sf[1] || null;
       const FIN = fin[0] || null;
 
