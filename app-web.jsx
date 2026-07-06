@@ -641,6 +641,7 @@ function PartidosWeb({ onTeam }) {
     if (byMd[m.md] !== undefined) byMd[m.md].push(m);
     else if (byKO[m.stage] !== undefined) byKO[m.stage].push(m);
   });
+  Object.keys(byKO).forEach(s => byKO[s].sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime()));
   const hasKO = Object.values(byKO).some(arr => arr.length > 0);
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
