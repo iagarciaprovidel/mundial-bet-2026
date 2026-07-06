@@ -443,8 +443,8 @@
               <NxtCard key={`lnt-${i}`} x={NC_LX} y={nxtY((leftNxtSlots || leftNxtFix).length + i)} team1={null} team2={null} />
             ))}
 
-            {/* ── Trofeo central ── */}
-            <TrophyColumn h={TOTAL_H} />
+            {/* ── Trofeo central: solo en SF/Final ── */}
+            {(activePhase === 'sf' || activePhase === 'final') && <TrophyColumn h={TOTAL_H} />}
 
             {/* ── Mitad derecha: fase siguiente ── */}
             {rightNxtSlots && rightNxtSlots.map((slot, i) => (
@@ -769,6 +769,13 @@
       if (r16w1) { const od_w1 = (oddsAll && oddsAll[r16w1.id]) || {}; return <WSlot m={r16w1} x={x} y={y} champCode={champCode} od={od_w1} />; }
       const r16w2 = (w2c && r16All) ? r16All.find(fx => fx.homeCode === w2c.code || fx.awayCode === w2c.code) : null;
       if (r16w2) { const od_w2 = (oddsAll && oddsAll[r16w2.id]) || {}; return <WSlot m={r16w2} x={x} y={y} champCode={champCode} od={od_w2} />; }
+      // Fallback: odds doc sin finished:true pero el partido ya pasó → buscar R16 por par de R32
+      const m1Codes = m1 ? new Set([m1.homeCode, m1.awayCode].filter(Boolean)) : new Set();
+      const m2Codes = m2 ? new Set([m2.homeCode, m2.awayCode].filter(Boolean)) : new Set();
+      const r16Pair = (m1Codes.size && m2Codes.size && r16All)
+        ? r16All.find(fx => (m1Codes.has(fx.homeCode) || m1Codes.has(fx.awayCode)) && (m2Codes.has(fx.homeCode) || m2Codes.has(fx.awayCode)))
+        : null;
+      if (r16Pair) { const od_p = (oddsAll && oddsAll[r16Pair.id]) || {}; return <WSlot m={r16Pair} x={x} y={y} champCode={champCode} od={od_p} />; }
       const w1 = m1 ? getWinner(m1, od1, true) : null;
       const w2 = m2 ? getWinner(m2, od2, true) : null;
       return (
