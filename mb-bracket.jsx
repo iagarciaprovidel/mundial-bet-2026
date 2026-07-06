@@ -812,8 +812,7 @@
 
       const r32raw = byS.r32, r16 = byS.r16, qf = byS.qf, sf = byS.sf, fin = byS.final;
 
-      // Función genérica: reordena `cur` tal que los equipos de cada fixture de `nxt`
-      // queden en pares consecutivos (primer equipo → un fixture cur, segundo → otro).
+      // Reordena `cur` para que los pares que alimentan cada fixture de `nxt` queden consecutivos
       const dynReorder = (cur, nxt) => {
         if (nxt.length < 2 || cur.length < 2) return cur;
         const used = new Set(), ordered = [];
@@ -827,19 +826,41 @@
         return ordered.length === cur.length ? ordered : cur;
       };
 
-      // Cadena descendente: sf→qf→r16→r32
-      // Primero ordenar desde arriba para que cada nivel use el orden correcto del superior
-      const qfs  = dynReorder(qf, sf);   // qf ordenado según SF reales
-      const r16s = dynReorder(r16, qfs); // r16 ordenado según QF (ya ordenados por SF)
-      const r32  = dynReorder(r32raw, r16s); // r32 ordenado según R16 (ya ordenados)
+      // Mitades estáticas del cuadro (según wc2026.js — define qué equipo está en cada lado del bracket FIFA)
+      const r32rawL = r32raw.slice(0, 8);
+      const r32rawR = r32raw.slice(8, 16);
+
+      // Conjuntos de códigos por mitad estática: permite clasificar cualquier equipo
+      const lCodes = new Set(r32rawL.flatMap(m => [m.homeCode, m.awayCode].filter(Boolean)));
+      const rCodes = new Set(r32rawR.flatMap(m => [m.homeCode, m.awayCode].filter(Boolean)));
+
+      // Un fixture pertenece a la mitad izquierda si alguno de sus equipos vino de esa mitad
+      const isLeft = (m) => lCodes.has(m.homeCode) || lCodes.has(m.awayCode);
+
+      // Clasificar R16, QF y SF por mitad del cuadro
+      const L16all = r16.filter(isLeft);
+      const R16all = r16.filter(m => !isLeft(m));
+      const LQF_all = qf.filter(isLeft);
+      const RQF_all = qf.filter(m => !isLeft(m));
+      const LSF_m = sf.find(isLeft) || null;
+      const RSF_m = sf.find(m => !isLeft(m)) || null;
+
+      // Reordenar cada mitad R32 según los R16 reales de su lado
+      // (así nunca cruza partidos de un lado al otro)
+      const L32 = dynReorder(r32rawL, dynReorder(L16all, LQF_all));
+      const R32 = dynReorder(r32rawR, dynReorder(R16all, RQF_all));
 
       // Tag index for connector color calculation
-      r32.forEach((m, i) => { m._idx = i; });
+      [...L32, ...R32].forEach((m, i) => { m._idx = i; });
 
-      const L32 = r32.slice(0, 8), R32 = r32.slice(8, 16);
-      const L16 = r16s.slice(0, 4), R16 = r16s.slice(4, 8);
-      const LQF = qfs.slice(0, 2),  RQF = qfs.slice(2, 4);
-      const LSF = sf[0] || null,    RSF = sf[1] || null;
+      // R16 ordenado dentro de cada mitad según QF reales
+      const L16 = dynReorder(L16all, LQF_all);
+      const R16 = dynReorder(R16all, RQF_all);
+
+      // QF ordenado dentro de cada mitad según SF
+      const LQF = LSF_m ? dynReorder(LQF_all, [LSF_m]) : LQF_all.slice(0, 2);
+      const RQF = RSF_m ? dynReorder(RQF_all, [RSF_m]) : RQF_all.slice(0, 2);
+      const LSF = LSF_m,    RSF = RSF_m;
       const FIN = fin[0] || null;
 
       // Construye segmentos de conector coloreados para cada par
