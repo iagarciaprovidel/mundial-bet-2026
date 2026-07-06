@@ -791,7 +791,24 @@
       const byS = {};
       ['r32','r16','qf','sf','final'].forEach(s => { byS[s] = fx.filter(m => m.stage === s); });
 
-      const r32 = byS.r32, r16 = byS.r16, qf = byS.qf, sf = byS.sf, fin = byS.final;
+      const r32raw = byS.r32, r16 = byS.r16, qf = byS.qf, sf = byS.sf, fin = byS.final;
+
+      // Reordenar r32 para que los pares que se cruzan en el mismo octavo queden consecutivos.
+      // Cuando r16 tiene fixtures reales (del agente), usa homeCode/awayCode para buscar
+      // el partido de r32 que produjo cada equipo y agruparlos en pares correctos.
+      let r32 = r32raw.slice();
+      if (r16.length >= 2) {
+        const used = new Set(), ordered = [];
+        r16.forEach(r16m => {
+          [r16m.homeCode, r16m.awayCode].filter(Boolean).forEach(code => {
+            const m = r32.find(m32 => !used.has(m32.id) && (m32.homeCode === code || m32.awayCode === code));
+            if (m) { ordered.push(m); used.add(m.id); }
+          });
+        });
+        r32.forEach(m => { if (!used.has(m.id)) ordered.push(m); });
+        if (ordered.length === r32.length) r32 = ordered;
+      }
+
       // Tag index for connector color calculation
       r32.forEach((m, i) => { m._idx = i; });
 
