@@ -585,7 +585,7 @@ function Partidos() {
               {(() => {
                 const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
                 const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', final: 'Final' };
-                const koFx = fx.filter((m) => m.stage && m.stage !== 'Grupos' && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now && !isDoneS(m));
+                const koFx = fx.filter((m) => m.stage && m.stage !== 'Grupos' && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now && !isDoneS(m)).sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime());
                 const byStage = {};
                 koFx.forEach((m) => { (byStage[m.stage] = byStage[m.stage] || []).push(m); });
                 const hasKoFx = koFx.length > 0;
