@@ -797,6 +797,47 @@
       );
     }
 
+    // Para QF: igual que WSlotFromWinners pero recibe los dos fixtures R16 (m1/m2)
+    // y busca el partido de QF cuyo par de equipos son los ganadores de esos R16.
+    function QFSlotFromWinners({ x, y, m1, od1, m2, od2, champCode, qfAll, oddsAll }) {
+      const w1c = m1 ? (getWinner(m1, od1, false) || null) : null;
+      const w2c = m2 ? (getWinner(m2, od2, false) || null) : null;
+      const qfM = (w1c && w2c && qfAll) ? qfAll.find(m => {
+        const s = new Set([m.homeCode, m.awayCode]);
+        return s.has(w1c.code) && s.has(w2c.code);
+      }) || null : null;
+      if (qfM) { const od = (oddsAll && oddsAll[qfM.id]) || {}; return <WSlot m={qfM} x={x} y={y} champCode={champCode} od={od} />; }
+      const qfW1 = (w1c && qfAll) ? qfAll.find(fx => fx.homeCode === w1c.code || fx.awayCode === w1c.code) : null;
+      if (qfW1) { const od = (oddsAll && oddsAll[qfW1.id]) || {}; return <WSlot m={qfW1} x={x} y={y} champCode={champCode} od={od} />; }
+      const qfW2 = (w2c && qfAll) ? qfAll.find(fx => fx.homeCode === w2c.code || fx.awayCode === w2c.code) : null;
+      if (qfW2) { const od = (oddsAll && oddsAll[qfW2.id]) || {}; return <WSlot m={qfW2} x={x} y={y} champCode={champCode} od={od} />; }
+      const m1Codes = m1 ? new Set([m1.homeCode, m1.awayCode].filter(Boolean)) : new Set();
+      const m2Codes = m2 ? new Set([m2.homeCode, m2.awayCode].filter(Boolean)) : new Set();
+      const qfPair = (m1Codes.size && m2Codes.size && qfAll)
+        ? qfAll.find(fx => (m1Codes.has(fx.homeCode) || m1Codes.has(fx.awayCode)) && (m2Codes.has(fx.homeCode) || m2Codes.has(fx.awayCode)))
+        : null;
+      if (qfPair) { const od = (oddsAll && oddsAll[qfPair.id]) || {}; return <WSlot m={qfPair} x={x} y={y} champCode={champCode} od={od} />; }
+      const w1 = m1 ? getWinner(m1, od1, true) : null;
+      const w2 = m2 ? getWinner(m2, od2, true) : null;
+      return (
+        <div style={{ position: 'absolute', left: x, top: y, width: W, height: H, background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 6, boxSizing: 'border-box', padding: '4px 6px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+          {[w1, w2].map((w, i) => (
+            <React.Fragment key={i}>
+              {i === 1 && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '1px -6px' }} />}
+              <div onClick={() => w && (w.code && window.MB_openTeamByCode ? window.MB_openTeamByCode(w.code) : (w.name && window.MB_openTeam && window.MB_openTeam(w.name)))} style={{ display: 'flex', alignItems: 'center', gap: 4, height: 15, opacity: w && w.prov ? 0.6 : 1, cursor: w ? 'pointer' : 'default' }}>
+                {w && w.code
+                  ? <img src={`https://flagcdn.com/h20/${w.code}.png`} alt="" style={{ height: 11, width: 'auto', flexShrink: 0 }} />
+                  : <span style={{ width: 14, height: 11, background: 'rgba(255,255,255,0.06)', borderRadius: 1, display: 'inline-block', flexShrink: 0 }} />}
+                <span style={{ flex: 1, fontSize: 9, color: w ? (w.prov ? 'rgba(255,165,0,0.7)' : 'var(--text)') : 'rgba(255,255,255,0.18)', fontWeight: w && !w.prov ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {w ? w.name : 'Por definir'}{w && w.prov ? ' ~' : ''}
+                </span>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      );
+    }
+
     function BracketScreenWeb() {
       const authUser  = window.MB_useAuth ? window.MB_useAuth() : null;
       const store     = window.MB_useBetStore ? window.MB_useBetStore() : null;
@@ -1024,7 +1065,12 @@
 
               {/* ─── QF LEFT ─── */}
               {Array.from({length:2},(_,i)=>(
-                <WSlot key={`lqf-${i}`} m={LQF[i]||null} x={XQF} y={yQF(i)} champCode={champCode} od={LQF[i]?(odds[LQF[i].id]||{}):{}} label="Cuartos" />
+                LQF[i]
+                  ? <WSlot key={`lqf-${i}`} m={LQF[i]} x={XQF} y={yQF(i)} champCode={champCode} od={odds[LQF[i].id]||{}} />
+                  : <QFSlotFromWinners key={`lqf-${i}`} x={XQF} y={yQF(i)} champCode={champCode}
+                      m1={L16[2*i]} od1={L16[2*i]?(odds[L16[2*i].id]||{}):{}}
+                      m2={L16[2*i+1]} od2={L16[2*i+1]?(odds[L16[2*i+1].id]||{}):{}}
+                      qfAll={qf} oddsAll={odds} />
               ))}
 
               {/* ─── SF LEFT ─── */}
@@ -1056,7 +1102,12 @@
 
               {/* ─── QF RIGHT ─── */}
               {Array.from({length:2},(_,i)=>(
-                <WSlot key={`rqf-${i}`} m={RQF[i]||null} x={XQF_R} y={yQF(i)} champCode={champCode} od={RQF[i]?(odds[RQF[i].id]||{}):{}} label="Cuartos" />
+                RQF[i]
+                  ? <WSlot key={`rqf-${i}`} m={RQF[i]} x={XQF_R} y={yQF(i)} champCode={champCode} od={odds[RQF[i].id]||{}} />
+                  : <QFSlotFromWinners key={`rqf-${i}`} x={XQF_R} y={yQF(i)} champCode={champCode}
+                      m1={R16[2*i]} od1={R16[2*i]?(odds[R16[2*i].id]||{}):{}}
+                      m2={R16[2*i+1]} od2={R16[2*i+1]?(odds[R16[2*i+1].id]||{}):{}}
+                      qfAll={qf} oddsAll={odds} />
               ))}
 
               {/* ─── R16 RIGHT ─── */}
