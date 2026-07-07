@@ -1160,7 +1160,9 @@ async function main() {
 
     // Prórroga / penales: relevante para fase KO (la apuesta 'draw' se convierte en "Prórr./Pen.")
     const isKO = mm.our.stage && mm.our.stage !== 'Grupos';
-    const extraTime = isKO && !!(m.extraTime);
+    // m.extraTime se detecta por regex en statusDesc; también cuenta como ET si ESPN
+    // reporta un ganador en un partido KO que quedó igualado (garantía de ET/PKs).
+    const extraTime = isKO && (!!(m.extraTime) || (ourResult === 'draw' && !!m.espnWinner));
     // Ganador final en caso de penales (marcador queda igualado; ESPN indica el ganador)
     let penWinner = null;
     if (isKO && extraTime && ourResult === 'draw' && m.espnWinner) {
@@ -1270,6 +1272,11 @@ async function main() {
     if (fdFallbackN) { settled += fdFallbackN; console.log(`FD fallback: ${fdFallbackN} apuesta(s) liquidada(s).`); }
   } catch (e) { console.warn('FD fallback:', (e && e.message) || e); }
 
+  try {
+    const drawFixed = await resettleDrawBets();
+    if (drawFixed) console.log(`resettleDrawBets: ${drawFixed} apuesta(s) corregida(s).`);
+  } catch (e) { console.warn('resettleDrawBets:', (e && e.message) || e); }
+
   try { await recomputeAllStreaks(); } catch (e) { console.warn('recomputeAllStreaks:', (e && e.message) || e); }
 
   let parlaysSettled = 0;
@@ -1305,6 +1312,37 @@ async function recomputeAllStreaks() {
 }
 
 // Liquida con football-data.org partidos terminados que ESPN no procesó (best-effort).
+// Repara apuestas 'draw' (Prórr./Pen.) liquidadas incorrectamente como 'lost'
+// antes de que llegara el dato de extraTime al doc odds. Criterio: pick='draw',
+// status='lost', odds doc tiene finished=true, extraTime=true, stage KO.
+async function resettleDrawBets() {
+  const snap = await db.collection('bets').where('pick', '==', 'draw').where('status', '==', 'lost').get();
+  if (snap.empty) return 0;
+  let fixed = 0;
+  for (const doc of snap.docs) {
+    const bet = doc.data();
+    const odDoc = await db.collection('odds').doc(bet.matchId).get();
+    if (!odDoc.exists) continue;
+    const od = odDoc.data();
+    // Solo KO con extraTime confirmado; grupo no tiene esta regla
+    if (!od.finished || !od.extraTime || !od._stage || od._stage === 'Grupos') continue;
+    const payout = Math.round((bet.stake || 0) * (bet.odd || 1));
+    await db.runTransaction(async (tx) => {
+      const bs = await tx.get(doc.ref);
+      if (!bs.exists || bs.data().status !== 'lost') return;
+      const userRef = db.collection('users').doc(bet.uid);
+      const us = await tx.get(userRef);
+      const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : 0;
+      tx.set(doc.ref, { status: 'won', payout: payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      tx.set(userRef, { prevSaldo: saldo, saldo: saldo + payout }, { merge: true });
+    });
+    await notify(bet.uid, '✅ Apuesta corregida', `${od._home || ''} vs ${od._away || ''}: tu apuesta Prórr./Pen. era ganadora. +${payout} puntos.`);
+    console.log(`  resettleDrawBets: ${bet.matchId} uid=${bet.uid} → won, payout=${payout}`);
+    fixed++;
+  }
+  return fixed;
+}
+
 async function settleFdFallback() {
   let n = 0;
   const fdAll = await fdMatches();
