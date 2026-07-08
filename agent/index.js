@@ -1456,13 +1456,17 @@ async function settleFdFallback() {
 }
 
 async function auditRAMBOP() {
-  const UID = 'qUat5M4FPdaz'; // RAMBOP (uid verificado 2026-07-08)
-  const [bSnap, pSnap, uDoc] = await Promise.all([
+  // Buscar por nombre para obtener el uid real (evita truncamiento)
+  const usersSnap = await db.collection('users').get();
+  const rambopDoc = usersSnap.docs.find(d => (d.data().nombre||'').toLowerCase() === 'rambop');
+  if (!rambopDoc) { console.log('RAMBOP no encontrado por nombre'); return; }
+  const UID = rambopDoc.id;
+  console.log(`  RAMBOP uid COMPLETO: ${UID}`);
+  const [bSnap, pSnap] = await Promise.all([
     db.collection('bets').where('uid', '==', UID).get(),
     db.collection('parlays').where('uid', '==', UID).get(),
-    db.collection('users').doc(UID).get(),
   ]);
-  const user = uDoc.exists ? uDoc.data() : {};
+  const user = rambopDoc.data();
   const rewards = user.rewards || {};
   console.log(`\n====== AUDIT RAMBOP (${UID}) ======`);
   console.log(`  saldo=${user.saldo} staked=${user.staked} betsCount=${user.betsCount||0}`);
