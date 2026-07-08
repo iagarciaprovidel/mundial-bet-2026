@@ -1,13 +1,13 @@
-/* MundialBet Club 2026 — Bracket eliminatorio visual + Sparkline + Banner
+/* MundialBet Club 2026 â€” Bracket eliminatorio visual + Sparkline + Banner
    Expone:
-     window.MB_BracketScreen  — cuadro eliminatorio con fase actual + siguiente
-     window.MB_SaldoSparkline — gráfico SVG de evolución del saldo
-     window.MB_TopTodayBanner — banner motivacional de racha
+     window.MB_BracketScreen  â€” cuadro eliminatorio con fase actual + siguiente
+     window.MB_SaldoSparkline â€” grÃ¡fico SVG de evoluciÃ³n del saldo
+     window.MB_TopTodayBanner â€” banner motivacional de racha
 */
 (function () {
   'use strict';
 
-  // ── Dimensiones base ──────────────────────────────────────
+  // â”€â”€ Dimensiones base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const CC   = 84;  // ancho tarjeta fase actual
   const NC   = 68;  // ancho tarjeta fase siguiente
   const CH_C = 52;  // alto tarjeta fase actual (con fecha/sede/live)
@@ -25,13 +25,13 @@
   const CC_RX  = NC_RX + NC + CN;     // 320
   const TOTAL_W = CC_RX + CC;         // 404
 
-  // Y de tarjeta en fase actual (dado índice i y tamaño de mitad N)
+  // Y de tarjeta en fase actual (dado Ã­ndice i y tamaÃ±o de mitad N)
   const curY  = (i)    => i * SH;
   const curCY = (i)    => i * SH + CH_C / 2;                            // centro Y
   const nxtCY = (i)    => (curCY(2 * i) + curCY(2 * i + 1)) / 2;       // centro Y del slot siguiente
   const nxtY  = (i)    => nxtCY(i) - CH_N / 2;                         // top Y del slot siguiente
 
-  // ── Utilidades ────────────────────────────────────────────
+  // â”€â”€ Utilidades â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const now = () => Date.now();
 
   const isLive = (m, od) => {
@@ -40,7 +40,7 @@
     return !!(od && !od.finished && ko <= now() && ko > now() - 3 * 60 * 60 * 1000);
   };
 
-  // Resultado efectivo: si terminó en empate y se definió por penales, el
+  // Resultado efectivo: si terminÃ³ en empate y se definiÃ³ por penales, el
   // ganador real es penWinner (result queda en 'draw' porque el marcador
   // de 90'/120' fue empate).
   const effResult = (od) => {
@@ -77,12 +77,12 @@
     } catch (_) { return ''; }
   };
 
-  // ── SVG: líneas conectoras ────────────────────────────────
+  // â”€â”€ SVG: lÃ­neas conectoras â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function buildConnectors(half) {
     const S = 'rgba(255,255,255,0.14)';
     const p = [];
-    const nbx_L  = CC_LX + CC + CN / 2;     // 89 — rama izq
-    const nbx_R  = NC_RX + NC + CN / 2;     // 315 — rama der
+    const nbx_L  = CC_LX + CC + CN / 2;     // 89 â€” rama izq
+    const nbx_R  = NC_RX + NC + CN / 2;     // 315 â€” rama der
 
     for (let i = 0; i < Math.floor(half / 2); i++) {
       const ty = curCY(2 * i), by = curCY(2 * i + 1), my = nxtCY(i);
@@ -92,7 +92,7 @@
     return p;
   }
 
-  // ── Tarjeta: fase actual ──────────────────────────────────
+  // â”€â”€ Tarjeta: fase actual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function CurCard({ m, x, y, champCode, od }) {
     if (!m) {
       return (
@@ -139,7 +139,7 @@
             color: gold ? 'var(--gold-light)' : won ? 'var(--success)' : name ? 'var(--text)' : 'var(--muted-2)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
-            {name || 'TBD'}{gold ? ' ⭐' : ''}
+            {name || 'TBD'}{gold ? ' â­' : ''}
           </span>
           {(live || finished) && score != null && (
             <span style={{
@@ -172,7 +172,7 @@
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />
           )}
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {live ? 'EN VIVO · ' : finished ? (onPens ? '✓ Penales · ' : '✓ ') : ''}{cityOf(m.stadium)}
+            {live ? 'EN VIVO Â· ' : finished ? (onPens ? 'âœ“ Penales Â· ' : 'âœ“ ') : ''}{cityOf(m.stadium)}
           </span>
         </div>
 
@@ -194,7 +194,7 @@
     );
   }
 
-  // ── Tarjeta: fase siguiente (slot de ganador) ─────────────
+  // â”€â”€ Tarjeta: fase siguiente (slot de ganador) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function NxtCard({ x, y, team1, team2 }) {
     const TeamSlot = ({ t }) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 13 }}>
@@ -228,7 +228,7 @@
     );
   }
 
-  // ── Columna trofeo (centro) ───────────────────────────────
+  // â”€â”€ Columna trofeo (centro) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function TrophyColumn({ h }) {
     return (
       <div style={{
@@ -243,7 +243,7 @@
           fontSize: 44, lineHeight: 1,
           filter: 'drop-shadow(0 0 14px rgba(212,175,55,0.8)) drop-shadow(0 0 28px rgba(212,175,55,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
           marginBottom: 8,
-        }}>🏆</div>
+        }}>ðŸ†</div>
 
         {/* FINAL label */}
         <div style={{
@@ -254,12 +254,12 @@
           marginBottom: 3,
         }}>FINAL</div>
 
-        {/* Línea dorada */}
+        {/* LÃ­nea dorada */}
         <div style={{ width: 28, height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.6), transparent)', marginBottom: 5 }} />
 
         {/* Fecha y sede */}
         <div style={{ fontSize: 7, color: 'rgba(212,175,55,0.55)', textAlign: 'center', lineHeight: 1.5, fontWeight: 600 }}>
-          19 jul · 2026
+          19 jul Â· 2026
           <br />MetLife Stadium
           <br />Nueva Jersey
         </div>
@@ -267,7 +267,7 @@
     );
   }
 
-  // ── Pantalla principal ────────────────────────────────────
+  // â”€â”€ Pantalla principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function BracketScreen() {
     const [tab, setTab] = React.useState(null);
     const authUser  = window.MB_useAuth ? window.MB_useAuth() : null;
@@ -293,8 +293,8 @@
     const PHASES = ['r32','r16','qf','sf','final'];
     const NAMES  = { r32:'Dieciseisavos', r16:'Octavos de Final', qf:'Cuartos de Final', sf:'Semifinales', final:'Final' };
 
-    // Un partido se considera terminado si el agente lo marcó (finished=true) O
-    // si su kickoff fue hace más de 3.5h (fallback por reloj para matches R32 viejos
+    // Un partido se considera terminado si el agente lo marcÃ³ (finished=true) O
+    // si su kickoff fue hace mÃ¡s de 3.5h (fallback por reloj para matches R32 viejos
     // que ESPN ya no devuelve y el agente nunca pudo marcarlos).
     const isEffDone = (m) => {
       const od = odds[m.id] || {};
@@ -328,9 +328,9 @@
     // Fixtures siguiente fase ordenados por kickoff para posicionamiento consistente
     const nxtSorted = activeNxt.slice().sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime());
 
-    // Reordenar fase actual según fixtures reales de la siguiente fase:
-    // para cada partido siguiente, sus equipos vinieron de la fase actual → ordenar en pares.
-    // Aplica a R32→R16, R16→QF, QF→SF, etc.
+    // Reordenar fase actual segÃºn fixtures reales de la siguiente fase:
+    // para cada partido siguiente, sus equipos vinieron de la fase actual â†’ ordenar en pares.
+    // Aplica a R32â†’R16, R16â†’QF, QFâ†’SF, etc.
     let sortedCur = activeMatches.slice();
     if (nxtSorted.length >= 2) {
       const usedCur = new Set(), orderedCur = [];
@@ -396,14 +396,14 @@
             </span>
             {activeNxtPhase && (
               <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginLeft: 8 }}>
-                → {NAMES[activeNxtPhase]}
+                â†’ {NAMES[activeNxtPhase]}
               </span>
             )}
           </div>
           {champCode && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>
               <img src={`https://flagcdn.com/h20/${champCode}.png`} alt="" style={{ height: 11, borderRadius: 1 }} />
-              <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{champName} ⭐</span>
+              <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{champName} â­</span>
             </div>
           )}
         </div>
@@ -412,14 +412,14 @@
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 8 }}>
           <div style={{ position: 'relative', width: TOTAL_W, height: TOTAL_H + 4 }}>
 
-            {/* SVG: líneas conectoras */}
+            {/* SVG: lÃ­neas conectoras */}
             <svg width={TOTAL_W} height={TOTAL_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
               {connectors.map((c, i) => (
                 <path key={i} d={c.d} fill="none" stroke={c.stroke} strokeWidth="1.5" strokeLinejoin="round" />
               ))}
             </svg>
 
-            {/* ── Mitad izquierda: fase actual ── */}
+            {/* â”€â”€ Mitad izquierda: fase actual â”€â”€ */}
             {leftCur.map((m, i) => (
               <CurCard key={m.id} m={m} x={CC_LX} y={curY(i)} champCode={champCode} od={odds[m.id] || {}} />
             ))}
@@ -428,7 +428,7 @@
               <CurCard key={`lpad-${i}`} m={null} x={CC_LX} y={curY(leftCur.length + i)} champCode={null} od={{}} />
             ))}
 
-            {/* ── Mitad izquierda: fase siguiente ── */}
+            {/* â”€â”€ Mitad izquierda: fase siguiente â”€â”€ */}
             {leftNxtSlots && leftNxtSlots.map((slot, i) => (
               <NxtCard key={`lns-${i}`} x={NC_LX} y={nxtY(i)} team1={slot.team1} team2={slot.team2} />
             ))}
@@ -443,10 +443,10 @@
               <NxtCard key={`lnt-${i}`} x={NC_LX} y={nxtY((leftNxtSlots || leftNxtFix).length + i)} team1={null} team2={null} />
             ))}
 
-            {/* ── Trofeo central: solo en SF/Final ── */}
+            {/* â”€â”€ Trofeo central: solo en SF/Final â”€â”€ */}
             {(activePhase === 'sf' || activePhase === 'final') && <TrophyColumn h={TOTAL_H} />}
 
-            {/* ── Mitad derecha: fase siguiente ── */}
+            {/* â”€â”€ Mitad derecha: fase siguiente â”€â”€ */}
             {rightNxtSlots && rightNxtSlots.map((slot, i) => (
               <NxtCard key={`rns-${i}`} x={NC_RX} y={nxtY(i)} team1={slot.team1} team2={slot.team2} />
             ))}
@@ -460,7 +460,7 @@
               <NxtCard key={`rnt-${i}`} x={NC_RX} y={nxtY((rightNxtSlots || rightNxtFix).length + i)} team1={null} team2={null} />
             ))}
 
-            {/* ── Mitad derecha: fase actual ── */}
+            {/* â”€â”€ Mitad derecha: fase actual â”€â”€ */}
             {rightCur.map((m, i) => (
               <CurCard key={m.id} m={m} x={CC_RX} y={curY(i)} champCode={champCode} od={odds[m.id] || {}} />
             ))}
@@ -471,13 +471,13 @@
         </div>
 
         <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 4 }}>
-          ~ provisorio en vivo · ⭐ tu campeón elegido · Toca un equipo para ver su ficha
+          ~ provisorio en vivo Â· â­ tu campeÃ³n elegido Â· Toca un equipo para ver su ficha
         </div>
       </div>
     );
   }
 
-  // ── Gráfico evolución del saldo ───────────────────────────
+  // â”€â”€ GrÃ¡fico evoluciÃ³n del saldo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function SaldoSparkline({ bets }) {
     const ms = (t) => (t && typeof t.toMillis === 'function') ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
     const settled = (bets || [])
@@ -504,7 +504,7 @@
     return (
       <div style={{ marginTop: 10, padding: '10px 12px', background: 'var(--surface-2)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <span style={{ fontSize: 'var(--t-xs)', fontWeight: 700 }}>📈 Evolución del saldo</span>
+          <span style={{ fontSize: 'var(--t-xs)', fontWeight: 700 }}>ðŸ“ˆ EvoluciÃ³n del saldo</span>
           <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color }} className="num">
             {up ? '+' : ''}{fmt(last - 90000)} pts
           </span>
@@ -529,7 +529,7 @@
     );
   }
 
-  // ── Banner racha ──────────────────────────────────────────
+  // â”€â”€ Banner racha â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function TopTodayBanner() {
     const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
     const store    = window.MB_useBetStore ? window.MB_useBetStore() : null;
@@ -540,10 +540,10 @@
     let streak = 0;
     for (let i = sorted.length - 1; i >= 0; i--) { if (sorted[i].status === 'won') streak++; else break; }
     if (streak < 2) return null;
-    const msgs = [`¡Llevas ${streak} aciertos seguidos! 🔥 Sigue así`, `${streak} en racha — estás en modo campeón 🏆`, `¡${streak} correctas seguidas! 📈 No pares`];
+    const msgs = [`Â¡Llevas ${streak} aciertos seguidos! ðŸ”¥ Sigue asÃ­`, `${streak} en racha â€” estÃ¡s en modo campeÃ³n ðŸ†`, `Â¡${streak} correctas seguidas! ðŸ“ˆ No pares`];
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg,rgba(0,200,90,.15),rgba(0,100,50,.1))', border: '1px solid rgba(0,200,90,.4)', marginBottom: 8 }}>
-        <span style={{ fontSize: 22, flexShrink: 0 }}>🔥</span>
+        <span style={{ fontSize: 22, flexShrink: 0 }}>ðŸ”¥</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--success)' }}>{msgs[streak % msgs.length]}</div>
           <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginTop: 1 }}>Cada acierto suma a tu bono de racha</div>
@@ -552,11 +552,11 @@
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  //  BRACKET WEB — todas las rondas visibles, marcadores grandes
-  // ══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  BRACKET WEB â€” todas las rondas visibles, marcadores grandes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   (function () {
-    // Dimensiones web (más anchas, más altas)
+    // Dimensiones web (mÃ¡s anchas, mÃ¡s altas)
     const W  = 104;   // card width
     const H  = 58;    // card height (con sede/live/scores)
     const CN = 18;    // conector
@@ -581,7 +581,7 @@
     const WEB_W = X32_R + W;       // 1082
     const WEB_H = 8 * SH - G;     // 492
 
-    // Centro Y por ronda (fórmulas exactas)
+    // Centro Y por ronda (fÃ³rmulas exactas)
     const cY32 = (i) => i * SH + H / 2;
     const cY16 = (i) => (cY32(2 * i) + cY32(2 * i + 1)) / 2;
     const cYQF = (i) => (cY16(2 * i) + cY16(2 * i + 1)) / 2;
@@ -596,7 +596,7 @@
     // Partido efectivamente terminado: por flag del agente O por reloj (kickoff +3.5h)
     const isEffDoneW = (m, od) => !!(od && od.finished) || !!(m && m.kickoff && new Date(m.kickoff).getTime() + 3.5 * 3600000 < Date.now());
 
-    // Colores de conector según estado
+    // Colores de conector segÃºn estado
     const connColor = (m, od) => {
       if (!m || !od) return 'rgba(255,255,255,0.1)';
       if (isEffDoneW(m, od)) return 'rgba(0,200,90,0.45)';
@@ -629,7 +629,7 @@
       if (n && window.MB_openTeam) window.MB_openTeam(n);
     };
 
-      // ¿quién pasa (para mostrar indicador "→ Pasa")?
+      // Â¿quiÃ©n pasa (para mostrar indicador "â†’ Pasa")?
       const winner = getWinner(m, od, true);
 
       const Row = ({ name, code, won, score, prov }) => {
@@ -650,7 +650,7 @@
               color: gold ? 'var(--gold-light)' : won ? 'var(--success)' : name ? 'var(--text)' : 'var(--muted-2)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              {name || 'TBD'}{gold ? ' ⭐' : ''}
+              {name || 'TBD'}{gold ? ' â­' : ''}
             </span>
             {/* Marcador */}
             {(live || finished) && score != null && (
@@ -684,7 +684,7 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 14, paddingTop: 3, fontSize: 7.5, fontWeight: 700, letterSpacing: 0.3, overflow: 'hidden' }}>
             {live && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff5252', display: 'inline-block', flexShrink: 0, animation: 'mb-pulse-live 1s infinite' }} />}
             <span style={{ color: live ? '#ff5252' : finished ? 'var(--success)' : 'var(--muted-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {live ? 'EN VIVO · ' : finished ? (onPens ? '✓ Penales · ' : '✓ ') : ''}{cityOf(m.stadium)}
+              {live ? 'EN VIVO Â· ' : finished ? (onPens ? 'âœ“ Penales Â· ' : 'âœ“ ') : ''}{cityOf(m.stadium)}
             </span>
           </div>
           {/* Equipos */}
@@ -726,9 +726,9 @@
               ? <img src={`https://flagcdn.com/h20/${t.code}.png`} alt="" style={{ height: 11, width: 'auto', flexShrink: 0 }} />
               : <span style={{ width: 14, height: 11, background: 'rgba(255,255,255,0.06)', borderRadius: 1, display: 'inline-block', flexShrink: 0 }} />}
             <span style={{ flex: 1, fontSize: 9, fontWeight: gold ? 800 : t.won ? 700 : 500, color: gold ? 'var(--gold-light)' : t.won ? 'var(--success)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {t.name || '?'}{gold ? ' ⭐' : ''}
+              {t.name || '?'}{gold ? ' â­' : ''}
             </span>
-            {finished && t.won && <span style={{ fontSize: 7, color: 'var(--success)', fontWeight: 800 }}>✓</span>}
+            {finished && t.won && <span style={{ fontSize: 7, color: 'var(--success)', fontWeight: 800 }}>âœ“</span>}
           </div>
         );
       };
@@ -769,7 +769,7 @@
       if (r16w1) { const od_w1 = (oddsAll && oddsAll[r16w1.id]) || {}; return <WSlot m={r16w1} x={x} y={y} champCode={champCode} od={od_w1} />; }
       const r16w2 = (w2c && r16All) ? r16All.find(fx => fx.homeCode === w2c.code || fx.awayCode === w2c.code) : null;
       if (r16w2) { const od_w2 = (oddsAll && oddsAll[r16w2.id]) || {}; return <WSlot m={r16w2} x={x} y={y} champCode={champCode} od={od_w2} />; }
-      // Fallback: odds doc sin finished:true pero el partido ya pasó → buscar R16 por par de R32
+      // Fallback: odds doc sin finished:true pero el partido ya pasÃ³ â†’ buscar R16 por par de R32
       const m1Codes = m1 ? new Set([m1.homeCode, m1.awayCode].filter(Boolean)) : new Set();
       const m2Codes = m2 ? new Set([m2.homeCode, m2.awayCode].filter(Boolean)) : new Set();
       const r16Pair = (m1Codes.size && m2Codes.size && r16All)
@@ -819,8 +819,8 @@
       if (qfPair) { const od = (oddsAll && oddsAll[qfPair.id]) || {}; return <WSlot m={qfPair} x={x} y={y} champCode={champCode} od={od} />; }
       // Sin fixture QF confirmado: mostrar "Por definir" sin implicar rival.
       // El emparejamiento de QF lo determina el cuadro FIFA, no el orden de
-      // llegada de los R16 — no mostramos provisionalmente quién se enfrenta
-      // a quién hasta que ESPN registre el fixture real (9-11 Jul).
+      // llegada de los R16 â€” no mostramos provisionalmente quiÃ©n se enfrenta
+      // a quiÃ©n hasta que ESPN registre el fixture real (9-11 Jul).
       return (
         <div style={{ position: 'absolute', left: x, top: y, width: W, height: H, background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 6, boxSizing: 'border-box', padding: '4px 6px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
           {[0, 1].map((i) => (
@@ -874,11 +874,11 @@
         return ordered.length === cur.length ? ordered : cur;
       };
 
-      // Mitades estáticas del cuadro (según wc2026.js — define qué equipo está en cada lado del bracket FIFA)
+      // Mitades estÃ¡ticas del cuadro (segÃºn wc2026.js â€” define quÃ© equipo estÃ¡ en cada lado del bracket FIFA)
       const r32rawL = r32raw.slice(0, 8);
       const r32rawR = r32raw.slice(8, 16);
 
-      // Conjuntos de códigos por mitad estática: permite clasificar cualquier equipo
+      // Conjuntos de cÃ³digos por mitad estÃ¡tica: permite clasificar cualquier equipo
       const lCodes = new Set(r32rawL.flatMap(m => [m.homeCode, m.awayCode].filter(Boolean)));
       const rCodes = new Set(r32rawR.flatMap(m => [m.homeCode, m.awayCode].filter(Boolean)));
 
@@ -893,19 +893,19 @@
       const LSF_m = sf.find(isLeft) || null;
       const RSF_m = sf.find(m => !isLeft(m)) || null;
 
-      // Reordenar cada mitad R32 según los R16 reales de su lado
-      // (así nunca cruza partidos de un lado al otro)
+      // Reordenar cada mitad R32 segÃºn los R16 reales de su lado
+      // (asÃ­ nunca cruza partidos de un lado al otro)
       const L32 = dynReorder(r32rawL, dynReorder(L16all, LQF_all));
       const R32 = dynReorder(r32rawR, dynReorder(R16all, RQF_all));
 
       // Tag index for connector color calculation
       [...L32, ...R32].forEach((m, i) => { m._idx = i; });
 
-      // R16 ordenado dentro de cada mitad según QF reales
+      // R16 ordenado dentro de cada mitad segÃºn QF reales
       const L16 = dynReorder(L16all, LQF_all);
       const R16 = dynReorder(R16all, RQF_all);
 
-      // QF ordenado dentro de cada mitad según SF
+      // QF ordenado dentro de cada mitad segÃºn SF
       const LQF = LSF_m ? dynReorder(LQF_all, [LSF_m]) : LQF_all.slice(0, 2);
       const RQF = RSF_m ? dynReorder(RQF_all, [RSF_m]) : RQF_all.slice(0, 2);
       const LSF = LSF_m,    RSF = RSF_m;
@@ -914,7 +914,7 @@
       // Construye segmentos de conector coloreados para cada par
       const segs = [];
 
-      // LEFT: R32→R16
+      // LEFT: R32â†’R16
       for (let i = 0; i < 4; i++) {
         const m1 = L32[2*i], m2 = L32[2*i+1];
         const od1 = m1 ? (odds[m1.id]||{}) : {}, od2 = m2 ? (odds[m2.id]||{}) : {};
@@ -930,7 +930,7 @@
           { d: `M${bx} ${my} H${X16}`, s: cm },
         );
       }
-      // LEFT: R16→QF
+      // LEFT: R16â†’QF
       for (let i = 0; i < 2; i++) {
         const m1 = L16[2*i], m2 = L16[2*i+1];
         const od1 = m1?(odds[m1.id]||{}):{}, od2 = m2?(odds[m2.id]||{}):{};
@@ -944,7 +944,7 @@
           { d: `M${bx} ${my} H${XQF}`, s: cm },
         );
       }
-      // LEFT: QF→SF
+      // LEFT: QFâ†’SF
       {
         const m1=LQF[0],m2=LQF[1];
         const od1=m1?(odds[m1.id]||{}):{}, od2=m2?(odds[m2.id]||{}):{};
@@ -958,12 +958,12 @@
           { d: `M${bx} ${my} H${XSF}`, s: cm },
         );
       }
-      // LEFT: SF→Final
+      // LEFT: SFâ†’Final
       { const od=LSF?(odds[LSF.id]||{}):{};
         const c=connColor(LSF,od);
         segs.push({ d:`M${XSF+W} ${cYSF()} H${XFIN}`, s: c }); }
 
-      // RIGHT (mirror): R32→R16
+      // RIGHT (mirror): R32â†’R16
       for (let i = 0; i < 4; i++) {
         const m1 = R32[2*i], m2 = R32[2*i+1];
         if (m1) m1._idx = 2*i; if (m2) m2._idx = 2*i+1;
@@ -978,7 +978,7 @@
           { d:`M${bx} ${my} H${X16_R+W}`, s:cm },
         );
       }
-      // RIGHT: R16→QF
+      // RIGHT: R16â†’QF
       for (let i = 0; i < 2; i++) {
         const m1=R16[2*i],m2=R16[2*i+1];
         const od1=m1?(odds[m1.id]||{}):{}, od2=m2?(odds[m2.id]||{}):{};
@@ -992,7 +992,7 @@
           { d:`M${bx} ${my} H${XQF_R+W}`, s:cm },
         );
       }
-      // RIGHT: QF→SF
+      // RIGHT: QFâ†’SF
       { const m1=RQF[0],m2=RQF[1];
         const od1=m1?(odds[m1.id]||{}):{}, od2=m2?(odds[m2.id]||{}):{};
         const ty=cYQF(0),by=cYQF(1),my=cYSF();
@@ -1005,7 +1005,7 @@
           { d:`M${bx} ${my} H${XSF_R+W}`, s:cm },
         );
       }
-      // RIGHT: SF→Final
+      // RIGHT: SFâ†’Final
       { const od=RSF?(odds[RSF.id]||{}):{};
         const c=connColor(RSF,od);
         segs.push({ d:`M${XSF_R} ${cYSF()} H${XFIN_END}`, s: c }); }
@@ -1023,7 +1023,7 @@
             {champCode && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--t-sm)', color: 'var(--muted)' }}>
                 <img src={`https://flagcdn.com/h20/${champCode}.png`} alt="" style={{ height: 14, borderRadius: 2 }} />
-                <span>Tu campeón: <strong style={{ color: 'var(--gold-light)' }}>{champName}</strong> — borde dorado</span>
+                <span>Tu campeÃ³n: <strong style={{ color: 'var(--gold-light)' }}>{champName}</strong> â€” borde dorado</span>
               </div>
             )}
             <div style={{ display: 'flex', gap: 12, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', alignItems: 'center' }}>
@@ -1052,38 +1052,38 @@
                 </div>
               ))}
 
-              {/* ─── R32 LEFT ─── */}
+              {/* â”€â”€â”€ R32 LEFT â”€â”€â”€ */}
               {L32.map((m, i) => <WCard key={m.id} m={m} x={X32} y={y32(i)} champCode={champCode} od={odds[m.id]||{}} />)}
 
-              {/* ─── R16 LEFT ─── */}
+              {/* â”€â”€â”€ R16 LEFT â”€â”€â”€ */}
               {Array.from({length:4},(_,i)=>(
                 <WSlotFromWinners key={`l16-${i}`} x={X16} y={y16(i)} champCode={champCode}
                   m1={L32[2*i]} od1={odds[L32[2*i]?.id]||{}}
                   m2={L32[2*i+1]} od2={odds[L32[2*i+1]?.id]||{}}
-                  r16All={r16} oddsAll={odds} />
+                  r16All={L16all} oddsAll={odds} />
               ))}
 
-              {/* ─── QF LEFT ─── */}
+              {/* â”€â”€â”€ QF LEFT â”€â”€â”€ */}
               {Array.from({length:2},(_,i)=>(
                 LQF[i]
                   ? <WSlot key={`lqf-${i}`} m={LQF[i]} x={XQF} y={yQF(i)} champCode={champCode} od={odds[LQF[i].id]||{}} />
                   : <QFSlotFromWinners key={`lqf-${i}`} x={XQF} y={yQF(i)} champCode={champCode}
                       m1={L16[2*i]} od1={L16[2*i]?(odds[L16[2*i].id]||{}):{}}
                       m2={L16[2*i+1]} od2={L16[2*i+1]?(odds[L16[2*i+1].id]||{}):{}}
-                      qfAll={qf} oddsAll={odds} />
+                      qfAll={LQF_all} oddsAll={odds} />
               ))}
 
-              {/* ─── SF LEFT ─── */}
+              {/* â”€â”€â”€ SF LEFT â”€â”€â”€ */}
               <WSlot m={LSF} x={XSF} y={ySF()} champCode={champCode} od={LSF?(odds[LSF.id]||{}):{}} label="Semifinal" />
 
-              {/* ─── TROFEO CENTRAL ─── */}
+              {/* â”€â”€â”€ TROFEO CENTRAL â”€â”€â”€ */}
               <div style={{
                 position: 'absolute', left: XFIN, top: 0, width: TW, height: WEB_H,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 background: 'linear-gradient(180deg, rgba(212,175,55,0.02) 0%, rgba(212,175,55,0.12) 50%, rgba(212,175,55,0.02) 100%)',
                 borderLeft: '1px solid rgba(212,175,55,0.2)', borderRight: '1px solid rgba(212,175,55,0.2)',
               }}>
-                <div style={{ fontSize: 52, lineHeight: 1, filter: 'drop-shadow(0 0 18px rgba(212,175,55,0.9)) drop-shadow(0 0 36px rgba(212,175,55,0.5)) drop-shadow(0 2px 6px rgba(0,0,0,0.7))', marginBottom: 10 }}>🏆</div>
+                <div style={{ fontSize: 52, lineHeight: 1, filter: 'drop-shadow(0 0 18px rgba(212,175,55,0.9)) drop-shadow(0 0 36px rgba(212,175,55,0.5)) drop-shadow(0 2px 6px rgba(0,0,0,0.7))', marginBottom: 10 }}>ðŸ†</div>
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase', background: 'linear-gradient(135deg,#F5D76E,#C99B1F)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 4 }}>FINAL</div>
                 <div style={{ width: 32, height: 1, background: 'linear-gradient(90deg,transparent,rgba(212,175,55,0.6),transparent)', marginBottom: 6 }} />
                 {FIN ? (
@@ -1092,39 +1092,39 @@
                   </div>
                 ) : (
                   <div style={{ fontSize: 8, color: 'rgba(212,175,55,0.5)', textAlign: 'center', lineHeight: 1.6 }}>
-                    19 jul · 2026<br />MetLife Stadium<br />Nueva Jersey
+                    19 jul Â· 2026<br />MetLife Stadium<br />Nueva Jersey
                   </div>
                 )}
               </div>
 
-              {/* ─── SF RIGHT ─── */}
+              {/* â”€â”€â”€ SF RIGHT â”€â”€â”€ */}
               <WSlot m={RSF} x={XSF_R} y={ySF()} champCode={champCode} od={RSF?(odds[RSF.id]||{}):{}} label="Semifinal" />
 
-              {/* ─── QF RIGHT ─── */}
+              {/* â”€â”€â”€ QF RIGHT â”€â”€â”€ */}
               {Array.from({length:2},(_,i)=>(
                 RQF[i]
                   ? <WSlot key={`rqf-${i}`} m={RQF[i]} x={XQF_R} y={yQF(i)} champCode={champCode} od={odds[RQF[i].id]||{}} />
                   : <QFSlotFromWinners key={`rqf-${i}`} x={XQF_R} y={yQF(i)} champCode={champCode}
                       m1={R16[2*i]} od1={R16[2*i]?(odds[R16[2*i].id]||{}):{}}
                       m2={R16[2*i+1]} od2={R16[2*i+1]?(odds[R16[2*i+1].id]||{}):{}}
-                      qfAll={qf} oddsAll={odds} />
+                      qfAll={RQF_all} oddsAll={odds} />
               ))}
 
-              {/* ─── R16 RIGHT ─── */}
+              {/* â”€â”€â”€ R16 RIGHT â”€â”€â”€ */}
               {Array.from({length:4},(_,i)=>(
                 <WSlotFromWinners key={`r16-${i}`} x={X16_R} y={y16(i)} champCode={champCode}
                   m1={R32[2*i]} od1={odds[R32[2*i]?.id]||{}}
                   m2={R32[2*i+1]} od2={odds[R32[2*i+1]?.id]||{}}
-                  r16All={r16} oddsAll={odds} />
+                  r16All={R16all} oddsAll={odds} />
               ))}
 
-              {/* ─── R32 RIGHT ─── */}
+              {/* â”€â”€â”€ R32 RIGHT â”€â”€â”€ */}
               {R32.map((m, i) => <WCard key={m.id} m={m} x={X32_R} y={y32(i)} champCode={champCode} od={odds[m.id]||{}} />)}
             </div>
           </div>
 
           <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', marginTop: 4 }}>
-            ~ resultado provisional (partido en curso) · ⭐ tu campeón · Toca un equipo para ver su ficha
+            ~ resultado provisional (partido en curso) Â· â­ tu campeÃ³n Â· Toca un equipo para ver su ficha
           </div>
         </div>
       );
