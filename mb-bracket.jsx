@@ -858,7 +858,14 @@
       const byS = {};
       ['r32','r16','qf','sf','final'].forEach(s => { byS[s] = fx.filter(m => m.stage === s); });
 
-      const r32raw = byS.r32, r16 = byS.r16, qf = byS.qf, sf = byS.sf, fin = byS.final;
+      const r32raw = byS.r32, sf = byS.sf, fin = byS.final;
+      const _qfSorted = [...byS.qf].sort((a,b) => new Date(b.kickoff)-new Date(a.kickoff));
+      const _qfSeen = new Set();
+      const qf = _qfSorted.filter(m => {
+        if (_qfSeen.has(m.homeCode) || _qfSeen.has(m.awayCode)) return false;
+        _qfSeen.add(m.homeCode); _qfSeen.add(m.awayCode); return true;
+      });
+      const r16 = [...byS.r16, ...byS.qf.filter(m => !qf.some(v => v.id === m.id))];
 
       // Reordena `cur` para que los pares que alimentan cada fixture de `nxt` queden consecutivos
       const dynReorder = (cur, nxt) => {
