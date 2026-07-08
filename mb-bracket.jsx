@@ -1070,7 +1070,7 @@
                   : <QFSlotFromWinners key={`lqf-${i}`} x={XQF} y={yQF(i)} champCode={champCode}
                       m1={L16[2*i]} od1={L16[2*i]?(odds[L16[2*i].id]||{}):{}}
                       m2={L16[2*i+1]} od2={L16[2*i+1]?(odds[L16[2*i+1].id]||{}):{}}
-                      qfAll={LQF_all} oddsAll={odds} />
+                      qfAll={LQF_all.filter(m => !LQF.some(r => r && r.id === m.id))} oddsAll={odds} />
               ))}
 
               {/* â”€â”€â”€ SF LEFT â”€â”€â”€ */}
@@ -1107,7 +1107,7 @@
                   : <QFSlotFromWinners key={`rqf-${i}`} x={XQF_R} y={yQF(i)} champCode={champCode}
                       m1={R16[2*i]} od1={R16[2*i]?(odds[R16[2*i].id]||{}):{}}
                       m2={R16[2*i+1]} od2={R16[2*i+1]?(odds[R16[2*i+1].id]||{}):{}}
-                      qfAll={RQF_all} oddsAll={odds} />
+                      qfAll={RQF_all.filter(m => !RQF.some(r => r && r.id === m.id))} oddsAll={odds} />
               ))}
 
               {/* â”€â”€â”€ R16 RIGHT â”€â”€â”€ */}
