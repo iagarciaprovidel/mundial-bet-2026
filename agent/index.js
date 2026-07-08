@@ -1311,21 +1311,57 @@ async function recomputeAllStreaks() {
   console.log(`Rachas recalculadas para ${uids.length} usuario(s).`);
 }
 
-// Liquida con football-data.org partidos terminados que ESPN no procesó (best-effort).
 // Repara apuestas 'draw' (Prórr./Pen.) liquidadas incorrectamente como 'lost'
-// antes de que llegara el dato de extraTime al doc odds. Criterio: pick='draw',
-// status='lost', odds doc tiene finished=true, extraTime=true, stage KO.
+// en partidos KO que sí fueron a prórroga/penales.
+// Problema conocido: race condition entre ESPN actualizando statusDesc con keywords
+// ET/Pen y el agente liquidando. Si ESPN era lento, extraTime=false quedó en el doc
+// odds aunque el partido sí fue a ET/PKs. ESPN tampoco sirve partidos viejos en el
+// scoreboard, por lo que el doc odds nunca se repara con el path normal.
+// Solución: usa football-data.org (retorna TODOS los partidos del torneo, con
+// score.extraTime / score.penalties) como fuente de verdad para ET. Si FD confirma
+// ET, repara el doc odds (extraTime=true) y paga la apuesta.
 async function resettleDrawBets() {
   const snap = await db.collection('bets').where('pick', '==', 'draw').where('status', '==', 'lost').get();
   if (snap.empty) return 0;
+
+  // Pre-fetch football-data para verificar ET en partidos donde odds.extraTime=false.
+  // fdETMap: matchId → true si FD confirma que el partido terminó en ET/PKs.
+  const fdETMap = {};
+  try {
+    const fdAll = await fdMatches();
+    for (const m of fdAll) {
+      if (m.status !== 'FINISHED') continue;
+      const mm = matchOur((m.homeTeam && m.homeTeam.name) || '', (m.awayTeam && m.awayTeam.name) || '');
+      if (!mm) continue;
+      const ft = m.score && m.score.fullTime;
+      if (!ft || ft.home == null || ft.away == null) continue;
+      if (ft.home !== ft.away) continue; // sin empate en 90' → no aplica
+      const etScore = m.score && m.score.extraTime;
+      const pkScore = m.score && m.score.penalties;
+      const hasET = (etScore && (etScore.home != null || etScore.away != null)) ||
+                    (pkScore && (pkScore.home != null || pkScore.away != null));
+      if (hasET) fdETMap[mm.our.id] = true;
+    }
+  } catch (e) { console.warn('resettleDrawBets: FD no disponible:', (e && e.message) || e); }
+
   let fixed = 0;
   for (const doc of snap.docs) {
     const bet = doc.data();
     const odDoc = await db.collection('odds').doc(bet.matchId).get();
     if (!odDoc.exists) continue;
     const od = odDoc.data();
-    // Solo KO con extraTime confirmado; grupo no tiene esta regla
-    if (!od.finished || !od.extraTime || !od._stage || od._stage === 'Grupos') continue;
+    if (!od.finished || !od._stage || od._stage === 'Grupos') continue;
+
+    // Verificar ET: del doc odds O de football-data (cubre race condition)
+    const confirmedET = od.extraTime || fdETMap[bet.matchId];
+    if (!confirmedET) continue;
+
+    // Si el doc odds tenía extraTime=false incorrecto, repararlo ahora
+    if (!od.extraTime && fdETMap[bet.matchId]) {
+      await db.collection('odds').doc(bet.matchId).set({ extraTime: true }, { merge: true });
+      console.log(`  resettleDrawBets: reparó odds.extraTime para ${bet.matchId}`);
+    }
+
     const payout = Math.round((bet.stake || 0) * (bet.odd || 1));
     await db.runTransaction(async (tx) => {
       const bs = await tx.get(doc.ref);
