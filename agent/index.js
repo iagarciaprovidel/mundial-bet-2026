@@ -1283,6 +1283,7 @@ async function main() {
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
+  try { await auditBetsTotal(); } catch (e) { console.warn('auditBetsTotal:', (e&&e.message)||e); }
 }
 
 // Recalcula currentStreak para TODOS los usuarios con apuestas liquidadas.
@@ -1451,6 +1452,28 @@ async function settleFdFallback() {
     }
   }
   return n;
+}
+
+async function auditBetsTotal() {
+  const [bSnap, uSnap] = await Promise.all([
+    db.collection('bets').get(),
+    db.collection('users').get(),
+  ]);
+  // Contar bets por uid
+  const countByUid = {};
+  bSnap.forEach(d => { const uid=d.data().uid||'(sin uid)'; countByUid[uid]=(countByUid[uid]||0)+1; });
+  // Mapa uid→nombre
+  const nameByUid = {};
+  uSnap.forEach(d => { nameByUid[d.id] = d.data().nombre || d.id; });
+  // Listar usuarios con al menos 1 apuesta
+  const sorted = Object.entries(countByUid).sort((a,b)=>b[1]-a[1]);
+  console.log(`\n====== BETS TOTALES EN FIRESTORE: ${bSnap.size} ======`);
+  sorted.forEach(([uid, n]) => {
+    const ud = uSnap.docs.find(d=>d.id===uid);
+    const bc = ud ? (ud.data().betsCount||0) : '?';
+    console.log(`  ${(nameByUid[uid]||uid).padEnd(20)} uid=${uid.slice(0,12)}  bets_coleccion=${n}  betsCount_doc=${bc}`);
+  });
+  console.log(`====== FIN BETS TOTALES ======\n`);
 }
 
 main().catch((e) => {
