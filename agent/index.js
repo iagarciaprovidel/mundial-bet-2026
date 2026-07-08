@@ -1454,7 +1454,6 @@ async function settleFdFallback() {
 }
 
 async function auditPulentop() {
-  try { initFirebase(); } catch(e) {}
   const UID = '67GA2ltdsabGTk1jtXaNhWZCVM72';
   const uDoc = await db.collection('users').doc(UID).get();
   const u = uDoc.exists ? uDoc.data() : {};
@@ -1466,16 +1465,14 @@ async function auditPulentop() {
   let totalStake=0, totalPayout=0;
   snap.docs.sort((a,b)=>(a.data().placedAt||'')>(b.data().placedAt||'')?1:-1).forEach(d=>{
     const b=d.data();
-    const sm=b.streakMult||1;
     totalStake+=b.stake||0; totalPayout+=b.payout||0;
-    console.log(`  ${d.id} pick=${b.pick} stake=${b.stake} odd=${b.odd} status=${b.status} payout=${b.payout||0} sm=${sm}`);
+    console.log(`  ${d.id} pick=${b.pick} stake=${b.stake} odd=${b.odd} status=${b.status} payout=${b.payout||0} sm=${b.streakMult||1}`);
   });
   console.log(`TOTALES: apostado=${totalStake} cobrado=${totalPayout} PL=${totalPayout-totalStake}`);
   console.log('=== FIN AUDIT PULENTOP ===\n');
 }
-auditPulentop().catch(e=>console.error('AuditPulentop error:',e.message||e));
 
-main().catch((e) => {
+main().then(()=>auditPulentop()).catch((e) => {
   const msg = (e && e.message) || String(e);
   console.error('ERROR:', msg);
   // Cuota de Firestore agotada (plan gratuito): es transitorio y se repone solo
