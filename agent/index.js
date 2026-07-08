@@ -1507,7 +1507,8 @@ async function auditBetsTotal() {
   sorted.forEach(([uid, n]) => {
     const ud = uSnap.docs.find(d=>d.id===uid);
     const bc = ud ? (ud.data().betsCount||0) : '?';
-    console.log(`  ${(nameByUid[uid]||uid).padEnd(20)} uid=${uid.slice(0,12)}  bets_coleccion=${n}  betsCount_doc=${bc}`);
+    const saldo = ud ? ud.data().saldo : '?';
+    console.log(`  ${(nameByUid[uid]||uid).padEnd(20)} uid=${uid}  bets=${n}  betsCount=${bc}  saldo=${saldo}`);
   });
   console.log(`====== FIN BETS TOTALES ======\n`);
 }
