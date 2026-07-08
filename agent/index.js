@@ -1322,6 +1322,11 @@ async function recomputeAllStreaks() {
 // ET, repara el doc odds (extraTime=true) y paga la apuesta.
 async function resettleDrawBets() {
   const snap = await db.collection('bets').where('pick', '==', 'draw').where('status', '==', 'lost').get();
+  console.log(`  resettleDrawBets: query draw+lost → ${snap.size} apuesta(s)`);
+  // Diagnóstico adicional: ver apuestas draw en cualquier estado
+  const snapAll = await db.collection('bets').where('pick', '==', 'draw').get();
+  console.log(`  resettleDrawBets: total draw bets (todos estados) → ${snapAll.size}`);
+  snapAll.docs.forEach(d => { const b = d.data(); console.log(`    draw bet: uid=${b.uid} matchId=${b.matchId} status=${b.status} stake=${b.stake}`); });
   if (snap.empty) return 0;
 
   // Pre-fetch football-data para verificar ET en partidos donde odds.extraTime=false.
