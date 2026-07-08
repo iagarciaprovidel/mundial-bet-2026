@@ -288,8 +288,8 @@
     const fx       = [...staticFx, ...dynFx.filter((d) => !staticFx.some((s) => s.id === d.id))];
     const byStage = {};
     ['r32','r16','qf','sf','final'].forEach(s => { byStage[s] = fx.filter(m => m.stage === s); });
-    // Dedup QF mobile: si un equipo aparece por datos corruptos en Firestore, queda solo el fixture más reciente
-    { const seen = new Set(); byStage.qf = [...byStage.qf].sort((a,b)=>new Date(b.kickoff)-new Date(a.kickoff)).filter(m=>{ if(seen.has(m.homeCode)||seen.has(m.awayCode)) return false; seen.add(m.homeCode);seen.add(m.awayCode);return true; }); }
+    // Fixtures etiquetados "qf" con kickoff anterior al 9-Jul-2026 son datos erróneos → mover a r16
+    { const QF_MS = new Date('2026-07-09T00:00:00Z').getTime(); const [realQF, fakeQF] = byStage.qf.reduce(([r,f],m) => new Date(m.kickoff).getTime() >= QF_MS ? [[...r,m],f] : [r,[...f,m]], [[],[]]);  byStage.qf = realQF; byStage.r16 = [...byStage.r16, ...fakeQF]; }
 
     // Detectar fase activa: primera con partidos sin terminar o futuros
     const PHASES = ['r32','r16','qf','sf','final'];
@@ -860,14 +860,11 @@
       const byS = {};
       ['r32','r16','qf','sf','final'].forEach(s => { byS[s] = fx.filter(m => m.stage === s); });
 
+      // Cualquier fixture etiquetado "qf" con kickoff anterior al 9-Jul-2026 es un error de datos
+      const QF_MS = new Date('2026-07-09T00:00:00Z').getTime();
       const r32raw = byS.r32, sf = byS.sf, fin = byS.final;
-      const _qfSorted = [...byS.qf].sort((a,b) => new Date(b.kickoff)-new Date(a.kickoff));
-      const _qfSeen = new Set();
-      const qf = _qfSorted.filter(m => {
-        if (_qfSeen.has(m.homeCode) || _qfSeen.has(m.awayCode)) return false;
-        _qfSeen.add(m.homeCode); _qfSeen.add(m.awayCode); return true;
-      });
-      const r16 = [...byS.r16, ...byS.qf.filter(m => !qf.some(v => v.id === m.id))];
+      const qf  = byS.qf.filter(m => !m.kickoff || new Date(m.kickoff).getTime() >= QF_MS);
+      const r16 = [...byS.r16, ...byS.qf.filter(m => m.kickoff && new Date(m.kickoff).getTime() < QF_MS)];
 
       // Reordena `cur` para que los pares que alimentan cada fixture de `nxt` queden consecutivos
       const dynReorder = (cur, nxt) => {
