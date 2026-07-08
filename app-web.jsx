@@ -127,11 +127,25 @@ function FlagTicker({ onSelect, onGroup }) {
   const mask = 'linear-gradient(90deg, transparent, white 3%, white 97%, transparent)';
   const allFxT = (window.MB && window.MB.WC_FIXTURES) || [];
   const dynFxT = (store && store.dynFixtures) || [];
-  const r32CodesT = new Set([...allFxT, ...dynFxT].filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
-  const r16CodesT = new Set([...allFxT, ...dynFxT].filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const allDynT = [...allFxT, ...dynFxT];
+  const r32CodesT = new Set(allDynT.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const r16CodesT = new Set(allDynT.filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const qfCodesT  = new Set(allDynT.filter(f => f.stage === 'qf').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const sfCodesT  = new Set(allDynT.filter(f => f.stage === 'sf').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const finCodesT = new Set(allDynT.filter(f => f.stage === 'final').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFxT = allFxT.filter(f => !f.stage || f.stage === 'Grupos');
   const lastKOT = groupFxT.length ? Math.max.apply(null, groupFxT.map(f => new Date(f.kickoff).getTime())) : Infinity;
   const groupsClosedT = r32CodesT.size > 0 && isFinite(lastKOT) && Date.now() >= lastKOT + 2 * 60 * 60 * 1000;
+  // Opacidad por fase de eliminación (sin grayscale, conserva color de bandera)
+  const flagOpacityT = (tc) => {
+    if (!groupsClosedT) return 1;
+    if (r32CodesT.size > 0 && !r32CodesT.has(tc)) return 0.22;  // eliminado grupos
+    if (r16CodesT.size > 0 && !r16CodesT.has(tc)) return 0.38;  // eliminado R32
+    if (qfCodesT.size  > 0 && !qfCodesT.has(tc))  return 0.55;  // eliminado R16
+    if (sfCodesT.size  > 0 && !sfCodesT.has(tc))  return 0.72;  // eliminado QF
+    if (finCodesT.size > 0 && !finCodesT.has(tc)) return 0.88;  // eliminado SF
+    return 1;
+  };
   const [hov, setHov] = useStateW(null);
   const timer = useRefW(null);
   const tickerRef = useRefW(null);
@@ -195,12 +209,10 @@ function FlagTicker({ onSelect, onGroup }) {
       }}>
         {items.map((t, i) => {
           const tc = teamCode(t);
-          const elimGroup = groupsClosedT && r32CodesT.size > 0 && !r32CodesT.has(tc);
-          const elimR32 = !elimGroup && r16CodesT.size > 0 && r32CodesT.has(tc) && !r16CodesT.has(tc);
           return (
             <button key={i} className="mb-flagbtn" title={t.name}
               onMouseEnter={(e) => open(t, e)} onMouseLeave={scheduleClose} onClick={() => onSelect(t)}
-              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0, opacity: elimGroup ? 0.28 : elimR32 ? 0.55 : 1, filter: elimGroup ? 'grayscale(0.9)' : elimR32 ? 'grayscale(0.45)' : 'none', transition: 'opacity 0.2s' }}>
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0, opacity: flagOpacityT(tc), transition: 'opacity 0.2s' }}>
               <img src={`https://flagcdn.com/h40/${teamCode(t)}.png`} alt={t.name}
                 style={{ height: 22, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
             </button>
@@ -682,11 +694,24 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const dynFxW = (store && store.dynFixtures) || [];
   const allFxW = (window.MB && window.MB.WC_FIXTURES) || [];
-  const r32CodesW = new Set([...allFxW, ...dynFxW].filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
-  const r16CodesW = new Set([...allFxW, ...dynFxW].filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const allDynW = [...allFxW, ...dynFxW];
+  const r32CodesW = new Set(allDynW.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const r16CodesW = new Set(allDynW.filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const qfCodesW  = new Set(allDynW.filter(f => f.stage === 'qf').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const sfCodesW  = new Set(allDynW.filter(f => f.stage === 'sf').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const finCodesW = new Set(allDynW.filter(f => f.stage === 'final').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFxW = allFxW.filter(f => !f.stage || f.stage === 'Grupos');
   const lastKOW = groupFxW.length ? Math.max.apply(null, groupFxW.map(f => new Date(f.kickoff).getTime())) : Infinity;
   const groupsClosedW = r32CodesW.size > 0 && isFinite(lastKOW) && Date.now() >= lastKOW + 2 * 60 * 60 * 1000;
+  const flagOpacityW = (rc) => {
+    if (!groupsClosedW) return 1;
+    if (r32CodesW.size > 0 && !r32CodesW.has(rc)) return 0.22;
+    if (r16CodesW.size > 0 && !r16CodesW.has(rc)) return 0.38;
+    if (qfCodesW.size  > 0 && !qfCodesW.has(rc))  return 0.55;
+    if (sfCodesW.size  > 0 && !sfCodesW.has(rc))  return 0.72;
+    if (finCodesW.size > 0 && !finCodesW.has(rc)) return 0.88;
+    return 1;
+  };
   return (
     <div ref={ref}>
     <Card style={{ padding: '14px 16px', transition: 'box-shadow var(--dur-base) var(--ease-out)', ...hlStyle }}>
@@ -706,12 +731,11 @@ function GroupTableWeb({ letter, rows, highlighted, onTeam }) {
       </div>
       {rows.map(r => {
         const rc = r.code || '';
-        const elimGroupW = groupsClosedW && r32CodesW.size > 0 && !r32CodesW.has(rc);
-        const elimR32W = !elimGroupW && r16CodesW.size > 0 && r32CodesW.has(rc) && !r16CodesW.has(rc);
+        const rowOpacity = flagOpacityW(rc);
         return (
         <div key={r.name} onClick={() => onTeam && onTeam(Object.assign({}, r, { group: letter }))} className={onTeam ? 'mb-press mb-team-row' : ''}
           title={onTeam ? `Ver ficha de ${r.name}` : undefined}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 4px', margin: '0 -4px', borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: onTeam ? 'pointer' : 'default', opacity: elimGroupW ? 0.35 : elimR32W ? 0.6 : 1, filter: elimGroupW ? 'grayscale(0.8)' : elimR32W ? 'grayscale(0.35)' : 'none' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 4px', margin: '0 -4px', borderRadius: 'var(--r-sm)', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: onTeam ? 'pointer' : 'default', opacity: rowOpacity }}>
           <span style={{ width: 14, color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{r.pos}</span>
           <img src={`https://flagcdn.com/h24/${r.code || ''}.png`} alt="" style={{ height: 15, width: 'auto', borderRadius: 2, flexShrink: 0 }} />
           <span style={{ flex: 1, minWidth: 0 }}>
