@@ -1283,7 +1283,6 @@ async function main() {
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
-  try { await auditRAMBOP(); } catch (e) { console.warn('auditRAMBOP:', (e && e.message) || e); }
 }
 
 // Recalcula currentStreak para TODOS los usuarios con apuestas liquidadas.
@@ -1452,50 +1451,6 @@ async function settleFdFallback() {
     }
   }
   return n;
-}
-
-async function auditRAMBOP() {
-  const UID = '67GA2ltdsabGTk1jtXaNhWZCVM72';
-  const [bSnap, pSnap, uDoc] = await Promise.all([
-    db.collection('bets').where('uid', '==', UID).get(),
-    db.collection('parlays').where('uid', '==', UID).get(),
-    db.collection('users').doc(UID).get(),
-  ]);
-  const user = uDoc.exists ? uDoc.data() : {};
-  const rewards = user.rewards || {};
-  console.log(`\n====== AUDIT RAMBOP COMPLETO ======`);
-  console.log(`  Firestore: saldo=${user.saldo} staked=${user.staked} MB_worth=${(user.saldo||0)+(user.staked||0)}`);
-  console.log(`  Bonos reclamados: recarga=${rewards.recarga||0} precision=${rewards.precision||0} streak=${rewards.streak||0} champBonus=${rewards.champBonus||0} groupsClosed=${rewards.groupsClosed||false}`);
-  const champDoc = await db.collection('users').doc(UID).collection('picks').doc('champion').get().catch(()=>null);
-  if (!champDoc || !champDoc.exists) {
-    // Try alternate path
-    const champDoc2 = await db.collection('champion_picks').doc(UID).get().catch(()=>null);
-    if (champDoc2 && champDoc2.exists) console.log(`  Pick campeón (champion_picks): ${JSON.stringify(champDoc2.data())}`);
-    else console.log(`  Pick campeón: no encontrado`);
-  } else { console.log(`  Pick campeón (subcol): ${JSON.stringify(champDoc.data())}`); }
-
-  let totalStaked = 0, totalPayout = 0, openStake = 0;
-  const bets = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  bets.sort((a, b) => ((a.creado && a.creado.seconds)||0) - ((b.creado && b.creado.seconds)||0));
-  for (const b of bets) {
-    const s = b.stake||0, p = b.payout||0, st = b.status;
-    if (st === 'open') openStake += s; else { totalStaked += s; totalPayout += p; }
-    console.log(`  BET [${b.id}] pick=${b.pick} stake=${s} odd=${b.odd} status=${st} payout=${p} sm=${b.streakMult||1}`);
-  }
-  const parlays = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  for (const p of parlays) {
-    const s = p.stake||0, pay = p.payout||0, st = p.status;
-    if (st === 'open') openStake += s; else { totalStaked += s; totalPayout += pay; }
-    console.log(`  PARLAY [${p.id}] legs=${(p.legs||[]).length} stake=${s} status=${st} payout=${pay}`);
-  }
-  const bonusTotal = (rewards.recarga||0)+(rewards.precision||0)+(rewards.streak||0)+(rewards.champBonus||0);
-  const expectedSaldo = SALDO_INICIAL - totalStaked + totalPayout + bonusTotal;
-  console.log(`  ---- RESUMEN ----`);
-  console.log(`  SALDO_INICIAL: ${SALDO_INICIAL}  +bonos: ${bonusTotal}  +P&L: ${totalPayout-totalStaked}`);
-  console.log(`  Total apostado liquidado: ${totalStaked}  Total cobrado: ${totalPayout}  Abiertas: ${openStake}`);
-  console.log(`  Saldo ESPERADO: ${expectedSaldo}  Firestore: ${user.saldo}  DIFF: ${(user.saldo||0)-expectedSaldo}`);
-  console.log(`  ${expectedSaldo === user.saldo ? 'OK: saldo coincide' : '!! DISCREPANCIA !!'}`);
-  console.log(`====== FIN AUDIT RAMBOP ======\n`);
 }
 
 main().catch((e) => {
