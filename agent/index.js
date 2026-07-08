@@ -1453,6 +1453,28 @@ async function settleFdFallback() {
   return n;
 }
 
+async function auditPulentop() {
+  try { initFirebase(); } catch(e) {}
+  const UID = '67GA2ltdsabGTk1jtXaNhWZCVM72';
+  const uDoc = await db.collection('users').doc(UID).get();
+  const u = uDoc.exists ? uDoc.data() : {};
+  console.log('\n=== AUDIT PULENTOP ===');
+  console.log(`nombre=${u.nombre} saldo=${u.saldo} staked=${u.staked||0} betsCount=${u.betsCount} champion=${u.championCode||'?'}`);
+  console.log(`rewards=${JSON.stringify(u.rewards||{})}`);
+  const snap = await db.collection('bets').where('uid','==',UID).get();
+  console.log(`bets en coleccion: ${snap.size}`);
+  let totalStake=0, totalPayout=0;
+  snap.docs.sort((a,b)=>(a.data().placedAt||'')>(b.data().placedAt||'')?1:-1).forEach(d=>{
+    const b=d.data();
+    const sm=b.streakMult||1;
+    totalStake+=b.stake||0; totalPayout+=b.payout||0;
+    console.log(`  ${d.id} pick=${b.pick} stake=${b.stake} odd=${b.odd} status=${b.status} payout=${b.payout||0} sm=${sm}`);
+  });
+  console.log(`TOTALES: apostado=${totalStake} cobrado=${totalPayout} PL=${totalPayout-totalStake}`);
+  console.log('=== FIN AUDIT PULENTOP ===\n');
+}
+auditPulentop().catch(e=>console.error('AuditPulentop error:',e.message||e));
+
 main().catch((e) => {
   const msg = (e && e.message) || String(e);
   console.error('ERROR:', msg);
