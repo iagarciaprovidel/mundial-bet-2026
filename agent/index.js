@@ -1283,6 +1283,7 @@ async function main() {
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
+  try { await auditRAMBOP(); } catch (e) { console.warn('auditRAMBOP:', (e&&e.message)||e); }
 }
 
 // Recalcula currentStreak para TODOS los usuarios con apuestas liquidadas.
@@ -1451,6 +1452,49 @@ async function settleFdFallback() {
     }
   }
   return n;
+}
+
+async function auditRAMBOP() {
+  const UID = '67GA2ltdsabGTk1jtXaNhWZCVM72';
+  const [bSnap, pSnap, cSnap, sSnap, predSnap, uDoc] = await Promise.all([
+    db.collection('bets').where('uid', '==', UID).get(),
+    db.collection('parlays').where('uid', '==', UID).get(),
+    db.collection('challenge_picks').where('uid', '==', UID).get(),
+    db.collection('semi_picks').doc(UID).get(),
+    db.collection('predictions').where('uid', '==', UID).get(),
+    db.collection('users').doc(UID).get(),
+  ]);
+  const user = uDoc.exists ? uDoc.data() : {};
+  const rewards = user.rewards || {};
+  console.log(`\n====== AUDIT RAMBOP COMPLETO (${UID}) ======`);
+  console.log(`  saldo=${user.saldo} staked=${user.staked} champion="${user.champion||'N/A'}" betsCount=${user.betsCount||0}`);
+  console.log(`  bonos: recarga=${rewards.recarga||0} precision=${rewards.precision||0} streak=${rewards.streak||0} champBonus=${rewards.champBonus||0} groupsClosed=${rewards.groupsClosed||false}`);
+  console.log(`  --- BETS (${bSnap.size}) ---`);
+  let totalStaked=0, totalPayout=0, openStake=0;
+  bSnap.docs.forEach(d => {
+    const b=d.data(), s=b.stake||0, p=b.payout||0;
+    if(b.status==='open') openStake+=s; else { totalStaked+=s; totalPayout+=p; }
+    console.log(`    [${d.id}] pick=${b.pick} stake=${s} odd=${b.odd} status=${b.status} payout=${p}`);
+  });
+  console.log(`  --- PARLAYS (${pSnap.size}) ---`);
+  pSnap.docs.forEach(d => {
+    const p=d.data(), s=p.stake||0, pay=p.payout||0;
+    if(p.status==='open') openStake+=s; else { totalStaked+=s; totalPayout+=pay; }
+    console.log(`    [${d.id}] legs=${(p.legs||[]).length} stake=${s} status=${p.status} payout=${pay}`);
+  });
+  console.log(`  --- CHALLENGE_PICKS (${cSnap.size}) ---`);
+  cSnap.docs.forEach(d => console.log(`    [${d.id}] ${JSON.stringify(d.data()).slice(0,120)}`));
+  console.log(`  --- SEMI_PICKS (${sSnap.exists?'existe':'no existe'}) ---`);
+  if(sSnap.exists) console.log(`    ${JSON.stringify(sSnap.data()).slice(0,200)}`);
+  console.log(`  --- PREDICTIONS (${predSnap.size}) ---`);
+  predSnap.docs.forEach(d => console.log(`    [${d.id}] ${JSON.stringify(d.data()).slice(0,120)}`));
+  const bonusTotal=(rewards.recarga||0)+(rewards.precision||0)+(rewards.streak||0)+(rewards.champBonus||0);
+  const expectedSaldo=SALDO_INICIAL-totalStaked+totalPayout+bonusTotal;
+  console.log(`  --- RESUMEN ---`);
+  console.log(`  bets=${bSnap.size} parlays=${pSnap.size} challenges=${cSnap.size} predictions=${predSnap.size}`);
+  console.log(`  staked_liq=${totalStaked} cobrado=${totalPayout} P&L=${totalPayout-totalStaked} bonos=${bonusTotal} open=${openStake}`);
+  console.log(`  esperado=${expectedSaldo} firestore=${user.saldo} DIFF=${(user.saldo||0)-expectedSaldo}`);
+  console.log(`====== FIN AUDIT ======\n`);
 }
 
 main().catch((e) => {
