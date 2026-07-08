@@ -1,18 +1,18 @@
 /* ============================================================
-   MundialBet Club 2026 — Agente automático (GRATIS)
+   MundialBet Club 2026 â€” Agente automÃ¡tico (GRATIS)
    Fuente de RESULTADOS: football-data.org (plan gratis, incluye el
-   Mundial — competición "WC"). Las CUOTAS 1·X·2 se GENERAN por nivel
-   de cada selección (modelo tipo ranking), sin depender de nadie.
+   Mundial â€” competiciÃ³n "WC"). Las CUOTAS 1Â·XÂ·2 se GENERAN por nivel
+   de cada selecciÃ³n (modelo tipo ranking), sin depender de nadie.
 
    Cada corrida:
-     1) Genera cuotas (si faltan) de los próximos partidos → `odds`.
+     1) Genera cuotas (si faltan) de los prÃ³ximos partidos â†’ `odds`.
      2) Trae resultados de football-data.org y LIQUIDA las apuestas
-        de los partidos terminados (paga monto×cuota, actualiza saldo
-        y deja prevSaldo para las flechas ↑/↓).
+        de los partidos terminados (paga montoÃ—cuota, actualiza saldo
+        y deja prevSaldo para las flechas â†‘/â†“).
 
    Variables de entorno:
      FOOTBALL_DATA_TOKEN        token gratis de football-data.org
-     FIREBASE_SERVICE_ACCOUNT   JSON del service account (una línea)
+     FIREBASE_SERVICE_ACCOUNT   JSON del service account (una lÃ­nea)
    Opcionales: WC_COMP (def "WC"), MAX_ODDS, ODDS_WINDOW_H (def 120),
                ODDS_MARGIN (def 1.06).
    Modo descubrimiento (calibrar nombres):  node agent/index.js discover
@@ -22,7 +22,7 @@ const path = require('path');
 const admin = require('firebase-admin');
 
 const TOKEN = process.env.FOOTBALL_DATA_TOKEN;
-const COMP = process.env.WC_COMP || 'WC';                 // competición Mundial en football-data.org
+const COMP = process.env.WC_COMP || 'WC';                 // competiciÃ³n Mundial en football-data.org
 const FD_BASE = 'https://api.football-data.org/v4';
 const ODDS_WINDOW_H = parseInt(process.env.ODDS_WINDOW_H || '120', 10);
 const ODDS_MARGIN = parseFloat(process.env.ODDS_MARGIN || '1.06'); // overround (~6%)
@@ -33,26 +33,26 @@ const NOTIFY_NO_CLAIM    = process.argv.includes('notify-no-claim');
 const NOTIFY_NO_CHAMPION = process.argv.includes('notify-no-champion');
 const SALDO_INICIAL = 90000;
 
-// ── Esquema de premios que paga el motor de cierre de fase (espejo de
-//    window.MB_REBAL / MB_bonusBreakdown en mb-bet.jsx — mantener en sync). ──
+// â”€â”€ Esquema de premios que paga el motor de cierre de fase (espejo de
+//    window.MB_REBAL / MB_bonusBreakdown en mb-bet.jsx â€” mantener en sync). â”€â”€
 const BONUS = {
   recargaPer10: 2000,                              // +2.000 por cada 10 apuestas
-  precisionMinBets: 8,                             // mín. apuestas liquidadas para optar a precisión
-  precisionTiers: [[80, 25000], [65, 12000], [50, 5000]], // %acierto → bono (solo el mayor)
-  streakTiers: [[3, 2000], [5, 5000], [7, 10000]], // racha de aciertos → bono (acumulable)
-  champPassPhase: 5000,                            // campeón pasó a 2ª fase ("Pasa de fase" de CHAMP_LADDER)
-  // Escalera del campeón por avance en eliminatorias (espejo de CHAMP_LADDER en mb-bet.jsx).
-  // Clave = stage del partido (r32/r16/qf/sf/final), valor = puntos que gana quien eligió al equipo ganador.
+  precisionMinBets: 8,                             // mÃ­n. apuestas liquidadas para optar a precisiÃ³n
+  precisionTiers: [[80, 25000], [65, 12000], [50, 5000]], // %acierto â†’ bono (solo el mayor)
+  streakTiers: [[3, 2000], [5, 5000], [7, 10000]], // racha de aciertos â†’ bono (acumulable)
+  champPassPhase: 5000,                            // campeÃ³n pasÃ³ a 2Âª fase ("Pasa de fase" de CHAMP_LADDER)
+  // Escalera del campeÃ³n por avance en eliminatorias (espejo de CHAMP_LADDER en mb-bet.jsx).
+  // Clave = stage del partido (r32/r16/qf/sf/final), valor = puntos que gana quien eligiÃ³ al equipo ganador.
   champRounds: { r32: 7000, r16: 10000, qf: 15000, sf: 20000, final: 30000 },
 };
 // SEGURIDAD: por defecto SIMULA (no escribe saldos). Para pagar de verdad,
 // define la variable de entorno BONUS_DRY_RUN=0 en el workflow del agente.
 const BONUS_DRY_RUN = process.env.BONUS_DRY_RUN !== '0';
 
-// ── Nuestros partidos (generados desde wc2026.js) ──
+// â”€â”€ Nuestros partidos (generados desde wc2026.js) â”€â”€
 const OURS = JSON.parse(fs.readFileSync(path.join(__dirname, 'our-fixtures.json'), 'utf8'));
 
-// ── ISO2 → alias en inglés (como los nombra football-data.org) ──
+// â”€â”€ ISO2 â†’ alias en inglÃ©s (como los nombra football-data.org) â”€â”€
 const ALIASES = {
   mx: ['mexico'], za: ['south africa'], kr: ['south korea', 'korea republic', 'korea'],
   cz: ['czech republic', 'czechia'], ca: ['canada'], ba: ['bosnia and herzegovina', 'bosnia herzegovina', 'bosnia'],
@@ -64,15 +64,15 @@ const ALIASES = {
   cv: ['cape verde', 'cape verde islands', 'cabo verde'], sa: ['saudi arabia'], uy: ['uruguay'],
   fr: ['france'], sn: ['senegal'], iq: ['iraq'], no: ['norway'], ar: ['argentina'], dz: ['algeria'],
   at: ['austria'], jo: ['jordan'], pt: ['portugal'], cd: ['dr congo', 'congo dr', 'congo', 'democratic republic of congo'],
-  // (ir 'ir iran' y otras variantes que usa ESPN se añaden abajo)
+  // (ir 'ir iran' y otras variantes que usa ESPN se aÃ±aden abajo)
   uz: ['uzbekistan'], co: ['colombia'], 'gb-eng': ['england'], hr: ['croatia'], gh: ['ghana'], pa: ['panama'],
 };
-const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[Ì€-Í¯]/g, '').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
 const ALIAS_TO_ISO = {};
 Object.keys(ALIASES).forEach((iso) => ALIASES[iso].forEach((a) => { ALIAS_TO_ISO[norm(a)] = iso; }));
 const isoOf = (apiName) => ALIAS_TO_ISO[norm(apiName)] || null;
 
-// ── Fuerza aproximada por selección (para generar cuotas). Default 1750. ──
+// â”€â”€ Fuerza aproximada por selecciÃ³n (para generar cuotas). Default 1750. â”€â”€
 const RATING = {
   ar: 2100, fr: 2080, es: 2060, br: 2020, 'gb-eng': 2010, pt: 2000, de: 1960, nl: 1980, be: 1950,
   uy: 1910, co: 1900, hr: 1900, ma: 1890, jp: 1880, sn: 1870, ch: 1870, us: 1850, mx: 1850, at: 1850,
@@ -82,12 +82,12 @@ const RATING = {
 };
 const ratingOf = (iso) => RATING[iso] || 1750;
 
-// Genera cuotas 1·X·2 a partir de la fuerza de cada equipo (orientación nuestra).
+// Genera cuotas 1Â·XÂ·2 a partir de la fuerza de cada equipo (orientaciÃ³n nuestra).
 function modelOdds(homeIso, awayIso) {
   const dr = ratingOf(homeIso) - ratingOf(awayIso);          // sin ventaja de local (sedes neutrales)
   const pHwin = 1 / (1 + Math.pow(10, -dr / 400));           // prob. de que el local sea mejor
   const evenness = 1 - Math.abs(2 * pHwin - 1);              // 1 si parejo, 0 si dispar
-  const pD = 0.18 + 0.16 * evenness;                          // empate más probable si parejo
+  const pD = 0.18 + 0.16 * evenness;                          // empate mÃ¡s probable si parejo
   const pH = (1 - pD) * pHwin;
   const pA = (1 - pD) * (1 - pHwin);
   const odd = (p) => Math.max(1.05, Math.min(15, Math.round((1 / (p * ODDS_MARGIN)) * 100) / 100));
@@ -107,14 +107,14 @@ async function fdMatches() {
   const res = await fetch(`${FD_BASE}/competitions/${COMP}/matches`, { headers: { 'X-Auth-Token': TOKEN } });
   if (res.status === 403 || res.status === 429) {
     const t = await res.text().catch(() => '');
-    throw new Error(`football-data.org respondió ${res.status}: ${t.slice(0, 160)}`);
+    throw new Error(`football-data.org respondiÃ³ ${res.status}: ${t.slice(0, 160)}`);
   }
   const json = await res.json().catch(() => ({}));
   return Array.isArray(json.matches) ? json.matches : [];
 }
 
-// ── Marcadores desde ESPN (gratis, sin clave; SÍ trae goles en vivo y finales) ──
-// football-data.org gratis NO entrega goles del Mundial; ESPN sí. Devuelve los
+// â”€â”€ Marcadores desde ESPN (gratis, sin clave; SÃ trae goles en vivo y finales) â”€â”€
+// football-data.org gratis NO entrega goles del Mundial; ESPN sÃ­. Devuelve los
 // partidos con el MISMO formato que football-data para reusar el bucle de abajo.
 const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
 function espnToFd(e) {
@@ -144,13 +144,13 @@ function espnToFd(e) {
     const t = (x.type && x.type.text) || '';
     return { side: side, name: ath ? (ath.displayName || ath.shortName || '') : '', minute: (x.clock && x.clock.displayValue) || '', red: /red|roja|second yellow|segunda amarilla/i.test(t) };
   }).filter((g) => g.side && g.name);
-  // Detectar prórroga/penales desde la descripción del estado (ESPN: "Final - AET", "Final - Pen", etc.)
+  // Detectar prÃ³rroga/penales desde la descripciÃ³n del estado (ESPN: "Final - AET", "Final - Pen", etc.)
   const statusDesc = st.shortDetail || st.description || '';
   const extraTime  = /AET|after extra|overtime|\bOT\b|prorrog/i.test(statusDesc);
   const penalties  = /pen|PKs|penalty|penalties/i.test(statusDesc);
-  // Ganador final (útil para penales donde el marcador queda igualado)
+  // Ganador final (Ãºtil para penales donde el marcador queda igualado)
   const espnWinner = home.winner === true ? 'home' : away.winner === true ? 'away' : null;
-  // Marcador de la tanda de penales (campo estándar de ESPN: shootoutScore por
+  // Marcador de la tanda de penales (campo estÃ¡ndar de ESPN: shootoutScore por
   // equipo). Si no viene, intenta sacarlo del texto del estado ("Pen 4-2").
   const penScore = (home.shootoutScore != null && away.shootoutScore != null)
     ? { home: num(home.shootoutScore), away: num(away.shootoutScore) }
@@ -158,7 +158,7 @@ function espnToFd(e) {
         const mtch = penalties ? statusDesc.match(/(\d+)\s*-\s*(\d+)/) : null;
         return mtch ? { home: parseInt(mtch[1], 10), away: parseInt(mtch[2], 10) } : null;
       })();
-  // Detalle pateador a pateador (quién anotó y quién falló), si ESPN lo incluye
+  // Detalle pateador a pateador (quiÃ©n anotÃ³ y quiÃ©n fallÃ³), si ESPN lo incluye
   // entre los "details" del scoreboard. Best-effort: si no viene, queda [].
   const penKicks = ((c.details || []).filter((x) => {
     const t = (x.type && x.type.text) || '';
@@ -181,16 +181,16 @@ function espnToFd(e) {
     kickoff: e.date || (c && c.date) || null,
     espnRound: (c && c.notes && c.notes[0] && (c.notes[0].headline || c.notes[0].text)) || null,
     espnSeasonType: (e.season && e.season.type && (e.season.type.slug || e.season.type.name)) || null,
-    extraTime: extraTime || penalties, // fue a prórroga o penales
-    penalties: penalties,              // fue específicamente a penales
-    espnWinner: espnWinner,            // ganador según ESPN (sirve para penales)
-    penScore: penScore,                // { home, away } goles en la tanda (orientación ESPN)
-    penKicks: penKicks,                // [{ side, name, scored }] pateador a pateador (orientación ESPN)
+    extraTime: extraTime || penalties, // fue a prÃ³rroga o penales
+    penalties: penalties,              // fue especÃ­ficamente a penales
+    espnWinner: espnWinner,            // ganador segÃºn ESPN (sirve para penales)
+    penScore: penScore,                // { home, away } goles en la tanda (orientaciÃ³n ESPN)
+    penKicks: penKicks,                // [{ side, name, scored }] pateador a pateador (orientaciÃ³n ESPN)
   };
 }
 
 // Tarjetas (amarillas/rojas/expulsiones) desde el endpoint summary de ESPN, que es
-// más completo que el scoreboard (este último a veces solo trae goles). Best-effort:
+// mÃ¡s completo que el scoreboard (este Ãºltimo a veces solo trae goles). Best-effort:
 // si falla, devuelve [] y no rompe nada. Devuelve [{ homeAway, name, minute, red }].
 async function espnCardsFromSummary(eventId, homeId, awayId) {
   if (!eventId) return [];
@@ -217,7 +217,7 @@ async function espnCardsFromSummary(eventId, homeId, awayId) {
       if (!isRed && !isYellow) return;
       const tid = teamId(x.team);
       const homeAway = (tid && tid === String(homeId)) ? 'home' : (tid && tid === String(awayId)) ? 'away' : null;
-      // Jugador: athletesInvolved[0] o participants[0].athlete (según el endpoint).
+      // Jugador: athletesInvolved[0] o participants[0].athlete (segÃºn el endpoint).
       let ath = (x.athletesInvolved && x.athletesInvolved[0]) || null;
       if (!ath && x.participants && x.participants[0]) ath = x.participants[0].athlete || x.participants[0];
       const name = ath ? (ath.displayName || ath.shortName || ath.fullName || '') : '';
@@ -229,7 +229,7 @@ async function espnCardsFromSummary(eventId, homeId, awayId) {
   } catch (e) { return []; }
 }
 // Detalle completo de la tanda de penales (incluye los FALLADOS, que el
-// scoreboard compacto omite — solo trae los convertidos). El detalle completo
+// scoreboard compacto omite â€” solo trae los convertidos). El detalle completo
 // vive en el campo top-level "shootout" del endpoint summary (NO en
 // keyEvents/commentary): un array por equipo con sus tiros en orden.
 async function espnPenKicksFromSummary(eventId, homeId, awayId) {
@@ -256,22 +256,22 @@ async function espnPenKicksFromSummary(eventId, homeId, awayId) {
 async function espnMatches() {
   const d = new Date();
   const ymd = (off) => new Date(d.getTime() + off * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
-  const url = `${ESPN_URL}?dates=${ymd(-3)}-${ymd(4)}&limit=100`; // ventana 3 días atrás → 4 adelante para capturar toda la semana KO
+  const url = `${ESPN_URL}?dates=${ymd(-3)}-${ymd(4)}&limit=100`; // ventana 3 dÃ­as atrÃ¡s â†’ 4 adelante para capturar toda la semana KO
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  if (!res.ok) throw new Error('ESPN respondió ' + res.status);
+  if (!res.ok) throw new Error('ESPN respondiÃ³ ' + res.status);
   const j = await res.json().catch(() => ({}));
   return (j.events || []).map(espnToFd).filter(Boolean);
 }
 
 // Detecta el stage eliminatorio desde el texto que devuelve ESPN
 function stageFromEspn(roundText, seasonType) {
-  const t = String(roundText || seasonType || '').toLowerCase();
-  if (/round of 16|octavo|r16/i.test(t)) return 'r16';
-  if (/quarter|cuarto|qf/i.test(t)) return 'qf';
-  if (/semi/i.test(t)) return 'sf';
-  if (/final/i.test(t)) return 'final';
-  if (/round of 32|dieciseis|r32/i.test(t)) return 'r32';
-  return 'r16'; // default: si hay partido WC no en fixtures, asumimos r16
+  const t = String(roundText || seasonType || '').toLowerCase().trim();
+  if (/round of 16|octavo|\br16\b/i.test(t)) return 'r16';
+  if (/^quarter|^cuarto|\bqf\b/i.test(t)) return 'qf';
+  if (/^semi/i.test(t)) return 'sf';
+  if (/^final$|\bfinal\b/i.test(t) && !/semi/i.test(t)) return 'final';
+  if (/round of 32|dieciseis|\br32\b/i.test(t)) return 'r32';
+  return 'r16';
 }
 
 let db = null;
@@ -282,7 +282,7 @@ function initFirebase() {
   db = admin.firestore();
 }
 
-// ── Genera y guarda cuotas faltantes de los próximos partidos (sin API externa) ──
+// â”€â”€ Genera y guarda cuotas faltantes de los prÃ³ximos partidos (sin API externa) â”€â”€
 async function ensureOdds() {
   const now = Date.now();
   let n = 0;
@@ -292,7 +292,7 @@ async function ensureOdds() {
     const doc = await db.collection('odds').doc(o.id).get();
     const d = doc.exists ? doc.data() : null;
     // Respeta cuotas puestas a mano ('manual') y no re-genera las que ya son del modelo.
-    // Las de prueba/sembradas (sin 'fuente') SÍ se reemplazan por las del modelo.
+    // Las de prueba/sembradas (sin 'fuente') SÃ se reemplazan por las del modelo.
     if (d && d.home && (d.fuente === 'manual' || d.fuente === 'modelo')) continue;
     const od = modelOdds(o.homeCode, o.awayCode);
     await db.collection('odds').doc(o.id).set({
@@ -304,10 +304,10 @@ async function ensureOdds() {
   return n;
 }
 
-// ── Consenso de apuestas (% por pick) + actividad reciente, para la UI ──
+// â”€â”€ Consenso de apuestas (% por pick) + actividad reciente, para la UI â”€â”€
 // Una sola lectura de `bets` abiertas (no por partido) y se agrupa en memoria,
 // para no multiplicar lecturas de Firestore. El cliente NUNCA lee `bets` de
-// otros usuarios (las reglas se lo impiden); por eso esto se calcula acá, con
+// otros usuarios (las reglas se lo impiden); por eso esto se calcula acÃ¡, con
 // el service account, y se publica en `odds` (que el cliente ya escucha).
 async function updateBetConsensus() {
   const snap = await db.collection('bets').where('status', '==', 'open').get();
@@ -325,29 +325,29 @@ async function updateBetConsensus() {
     await db.collection('odds').doc(matchId).set({ consensus: byMatch[matchId] }, { merge: true });
     writes++;
   }
-  // Últimas 8 apuestas (cualquier estado en el lote leído) para el ticker de actividad.
+  // Ãšltimas 8 apuestas (cualquier estado en el lote leÃ­do) para el ticker de actividad.
   const recent = withTs.sort((a, b) => b.creado.toMillis() - a.creado.toMillis()).slice(0, 8)
     .map((b) => ({ nombre: b.nombre || 'Jugador', pick: b.pick, home: b.home, away: b.away, stake: b.stake, ts: b.creado.toMillis() }));
   if (recent.length) await db.collection('meta').doc('activity').set({ recent: recent }, { merge: true });
   return writes;
 }
 
-// ── Envía una notificación push a un usuario (si tiene tokens) ──
+// â”€â”€ EnvÃ­a una notificaciÃ³n push a un usuario (si tiene tokens) â”€â”€
 const ICON_URL = 'https://mundialbet-club.web.app/icon-192.png';
 async function notify(uid, title, body) {
   try {
     const us = await db.collection('users').doc(uid).get();
     const tokens = (us.exists && us.data().fcmTokens) || [];
-    if (!tokens.length) { console.log(`  notify ${String(uid).slice(0, 6)}…: SIN tokens (no activó notificaciones)`); return; }
+    if (!tokens.length) { console.log(`  notify ${String(uid).slice(0, 6)}â€¦: SIN tokens (no activÃ³ notificaciones)`); return; }
     const res = await admin.messaging().sendEachForMulticast({ tokens: tokens, notification: { title: title, body: body }, webpush: { notification: { icon: ICON_URL, badge: ICON_URL } } });
-    console.log(`  notify ${String(uid).slice(0, 6)}…: ${res.successCount}/${tokens.length} enviada(s) — "${title}"`);
+    console.log(`  notify ${String(uid).slice(0, 6)}â€¦: ${res.successCount}/${tokens.length} enviada(s) â€” "${title}"`);
     const bad = [];
     res.responses.forEach((r, i) => { if (!r.success && r.error && /not-registered|invalid-argument|invalid-registration/i.test(r.error.code || r.error.message || '')) bad.push(tokens[i]); });
     if (bad.length) await db.collection('users').doc(uid).set({ fcmTokens: admin.firestore.FieldValue.arrayRemove.apply(null, bad) }, { merge: true });
   } catch (e) { console.warn('  notify:', e && e.message); }
 }
 
-// ── Avisa a TODOS los usuarios con notificaciones activas ──
+// â”€â”€ Avisa a TODOS los usuarios con notificaciones activas â”€â”€
 async function notifyAll(title, body, icon) {
   const snap = await db.collection('users').get();
   let n = 0;
@@ -363,12 +363,12 @@ async function notifyAll(title, body, icon) {
       const bad = [];
       res.responses.forEach((r, i) => { if (!r.success && r.error && /not-registered|invalid-argument/i.test(r.error.code || r.error.message || '')) bad.push(tokens[i]); });
       if (bad.length) await db.collection('users').doc(d.id).set({ fcmTokens: admin.firestore.FieldValue.arrayRemove.apply(null, bad) }, { merge: true });
-    } catch (e) { /* no crítico */ }
+    } catch (e) { /* no crÃ­tico */ }
   }
   return n;
 }
 
-// ── Avisa a quienes SIGUEN un partido (watchMatches array-contains matchId) ──
+// â”€â”€ Avisa a quienes SIGUEN un partido (watchMatches array-contains matchId) â”€â”€
 async function notifyWatchers(matchId, title, body) {
   try {
     const snap = await db.collection('users').where('watchMatches', 'array-contains', matchId).get();
@@ -378,9 +378,9 @@ async function notifyWatchers(matchId, title, body) {
   } catch (e) { console.warn('  notifyWatchers:', e && e.message); return 0; }
 }
 
-// ── Avisa a quienes APOSTARON (apuesta abierta) en un partido, sigan o no el
-//    partido con la campanita. Así el apostador recibe avisos sin tener que
-//    seguir cada partido a mano. ──
+// â”€â”€ Avisa a quienes APOSTARON (apuesta abierta) en un partido, sigan o no el
+//    partido con la campanita. AsÃ­ el apostador recibe avisos sin tener que
+//    seguir cada partido a mano. â”€â”€
 async function notifyOpenBettors(matchId, title, body) {
   try {
     const snap = await db.collection('bets').where('matchId', '==', matchId).where('status', '==', 'open').get();
@@ -392,9 +392,9 @@ async function notifyOpenBettors(matchId, title, body) {
   } catch (e) { console.warn('  notifyOpenBettors:', e && e.message); return 0; }
 }
 
-// ── Avisos por tiempo (NO dependen de football-data): "empieza pronto" y
-//    "apuestas cerradas". Usa los kickoff de nuestras fixtures. Anti-repetición
-//    con el mapa odds/{id}.notified. ──
+// â”€â”€ Avisos por tiempo (NO dependen de football-data): "empieza pronto" y
+//    "apuestas cerradas". Usa los kickoff de nuestras fixtures. Anti-repeticiÃ³n
+//    con el mapa odds/{id}.notified. â”€â”€
 const SOON_MIN = 30;
 async function matchAlerts() {
   const now = Date.now();
@@ -407,38 +407,38 @@ async function matchAlerts() {
     const nt = (doc.exists && doc.data().notified) || {};
     if (!nt.soon && minToKo > 0 && minToKo <= SOON_MIN) {
       const mins = Math.max(1, Math.round(minToKo));
-      const c = await notifyWatchers(o.id, '⏰ Empieza pronto', `${o.home} vs ${o.away} comienza en ~${mins} min. ¡Última oportunidad para apostar!`);
+      const c = await notifyWatchers(o.id, 'â° Empieza pronto', `${o.home} vs ${o.away} comienza en ~${mins} min. Â¡Ãšltima oportunidad para apostar!`);
       nt.soon = true; await ref.set({ notified: nt }, { merge: true });
-      if (c) { sent += c; console.log(`  AVISO empieza-pronto ${o.id} → ${c} seguidor(es)`); }
+      if (c) { sent += c; console.log(`  AVISO empieza-pronto ${o.id} â†’ ${c} seguidor(es)`); }
     }
     // Aviso a los que APOSTARON en este partido (aunque no lo sigan con la campanita).
     if (!nt.betSoon && minToKo > 0 && minToKo <= SOON_MIN) {
       const mins = Math.max(1, Math.round(minToKo));
-      const c = await notifyOpenBettors(o.id, '⏰ Tu apuesta empieza pronto', `${o.home} vs ${o.away} comienza en ~${mins} min. Aún puedes cambiarla o cancelarla.`);
+      const c = await notifyOpenBettors(o.id, 'â° Tu apuesta empieza pronto', `${o.home} vs ${o.away} comienza en ~${mins} min. AÃºn puedes cambiarla o cancelarla.`);
       nt.betSoon = true; await ref.set({ notified: nt }, { merge: true });
-      if (c) { sent += c; console.log(`  AVISO apuesta-pronto ${o.id} → ${c} apostador(es)`); }
+      if (c) { sent += c; console.log(`  AVISO apuesta-pronto ${o.id} â†’ ${c} apostador(es)`); }
     }
     if (!nt.closed && minToKo <= 0) {
-      const c = await notifyWatchers(o.id, '🔒 Apuestas cerradas', `${o.home} vs ${o.away} ya comenzó. ¡A seguir el partido!`);
+      const c = await notifyWatchers(o.id, 'ðŸ”’ Apuestas cerradas', `${o.home} vs ${o.away} ya comenzÃ³. Â¡A seguir el partido!`);
       nt.closed = true; nt.soon = true; await ref.set({ notified: nt }, { merge: true });
-      if (c) { sent += c; console.log(`  AVISO cierre ${o.id} → ${c} seguidor(es)`); }
+      if (c) { sent += c; console.log(`  AVISO cierre ${o.id} â†’ ${c} seguidor(es)`); }
     }
     // KO: aviso a TODOS los usuarios 60 min antes para que apuesten
     const isKO = o.stage && o.stage !== 'Grupos';
     if (isKO && !nt.koAll && minToKo > 0 && minToKo <= 60) {
       const mins = Math.max(1, Math.round(minToKo));
-      const c = await notifyAll('⚽ ¿Ya apostaste?', `${o.home} vs ${o.away} (${o.stage.toUpperCase()}) empieza en ~${mins} min. ¡Última oportunidad!`, '/icons/icon-192.png');
+      const c = await notifyAll('âš½ Â¿Ya apostaste?', `${o.home} vs ${o.away} (${o.stage.toUpperCase()}) empieza en ~${mins} min. Â¡Ãšltima oportunidad!`, '/icons/icon-192.png');
       nt.koAll = true; await ref.set({ notified: nt }, { merge: true });
-      if (c) { sent += c; console.log(`  AVISO KO-todos ${o.id} → ${c} usuarios`); }
+      if (c) { sent += c; console.log(`  AVISO KO-todos ${o.id} â†’ ${c} usuarios`); }
     }
   }
   return sent;
 }
 
-// ── Liquida las apuestas abiertas de un partido terminado ──
-// extraTime: true si el partido fue a prórroga o penales (solo fase KO)
-// penWinner: 'home'|'away'|null — ganador final en caso de penales
-// ghOur/gaOur: marcador final en orientación nuestra (para exacto ×3)
+// â”€â”€ Liquida las apuestas abiertas de un partido terminado â”€â”€
+// extraTime: true si el partido fue a prÃ³rroga o penales (solo fase KO)
+// penWinner: 'home'|'away'|null â€” ganador final en caso de penales
+// ghOur/gaOur: marcador final en orientaciÃ³n nuestra (para exacto Ã—3)
 // Calcular racha actual y mejor racha de un usuario dado sus apuestas liquidadas.
 function computeStreaks(bets) {
   const settled = bets.filter((b) => (b.status === 'won' || b.status === 'lost') && b.settledAt && b.settledAt.seconds > 0);
@@ -455,7 +455,7 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
   if (snap.empty) return 0;
   const isKO = our.stage && our.stage !== 'Grupos';
 
-  // En fase KO: 'draw' gana si hubo prórroga; home/away según ganador final
+  // En fase KO: 'draw' gana si hubo prÃ³rroga; home/away segÃºn ganador final
   const evalWin = (pick) => {
     if (isKO) {
       if (pick === 'draw') return !!extraTime;
@@ -468,7 +468,7 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
   for (const doc of snap.docs) {
     const bet0 = doc.data();
     const won = evalWin(bet0.pick);
-    // Marcador exacto: ×3 si acertó el ganador Y el marcador exacto
+    // Marcador exacto: Ã—3 si acertÃ³ el ganador Y el marcador exacto
     const hasExact = typeof bet0.exactHome === 'number' && typeof bet0.exactAway === 'number';
     const exactCorrect = won && hasExact && ghOur != null && gaOur != null && bet0.exactHome === ghOur && bet0.exactAway === gaOur;
     const mult = exactCorrect ? 3 : 1;
@@ -487,7 +487,7 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       const userData = us.exists ? us.data() : {};
       const saldo = (typeof userData.saldo === 'number') ? userData.saldo : SALDO_INICIAL;
       const staked0 = (typeof userData.staked === 'number') ? userData.staked : 0;
-      // Multiplicador de racha: ×1.1 al 1er acierto seguido, hasta ×2.0 en racha 7+
+      // Multiplicador de racha: Ã—1.1 al 1er acierto seguido, hasta Ã—2.0 en racha 7+
       const streakNow = (typeof userData.currentStreak === 'number') ? userData.currentStreak : 0;
       const SMULT = (s) => s >= 7 ? 2.0 : s >= 5 ? 1.75 : s >= 4 ? 1.5 : s >= 3 ? 1.35 : s >= 2 ? 1.2 : s >= 1 ? 1.1 : 1.0;
       const sm = w ? SMULT(streakNow) : 1.0;
@@ -497,7 +497,7 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       tx.set(doc.ref, { status: w ? 'won' : 'lost', result: ourResult, payout: pay, exactCorrect: exOk, streakMult: sm, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     });
 
-    // Actualizar currentStreak y bestStreak en el usuario (para badge 🔥 y premios de racha)
+    // Actualizar currentStreak y bestStreak en el usuario (para badge ðŸ”¥ y premios de racha)
     try {
       const allBets = await db.collection('bets').where('uid', '==', bet0.uid).get();
       const betsData = allBets.docs.map((d) => d.data());
@@ -507,19 +507,19 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       const { cur, best } = computeStreaks(betsData);
       const prevBest = (typeof userData.bestStreak === 'number') ? userData.bestStreak : 0;
       await db.collection('users').doc(bet0.uid).set({ currentStreak: cur, bestStreak: Math.max(best, prevBest) }, { merge: true });
-    } catch (e) { /* no crítico */ }
+    } catch (e) { /* no crÃ­tico */ }
 
-    const notifTitle = exactCorrect ? '🎯 ¡Marcador exacto! 🎉' : (won ? '¡Ganaste! 🎉' : 'Apuesta perdida 😕');
+    const notifTitle = exactCorrect ? 'ðŸŽ¯ Â¡Marcador exacto! ðŸŽ‰' : (won ? 'Â¡Ganaste! ðŸŽ‰' : 'Apuesta perdida ðŸ˜•');
     await notify(bet0.uid, notifTitle,
-      our.home + ' vs ' + our.away + ': ' + (won ? '+' + payout + (exactCorrect ? ' (¡exacto! ×3)' : '') + (payout > Math.round((bet0.stake || 0) * (bet0.odd || 0)) ? ' (🔥 racha bonus)' : '') : '−' + (bet0.stake || 0)) + ' puntos');
+      our.home + ' vs ' + our.away + ': ' + (won ? '+' + payout + (exactCorrect ? ' (Â¡exacto! Ã—3)' : '') + (payout > Math.round((bet0.stake || 0) * (bet0.odd || 0)) ? ' (ðŸ”¥ racha bonus)' : '') : 'âˆ’' + (bet0.stake || 0)) + ' puntos');
     n++;
   }
   return n;
 }
 
-// ── ¿Acertó este pick en este partido? null = el partido aún no terminó.
-// Lee del doc `odds` (ya tiene finished/result/extraTime/penWinner), así
-// no depende de la fixture estática ni de los parámetros de settle().
+// â”€â”€ Â¿AcertÃ³ este pick en este partido? null = el partido aÃºn no terminÃ³.
+// Lee del doc `odds` (ya tiene finished/result/extraTime/penWinner), asÃ­
+// no depende de la fixture estÃ¡tica ni de los parÃ¡metros de settle().
 async function legWon(matchId, pick, cache) {
   if (!(matchId in cache)) {
     const s = await db.collection('odds').doc(matchId).get();
@@ -534,7 +534,7 @@ async function legWon(matchId, pick, cache) {
   return pick === o.result;
 }
 
-// ── Liquida combinadas (parlay): gana solo si TODOS los picks acertaron.
+// â”€â”€ Liquida combinadas (parlay): gana solo si TODOS los picks acertaron.
 // Solo se liquida cuando los partidos de TODAS las patas ya terminaron.
 async function settleParlays() {
   const snap = await db.collection('parlays').where('status', '==', 'open').get();
@@ -567,18 +567,18 @@ async function settleParlays() {
       tx.set(doc.ref, { status: won ? 'won' : 'lost', payout: payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     });
     try {
-      await notify(p.uid, won ? '¡Ganaste tu combinada! 🎉' : 'Combinada perdida 😕',
-        legs.length + ' partidos: ' + (won ? '+' + payout : '−' + (p.stake || 0)) + ' puntos');
-    } catch (e) { /* no crítico */ }
+      await notify(p.uid, won ? 'Â¡Ganaste tu combinada! ðŸŽ‰' : 'Combinada perdida ðŸ˜•',
+        legs.length + ' partidos: ' + (won ? '+' + payout : 'âˆ’' + (p.stake || 0)) + ' puntos');
+    } catch (e) { /* no crÃ­tico */ }
     n++;
   }
   return n;
 }
 
-// ── Liquida los desafíos por partido (challenge_picks) ──────
-// Q1: ¿Habrá gol en el primer tiempo? — necesita odds.htGoal (bool)
-// Q2: ¿Irá a penales? — necesita odds.penalties (bool derivado de extraTime)
-// POINTS por etapa KO: r32/r16→1500  qf/sf→2500  final→4000
+// â”€â”€ Liquida los desafÃ­os por partido (challenge_picks) â”€â”€â”€â”€â”€â”€
+// Q1: Â¿HabrÃ¡ gol en el primer tiempo? â€” necesita odds.htGoal (bool)
+// Q2: Â¿IrÃ¡ a penales? â€” necesita odds.penalties (bool derivado de extraTime)
+// POINTS por etapa KO: r32/r16â†’1500  qf/sfâ†’2500  finalâ†’4000
 const CHALLENGE_PTS = { r32: 1500, r16: 1500, qf: 2500, sf: 2500, final: 4000 };
 async function settleChallengePicks(our, oddsData) {
   try {
@@ -609,29 +609,29 @@ async function settleChallengePicks(our, oddsData) {
           tx.set(userRef, { saldo: saldo + payout }, { merge: true });
           tx.set(doc.ref, { status: 'won', payout: payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
         });
-        if (won) await notify(pick.uid, '🎯 Desafío acertado', `${our.home} vs ${our.away}: +${pts} puntos por el desafío del partido.`);
+        if (won) await notify(pick.uid, 'ðŸŽ¯ DesafÃ­o acertado', `${our.home} vs ${our.away}: +${pts} puntos por el desafÃ­o del partido.`);
       }
-      console.log(`  Desafíos ${qkey} liquidados (${our.id}): ${snap.size}`);
+      console.log(`  DesafÃ­os ${qkey} liquidados (${our.id}): ${snap.size}`);
     }
   } catch (e) { console.warn('  settleChallengePicks:', e && e.message); }
 }
 
-// ── Notifica a usuarios sin pronóstico del campeón ──────────
+// â”€â”€ Notifica a usuarios sin pronÃ³stico del campeÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function sendNotifyNoChampion() {
   const snap = await db.collection('users').get();
   let sent = 0, skipped = 0;
   for (const doc of snap.docs) {
     const u = doc.data();
     if (u.championCode) { skipped++; continue; }
-    await notify(doc.id, '🏆 ¿Quién será el Campeón?', 'Aún no has elegido tu selección campeona. Entra a MundialBet → Inicio y hazlo antes de que arranquen los cuartos de final.');
+    await notify(doc.id, 'ðŸ† Â¿QuiÃ©n serÃ¡ el CampeÃ³n?', 'AÃºn no has elegido tu selecciÃ³n campeona. Entra a MundialBet â†’ Inicio y hazlo antes de que arranquen los cuartos de final.');
     sent++;
   }
-  console.log(`Notificación "sin campeón": ${sent} enviada(s), ${skipped} ya eligieron.`);
+  console.log(`NotificaciÃ³n "sin campeÃ³n": ${sent} enviada(s), ${skipped} ya eligieron.`);
 }
 
-// ── Borra los equipos SIN integrantes (ningún usuario con ese groupId).
-//    Margen de 10 min para no borrar uno recién creado (mientras se asigna el
-//    creador). Limpia también sus solicitudes de ingreso huérfanas. ──
+// â”€â”€ Borra los equipos SIN integrantes (ningÃºn usuario con ese groupId).
+//    Margen de 10 min para no borrar uno reciÃ©n creado (mientras se asigna el
+//    creador). Limpia tambiÃ©n sus solicitudes de ingreso huÃ©rfanas. â”€â”€
 async function cleanupEmptyGroups() {
   const [groupsSnap, usersSnap] = await Promise.all([
     db.collection('groups').get(),
@@ -645,27 +645,27 @@ async function cleanupEmptyGroups() {
     if (used[doc.id]) continue;
     const c = doc.data().creado;
     const ms = (c && typeof c.toMillis === 'function') ? c.toMillis() : (c && c.seconds ? c.seconds * 1000 : 0);
-    if (ms && (now - ms) < 10 * 60 * 1000) continue; // recién creado: dale margen
+    if (ms && (now - ms) < 10 * 60 * 1000) continue; // reciÃ©n creado: dale margen
     try {
       const reqs = await db.collection('joinRequests').where('groupId', '==', doc.id).get();
       for (const r of reqs.docs) await r.ref.delete();
     } catch (e) {}
     await doc.ref.delete();
     n++;
-    console.log(`  Equipo vacío borrado: "${doc.data().name}" (${doc.id})`);
+    console.log(`  Equipo vacÃ­o borrado: "${doc.data().name}" (${doc.id})`);
   }
   return n;
 }
 
-// ── Recalcula el monto apostado (apuestas abiertas) y el total de apuestas
-//    (participación) de cada usuario. Escribe staked + betsCount. ──
+// â”€â”€ Recalcula el monto apostado (apuestas abiertas) y el total de apuestas
+//    (participaciÃ³n) de cada usuario. Escribe staked + betsCount. â”€â”€
 async function recomputeStaked() {
   const bets = await db.collection('bets').get(); // todas las apuestas
   const parlays = await db.collection('parlays').get(); // todas las combinadas
   const stakeByUid = {}, countByUid = {};
   bets.forEach(function (d) {
     const b = d.data(); if (!b.uid) return;
-    countByUid[b.uid] = (countByUid[b.uid] || 0) + 1;                 // participación (todas)
+    countByUid[b.uid] = (countByUid[b.uid] || 0) + 1;                 // participaciÃ³n (todas)
     if (b.status === 'open') stakeByUid[b.uid] = (stakeByUid[b.uid] || 0) + (b.stake || 0); // en juego (abiertas)
   });
   parlays.forEach(function (d) {
@@ -673,7 +673,7 @@ async function recomputeStaked() {
     countByUid[p.uid] = (countByUid[p.uid] || 0) + 1;
     if (p.status === 'open') stakeByUid[p.uid] = (stakeByUid[p.uid] || 0) + (p.stake || 0);
   });
-  // Usuarios a tocar: los que tienen apuestas + los que tenían staked>0 (para resetear).
+  // Usuarios a tocar: los que tienen apuestas + los que tenÃ­an staked>0 (para resetear).
   const uids = {};
   Object.keys(countByUid).forEach(function (u) { uids[u] = true; });
   try {
@@ -681,8 +681,8 @@ async function recomputeStaked() {
     withStaked.forEach(function (d) { uids[d.id] = true; });
   } catch (e) {}
   // Nota: la RECARGA por metas de apuestas (+2.000 c/10) se paga al CERRAR cada
-  // fase, no aquí. Lo hará el motor de cierre de fase (junto con la escalera del
-  // campeón). Aquí solo se actualiza staked + betsCount (participación).
+  // fase, no aquÃ­. Lo harÃ¡ el motor de cierre de fase (junto con la escalera del
+  // campeÃ³n). AquÃ­ solo se actualiza staked + betsCount (participaciÃ³n).
   let n = 0;
   for (const uid of Object.keys(uids)) {
     await db.collection('users').doc(uid).set({ staked: stakeByUid[uid] || 0, betsCount: countByUid[uid] || 0 }, { merge: true });
@@ -691,15 +691,15 @@ async function recomputeStaked() {
   return n;
 }
 
-// ── Motor de cierre de la FASE DE GRUPOS (fin de la 3ª fecha) ──
+// â”€â”€ Motor de cierre de la FASE DE GRUPOS (fin de la 3Âª fecha) â”€â”€
 //    Paga, UNA sola vez por jugador, los premios rebalanceados:
-//      · Recarga por apuestas (+2.000 c/10) · Precisión · Racha
-//      · Campeón "Pasa de fase" (+5.000) si su selección clasificó.
+//      Â· Recarga por apuestas (+2.000 c/10) Â· PrecisiÃ³n Â· Racha
+//      Â· CampeÃ³n "Pasa de fase" (+5.000) si su selecciÃ³n clasificÃ³.
 //    Clasifican los 2 primeros de cada grupo + los 8 mejores terceros
-//    (formato 2026). Idempotente vía meta/bonuses.groupsClosed y
-//    users/{uid}.rewards.groupsClosed. DRY_RUN simula sin escribir. ──
+//    (formato 2026). Idempotente vÃ­a meta/bonuses.groupsClosed y
+//    users/{uid}.rewards.groupsClosed. DRY_RUN simula sin escribir. â”€â”€
 async function payGroupStageBonuses() {
-  // ¿Ya se pagó? (evita releer users/bets en cada corrida posterior).
+  // Â¿Ya se pagÃ³? (evita releer users/bets en cada corrida posterior).
   if (!BONUS_DRY_RUN) {
     const metaDone = await db.collection('meta').doc('bonuses').get();
     if (metaDone.exists && metaDone.data().groupsClosed) return 0;
@@ -711,12 +711,12 @@ async function payGroupStageBonuses() {
   oddsSnap.forEach((d) => { odds[d.id] = d.data(); });
   const done = ids.filter((id) => odds[id] && odds[id].finished && odds[id].gh != null && odds[id].ga != null);
   if (done.length < ids.length) {
-    console.log(`  Cierre de grupos: ${done.length}/${ids.length} partidos terminados — aún no se paga.`);
+    console.log(`  Cierre de grupos: ${done.length}/${ids.length} partidos terminados â€” aÃºn no se paga.`);
     return 0;
   }
 
   // Tabla de cada grupo + clasificados (top 2 + 8 mejores terceros).
-  // Desempate: puntos → diferencia de gol → goles a favor (simplificado).
+  // Desempate: puntos â†’ diferencia de gol â†’ goles a favor (simplificado).
   const byGroup = {};
   OURS.forEach((f) => {
     const o = odds[f.id], g = f.group;
@@ -738,14 +738,14 @@ async function payGroupStageBonuses() {
   });
   thirds.sort(cmp).slice(0, 8).forEach((t) => qualified.add(t.code));
 
-  // Apuestas por usuario + kickoff por partido (para la racha cronológica).
+  // Apuestas por usuario + kickoff por partido (para la racha cronolÃ³gica).
   const koOf = {};
   OURS.forEach((f) => { koOf[f.id] = new Date(f.kickoff).getTime(); });
   const betsSnap = await db.collection('bets').get();
   const byUid = {};
   betsSnap.forEach((d) => { const b = d.data(); if (!b.uid) return; (byUid[b.uid] = byUid[b.uid] || []).push(b); });
 
-  // Iteramos sobre TODOS los usuarios (un campeón clasificado paga aunque no haya apostado).
+  // Iteramos sobre TODOS los usuarios (un campeÃ³n clasificado paga aunque no haya apostado).
   const usersSnap = await db.collection('users').get();
   let paid = 0, totalPts = 0;
   for (const ud of usersSnap.docs) {
@@ -770,7 +770,7 @@ async function payGroupStageBonuses() {
     const detail = { recarga: recarga, precision: precision, streak: streak, champPass: champPass, total: sum };
 
     if (BONUS_DRY_RUN) {
-      console.log(`  [DRY] ${u.nombre || ud.id}: recarga+${recarga} precisión+${precision} racha+${streak} campeón+${champPass} = +${sum} (apuestas ${nbets}, aciertos ${acc}%, mejor racha ${best})`);
+      console.log(`  [DRY] ${u.nombre || ud.id}: recarga+${recarga} precisiÃ³n+${precision} racha+${streak} campeÃ³n+${champPass} = +${sum} (apuestas ${nbets}, aciertos ${acc}%, mejor racha ${best})`);
     } else {
       await db.runTransaction(async (tx) => {
         const ref = db.collection('users').doc(ud.id);
@@ -783,23 +783,23 @@ async function payGroupStageBonuses() {
           rewards: Object.assign({}, data.rewards, { groupsClosed: true, groups: detail, at: admin.firestore.FieldValue.serverTimestamp() }),
         }, { merge: true });
       });
-      if (sum > 0) await notify(ud.id, '🎁 Premios de la fase de grupos', `Recibiste +${sum} puntos por tu actividad y precisión. ¡Sigue jugando!`);
+      if (sum > 0) await notify(ud.id, 'ðŸŽ Premios de la fase de grupos', `Recibiste +${sum} puntos por tu actividad y precisiÃ³n. Â¡Sigue jugando!`);
     }
     paid++; totalPts += sum;
   }
   if (!BONUS_DRY_RUN) {
     await db.collection('meta').doc('bonuses').set({ groupsClosed: true, at: admin.firestore.FieldValue.serverTimestamp(), qualified: Array.from(qualified) }, { merge: true });
   }
-  console.log(`  Cierre de grupos: ${BONUS_DRY_RUN ? 'SIMULADO (DRY_RUN, no se escribió)' : 'PAGADO'} a ${paid} jugador(es), ${totalPts} pts. Clasificados: ${qualified.size} selecciones.`);
+  console.log(`  Cierre de grupos: ${BONUS_DRY_RUN ? 'SIMULADO (DRY_RUN, no se escribiÃ³)' : 'PAGADO'} a ${paid} jugador(es), ${totalPts} pts. Clasificados: ${qualified.size} selecciones.`);
   return paid;
 }
 
-// ── Premios del campeón por avance en la fase eliminatoria (CHAMP_LADDER) ──
-//    Después de cada ronda (r32/r16/qf/sf/final), paga el bonus a quienes
-//    eligieron al equipo ganador. Se llama con los códigos ISO de los equipos
+// â”€â”€ Premios del campeÃ³n por avance en la fase eliminatoria (CHAMP_LADDER) â”€â”€
+//    DespuÃ©s de cada ronda (r32/r16/qf/sf/final), paga el bonus a quienes
+//    eligieron al equipo ganador. Se llama con los cÃ³digos ISO de los equipos
 //    que avanzaron (ganaron su partido de esa ronda).
-//    Idempotente vía meta/bonuses.champ_{stage} y users/{uid}.rewards.champ_{stage}.
-//    DRY_RUN simula sin escribir. ──
+//    Idempotente vÃ­a meta/bonuses.champ_{stage} y users/{uid}.rewards.champ_{stage}.
+//    DRY_RUN simula sin escribir. â”€â”€
 async function payChampionRoundBonus(stage, winnerCodes) {
   const bonus = BONUS.champRounds[stage];
   if (!bonus || !winnerCodes || !winnerCodes.length) return 0;
@@ -816,7 +816,7 @@ async function payChampionRoundBonus(stage, winnerCodes) {
     if (!u.championCode || !winners.has(u.championCode)) continue;
     if (u.rewards && u.rewards[metaKey]) continue;
     if (BONUS_DRY_RUN) {
-      console.log(`  [DRY] Campeón ${stage} ${u.nombre || ud.id} (${u.championCode}): +${bonus}`);
+      console.log(`  [DRY] CampeÃ³n ${stage} ${u.nombre || ud.id} (${u.championCode}): +${bonus}`);
     } else {
       await db.runTransaction(async (tx) => {
         const ref = db.collection('users').doc(ud.id);
@@ -828,18 +828,18 @@ async function payChampionRoundBonus(stage, winnerCodes) {
           rewards: Object.assign({}, data.rewards, { [metaKey]: true }),
         }, { merge: true });
       });
-      await notify(ud.id, '🏆 ¡Tu selección avanza!', `Tu campeón siguió adelante → +${bonus} puntos. ¡Sigue jugando!`);
+      await notify(ud.id, 'ðŸ† Â¡Tu selecciÃ³n avanza!', `Tu campeÃ³n siguiÃ³ adelante â†’ +${bonus} puntos. Â¡Sigue jugando!`);
     }
     paid++;
   }
   if (!BONUS_DRY_RUN && paid > 0) {
     await db.collection('meta').doc('bonuses').set({ [metaKey]: true, [`${metaKey}At`]: admin.firestore.FieldValue.serverTimestamp(), [`${metaKey}Winners`]: Array.from(winners) }, { merge: true });
   }
-  console.log(`  Campeón ${stage}: ${BONUS_DRY_RUN ? 'SIMULADO' : 'PAGADO'} a ${paid} jugador(es), +${bonus} c/u. Ganadores: ${[...winners].join(',')}`);
+  console.log(`  CampeÃ³n ${stage}: ${BONUS_DRY_RUN ? 'SIMULADO' : 'PAGADO'} a ${paid} jugador(es), +${bonus} c/u. Ganadores: ${[...winners].join(',')}`);
   return paid;
 }
 
-// ── Premio semifinalistas (+500 pts por cada uno que llegó a semis) ──
+// â”€â”€ Premio semifinalistas (+500 pts por cada uno que llegÃ³ a semis) â”€â”€
 // Se llama cuando TODOS los QF terminaron (winnerCodes = 4 clasificados a semis).
 async function paySemiBonus(winnerCodes) {
   if (!winnerCodes || winnerCodes.length !== 4) return 0;
@@ -863,32 +863,32 @@ async function paySemiBonus(winnerCodes) {
       const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
       tx.set(uRef, { prevSaldo: saldo, saldo: saldo + bonus }, { merge: true });
     });
-    await notify(d.uid, `🎯 ¡Acertaste ${correct} semifinalista${correct > 1 ? 's' : ''}!`, `+${bonus} puntos. Los 4 clasificados: ${[...winners].join(', ')}`);
+    await notify(d.uid, `ðŸŽ¯ Â¡Acertaste ${correct} semifinalista${correct > 1 ? 's' : ''}!`, `+${bonus} puntos. Los 4 clasificados: ${[...winners].join(', ')}`);
     paid++;
   }
   await db.collection('meta').doc('bonuses').set({ [metaKey]: true, semiWinners: Array.from(winners), [`${metaKey}At`]: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-  console.log(`  Semis: pagado a ${paid} usuarios (${PTS} pts × aciertos).`);
+  console.log(`  Semis: pagado a ${paid} usuarios (${PTS} pts Ã— aciertos).`);
   return paid;
 }
 
-// ── Notificación masiva: usuarios sin equipo ──
+// â”€â”€ NotificaciÃ³n masiva: usuarios sin equipo â”€â”€
 async function sendNotifyNoTeam() {
   const snap = await db.collection('users').get();
   let sent = 0, skipped = 0;
   for (const doc of snap.docs) {
     const u = doc.data();
     if (u.groupId || u.noGroup) { skipped++; continue; }
-    await notify(doc.id, '👥 ¡Únete a un equipo!', 'Aún no perteneces a ningún equipo. Entra a MundialBet y elige uno para competir en grupo durante el Mundial.');
+    await notify(doc.id, 'ðŸ‘¥ Â¡Ãšnete a un equipo!', 'AÃºn no perteneces a ningÃºn equipo. Entra a MundialBet y elige uno para competir en grupo durante el Mundial.');
     sent++;
   }
-  console.log(`Notificación "sin equipo": ${sent} enviada(s), ${skipped} omitida(s).`);
+  console.log(`NotificaciÃ³n "sin equipo": ${sent} enviada(s), ${skipped} omitida(s).`);
 }
 
-// ── Notificación masiva: usuarios con puntos sin reclamar ──
+// â”€â”€ NotificaciÃ³n masiva: usuarios con puntos sin reclamar â”€â”€
 async function sendNotifyNoClaim() {
   const hasR32 = OURS.some((f) => f.stage === 'r32');
   if (!hasR32) {
-    console.log('No hay fixtures r32: la fase de grupos aún no cerró. No se envía notificación.');
+    console.log('No hay fixtures r32: la fase de grupos aÃºn no cerrÃ³. No se envÃ­a notificaciÃ³n.');
     return;
   }
   const snap = await db.collection('users').get();
@@ -896,15 +896,15 @@ async function sendNotifyNoClaim() {
   for (const doc of snap.docs) {
     const u = doc.data();
     if (u.rewards && u.rewards.groupsClosed) { skipped++; continue; }
-    await notify(doc.id, '🎁 ¡Tienes puntos sin reclamar!', 'La fase de grupos terminó. Abre MundialBet → Perfil y reclama tus premios antes de que empiece la fase eliminatoria.');
+    await notify(doc.id, 'ðŸŽ Â¡Tienes puntos sin reclamar!', 'La fase de grupos terminÃ³. Abre MundialBet â†’ Perfil y reclama tus premios antes de que empiece la fase eliminatoria.');
     sent++;
   }
-  console.log(`Notificación "sin reclamar": ${sent} enviada(s), ${skipped} omitida(s).`);
+  console.log(`NotificaciÃ³n "sin reclamar": ${sent} enviada(s), ${skipped} omitida(s).`);
 }
 
 async function main() {
   if (NOTIFY_NO_TEAM || NOTIFY_NO_CLAIM || NOTIFY_NO_CHAMPION) {
-    console.log(`Agente MundialBet · notify · ${new Date().toISOString()}`);
+    console.log(`Agente MundialBet Â· notify Â· ${new Date().toISOString()}`);
     initFirebase();
     if (NOTIFY_NO_TEAM)      await sendNotifyNoTeam();
     if (NOTIFY_NO_CLAIM)     await sendNotifyNoClaim();
@@ -913,37 +913,37 @@ async function main() {
   }
 
   if (!TOKEN) throw new Error('Falta FOOTBALL_DATA_TOKEN');
-  console.log(`Agente MundialBet (football-data.org · ${COMP}) · ${new Date().toISOString()}`);
+  console.log(`Agente MundialBet (football-data.org Â· ${COMP}) Â· ${new Date().toISOString()}`);
 
   if (DISCOVER) {
     const matches = await fdMatches();
-    console.log(`football-data.org devolvió ${matches.length} partidos.\n— MODO DESCUBRIMIENTO (no escribe nada) —`);
+    console.log(`football-data.org devolviÃ³ ${matches.length} partidos.\nâ€” MODO DESCUBRIMIENTO (no escribe nada) â€”`);
     let ok = 0, miss = 0;
     matches.forEach((m) => {
       const h = m.homeTeam && (m.homeTeam.name || ''); const a = m.awayTeam && (m.awayTeam.name || '');
       const mm = matchOur(h, a);
-      if (mm) { ok++; } else { miss++; console.log(`  SIN MAPEAR: ${h || '?'} vs ${a || '?'} (${(m.utcDate || '').slice(0, 10)} · ${m.status})`); }
+      if (mm) { ok++; } else { miss++; console.log(`  SIN MAPEAR: ${h || '?'} vs ${a || '?'} (${(m.utcDate || '').slice(0, 10)} Â· ${m.status})`); }
     });
-    console.log(`\nMapeados: ${ok} · sin mapear: ${miss}. Si hay "SIN MAPEAR", pásamelos y ajusto ALIASES.`);
+    console.log(`\nMapeados: ${ok} Â· sin mapear: ${miss}. Si hay "SIN MAPEAR", pÃ¡samelos y ajusto ALIASES.`);
     return;
   }
 
   if (DIAG) {
     const matches = await fdMatches();
-    console.log(`football-data.org devolvió ${matches.length} partidos. — MODO DIAG (no escribe) —`);
+    console.log(`football-data.org devolviÃ³ ${matches.length} partidos. â€” MODO DIAG (no escribe) â€”`);
     const byStatus = {};
     matches.forEach((m) => { byStatus[m.status] = (byStatus[m.status] || 0) + 1; });
     console.log('Estados:', JSON.stringify(byStatus));
     const sorted = matches.slice().sort((a, b) => (a.utcDate || '').localeCompare(b.utcDate || ''));
     sorted.slice(0, 12).forEach((m) => {
       const h = m.homeTeam && (m.homeTeam.name || '?'); const a = m.awayTeam && (m.awayTeam.name || '?');
-      const ft = m.score && m.score.fullTime; const sc = ft ? `${ft.home}-${ft.away}` : '—';
+      const ft = m.score && m.score.fullTime; const sc = ft ? `${ft.home}-${ft.away}` : 'â€”';
       const mm = matchOur(h, a);
-      console.log(`  ${(m.utcDate || '').slice(0, 16)} · ${m.status} · ${h} ${sc} ${a} · ${mm ? 'mapeado→' + mm.our.id : 'SIN MAPEAR'}`);
+      console.log(`  ${(m.utcDate || '').slice(0, 16)} Â· ${m.status} Â· ${h} ${sc} ${a} Â· ${mm ? 'mapeadoâ†’' + mm.our.id : 'SIN MAPEAR'}`);
     });
-    // Volcado CRUDO del/los partido(s) FINISHED (y los que tengan algún gol) para ver dónde está el marcador.
+    // Volcado CRUDO del/los partido(s) FINISHED (y los que tengan algÃºn gol) para ver dÃ³nde estÃ¡ el marcador.
     const interesting = matches.filter((m) => m.status === 'FINISHED' || m.status === 'IN_PLAY' || m.status === 'PAUSED');
-    console.log(`\n— CRUDO (${interesting.length} FINISHED/IN_PLAY) —`);
+    console.log(`\nâ€” CRUDO (${interesting.length} FINISHED/IN_PLAY) â€”`);
     interesting.slice(0, 3).forEach((m) => {
       console.log('RAW ' + JSON.stringify({ id: m.id, status: m.status, minute: m.minute, score: m.score, lastUpdated: m.lastUpdated }));
     });
@@ -975,7 +975,7 @@ async function main() {
 
   initFirebase();
 
-  // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
+  // Carga fixtures dinÃ¡micos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
     const dynSnap = await db.collection('fixtures').get();
     const oddsMetaWrites = [];
@@ -990,7 +990,7 @@ async function main() {
           if (f.away && isoOf(f.away) !== f.awayCode) ALIAS_TO_ISO[norm(f.away)] = f.awayCode;
         }
         // Copia metadata de fixture en el doc de odds para que el cliente pueda leerla
-        // (la colección `fixtures` no tiene regla de seguridad de lectura para clientes).
+        // (la colecciÃ³n `fixtures` no tiene regla de seguridad de lectura para clientes).
         oddsMetaWrites.push(db.collection('odds').doc(d.id).set({
           _home: f.home || '', _away: f.away || '',
           _homeCode: f.homeCode, _awayCode: f.awayCode,
@@ -999,32 +999,32 @@ async function main() {
       }
     });
     if (oddsMetaWrites.length) await Promise.all(oddsMetaWrites);
-    if (dynSnap.size) console.log(`Fixtures dinámicos cargados: ${dynSnap.size}`);
+    if (dynSnap.size) console.log(`Fixtures dinÃ¡micos cargados: ${dynSnap.size}`);
   } catch (e) { console.warn('loadDynamicFixtures:', e && e.message); }
 
-  // Estas NO dependen de football-data → corren SIEMPRE (aunque la API falle):
+  // Estas NO dependen de football-data â†’ corren SIEMPRE (aunque la API falle):
   const oddsN = await ensureOdds();
   if (oddsN) console.log(`Cuotas generadas: ${oddsN}.`);
 
   try {
     const consN = await updateBetConsensus();
     if (consN) console.log(`Consenso de apuestas actualizado: ${consN} partido(s).`);
-  } catch (e) { console.warn('updateBetConsensus falló:', (e && e.message) || e); }
+  } catch (e) { console.warn('updateBetConsensus fallÃ³:', (e && e.message) || e); }
 
   // Tareas PESADAS (leen colecciones completas: users/bets/groups). El cron
   // corre cada 5 min; correrlas siempre agota la cuota diaria de Firestore
   // (plan gratuito). Solo 1 vez por hora (en la corrida del minuto :00).
-  // El saldo "en juego" ya se mantiene al apostar/cancelar/liquidar, así que
-  // recomputeStaked es solo reconciliación; los grupos vacíos pueden esperar.
+  // El saldo "en juego" ya se mantiene al apostar/cancelar/liquidar, asÃ­ que
+  // recomputeStaked es solo reconciliaciÃ³n; los grupos vacÃ­os pueden esperar.
   const hourly = new Date().getUTCMinutes() < 5;
   if (hourly) {
     const stkN = await recomputeStaked();
     if (stkN) console.log(`Montos apostados recalculados: ${stkN} usuario(s).`);
     const gone = await cleanupEmptyGroups();
-    if (gone) console.log(`Equipos vacíos borrados: ${gone}.`);
-    // Motor de cierre de fase de grupos: bonuses de precisión/racha/recarga/campeón.
-    try { await payGroupStageBonuses(); } catch (e) { console.warn('Cierre de grupos falló:', (e && e.message) || e); }
-    // Premio del campeón por avance: se delega a payChampionRoundBonus(stage, winnerCodes)
+    if (gone) console.log(`Equipos vacÃ­os borrados: ${gone}.`);
+    // Motor de cierre de fase de grupos: bonuses de precisiÃ³n/racha/recarga/campeÃ³n.
+    try { await payGroupStageBonuses(); } catch (e) { console.warn('Cierre de grupos fallÃ³:', (e && e.message) || e); }
+    // Premio del campeÃ³n por avance: se delega a payChampionRoundBonus(stage, winnerCodes)
     // que se llama desde el bucle de partidos terminados (ver abajo, en el bloque ESPN).
   }
 
@@ -1035,7 +1035,7 @@ async function main() {
   let matches = [];
   try {
     matches = await espnMatches();
-    console.log(`ESPN devolvió ${matches.length} partidos.`);
+    console.log(`ESPN devolviÃ³ ${matches.length} partidos.`);
   } catch (e) {
     console.warn('ESPN no disponible esta vez:', (e && e.message) || e);
   }
@@ -1052,7 +1052,7 @@ async function main() {
     const ft = m.score && m.score.fullTime;
     let mm = matchOur(m.homeTeam.name, m.awayTeam.name);
     if (!mm) {
-      // Intenta auto-registrar como fixture dinámico (solo si ambos ISOs son conocidos)
+      // Intenta auto-registrar como fixture dinÃ¡mico (solo si ambos ISOs son conocidos)
       const hi = isoOf(m.homeTeam.name), ai = isoOf(m.awayTeam.name);
       if (hi && ai && m.kickoff) {
         const dynId = 'dyn_' + [hi, ai].sort().join('_');
@@ -1068,9 +1068,9 @@ async function main() {
             if (m.homeTeam.name && isoOf(m.homeTeam.name) !== hi) ALIAS_TO_ISO[norm(m.homeTeam.name)] = hi;
             if (m.awayTeam.name && isoOf(m.awayTeam.name) !== ai) ALIAS_TO_ISO[norm(m.awayTeam.name)] = ai;
             mm = matchOur(m.homeTeam.name, m.awayTeam.name);
-            console.log(`  Auto-registrado fixture dinámico: ${m.homeTeam.name} vs ${m.awayTeam.name} → ${dynId}`);
+            console.log(`  Auto-registrado fixture dinÃ¡mico: ${m.homeTeam.name} vs ${m.awayTeam.name} â†’ ${dynId}`);
           } else {
-            // Ya existe: asegura que está en OURS para esta corrida
+            // Ya existe: asegura que estÃ¡ en OURS para esta corrida
             const f = existDoc.data();
             if (!OURS.some((o) => o.id === dynId)) {
               OURS.push({ id: f.id, home: f.home, away: f.away, homeCode: f.homeCode, awayCode: f.awayCode, kickoff: f.kickoff, stage: f.stage || 'r16', group: null, md: null });
@@ -1085,7 +1085,7 @@ async function main() {
     }
     // Partidos pre-partido (TIMED): ya registrados/con cuotas, no hay marcador que procesar
     if (!isFinished && !isLive) continue;
-    // Si ESPN terminó el partido pero fullTime no tiene scores, derivar de los goles individuales
+    // Si ESPN terminÃ³ el partido pero fullTime no tiene scores, derivar de los goles individuales
     const cntGoals = (side) => (m.goals || []).reduce((n, g) => {
       const eff = g.og ? (g.side === 'home' ? 'away' : 'home') : g.side;
       return n + (eff === side ? 1 : 0);
@@ -1094,25 +1094,25 @@ async function main() {
     const ftA = (ft && ft.away != null) ? ft.away : (isFinished ? cntGoals('away') : null);
     const gh = ftH != null ? ftH : 0;
     const ga = ftA != null ? ftA : 0;
-    // Goles en NUESTRA orientación (local/visita como en la app).
+    // Goles en NUESTRA orientaciÃ³n (local/visita como en la app).
     const ghOur = mm.sameOrient ? gh : ga;
     const gaOur = mm.sameOrient ? ga : gh;
-    // Goleadores en nuestra orientación: code = bandera del equipo del JUGADOR.
+    // Goleadores en nuestra orientaciÃ³n: code = bandera del equipo del JUGADOR.
     // En autogol, ESPN atribuye el gol al equipo beneficiado, pero el jugador es
-    // del equipo CONTRARIO → mostramos la bandera de su selección, no la rival.
+    // del equipo CONTRARIO â†’ mostramos la bandera de su selecciÃ³n, no la rival.
     const scorers = (m.goals || []).map((g) => {
       const og = !!g.og;
-      const goalSide = mm.sameOrient ? g.side : (g.side === 'home' ? 'away' : 'home'); // a quién le cuenta el gol
-      const playerSide = og ? (goalSide === 'home' ? 'away' : 'home') : goalSide;       // de qué equipo es el jugador
+      const goalSide = mm.sameOrient ? g.side : (g.side === 'home' ? 'away' : 'home'); // a quiÃ©n le cuenta el gol
+      const playerSide = og ? (goalSide === 'home' ? 'away' : 'home') : goalSide;       // de quÃ© equipo es el jugador
       return { code: playerSide === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, og: og, pen: !!g.pen };
     });
-    // Tarjetas en nuestra orientación: code = bandera del equipo del jugador.
+    // Tarjetas en nuestra orientaciÃ³n: code = bandera del equipo del jugador.
     let cards = (m.cards || []).map((g) => {
       const side = mm.sameOrient ? g.side : (g.side === 'home' ? 'away' : 'home');
       return { code: side === 'home' ? mm.our.homeCode : mm.our.awayCode, name: g.name, minute: g.minute, red: !!g.red };
     });
-    // Si el scoreboard no trajo tarjetas, las pedimos al endpoint summary (más completo).
-    // Para partidos terminados solo si todavía no las teníamos guardadas (evita re-pedir).
+    // Si el scoreboard no trajo tarjetas, las pedimos al endpoint summary (mÃ¡s completo).
+    // Para partidos terminados solo si todavÃ­a no las tenÃ­amos guardadas (evita re-pedir).
     if (!cards.length && (isLive || isFinished)) {
       let need = isLive;
       if (isFinished) {
@@ -1129,7 +1129,7 @@ async function main() {
       }
     }
     if (scorers.length) console.log(`  Goles ${mm.our.id}: ` + scorers.map((s) => `${s.code} ${s.name} ${s.minute}`).join(', '));
-    if (cards.length) console.log(`  Tarjetas ${mm.our.id}: ` + cards.map((c) => `${c.red ? '🟥' : '🟨'} ${c.code} ${c.name} ${c.minute}`).join(', '));
+    if (cards.length) console.log(`  Tarjetas ${mm.our.id}: ` + cards.map((c) => `${c.red ? 'ðŸŸ¥' : 'ðŸŸ¨'} ${c.code} ${c.name} ${c.minute}`).join(', '));
     else console.log(`  (sin tarjetas para ${mm.our.id})`);
 
     if (isLive) {
@@ -1145,8 +1145,8 @@ async function main() {
       // Avisa GOL a los seguidores cuando cambia el marcador (y hay al menos un gol).
       if (prev.notifiedScore !== scoreKey && (ghOur + gaOur) > 0) {
         const min = (m.minute != null) ? ` (${m.minute}')` : '';
-        const c = await notifyWatchers(mm.our.id, '⚽ ¡Gol!', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${min}`);
-        if (c) console.log(`  AVISO gol ${mm.our.id} (${scoreKey}) → ${c} seguidor(es)`);
+        const c = await notifyWatchers(mm.our.id, 'âš½ Â¡Gol!', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${min}`);
+        if (c) console.log(`  AVISO gol ${mm.our.id} (${scoreKey}) â†’ ${c} seguidor(es)`);
       }
       console.log(`  EN VIVO ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away})`);
       continue;
@@ -1158,24 +1158,24 @@ async function main() {
     let ourResult = apiResult;
     if (!mm.sameOrient && apiResult !== 'draw') ourResult = apiResult === 'home' ? 'away' : 'home';
 
-    // Prórroga / penales: relevante para fase KO (la apuesta 'draw' se convierte en "Prórr./Pen.")
+    // PrÃ³rroga / penales: relevante para fase KO (la apuesta 'draw' se convierte en "PrÃ³rr./Pen.")
     const isKO = mm.our.stage && mm.our.stage !== 'Grupos';
-    // m.extraTime se detecta por regex en statusDesc; también cuenta como ET si ESPN
-    // reporta un ganador en un partido KO que quedó igualado (garantía de ET/PKs).
+    // m.extraTime se detecta por regex en statusDesc; tambiÃ©n cuenta como ET si ESPN
+    // reporta un ganador en un partido KO que quedÃ³ igualado (garantÃ­a de ET/PKs).
     const extraTime = isKO && (!!(m.extraTime) || (ourResult === 'draw' && !!m.espnWinner));
     // Ganador final en caso de penales (marcador queda igualado; ESPN indica el ganador)
     let penWinner = null;
     if (isKO && extraTime && ourResult === 'draw' && m.espnWinner) {
       penWinner = mm.sameOrient ? m.espnWinner : (m.espnWinner === 'home' ? 'away' : 'home');
     }
-    // Marcador de la tanda + detalle pateador a pateador, en NUESTRA orientación.
+    // Marcador de la tanda + detalle pateador a pateador, en NUESTRA orientaciÃ³n.
     let penScore = null, penKicks = [];
     if (penWinner && m.penScore) {
       penScore = mm.sameOrient ? m.penScore : { home: m.penScore.away, away: m.penScore.home };
     }
     if (penWinner) {
       // El scoreboard compacto solo trae los penales CONVERTIDOS (omite los
-      // fallados), así que el detalle completo se pide siempre al endpoint
+      // fallados), asÃ­ que el detalle completo se pide siempre al endpoint
       // summary; si no responde, se usa lo poco que trajo el scoreboard.
       let need = true;
       if (isFinished) {
@@ -1206,16 +1206,16 @@ async function main() {
     if (!wasFinished) results++;
     const nt = (odoc.exists && odoc.data().notified) || {};
     if (!nt.final) {
-      const suffix = extraTime ? (penWinner ? ' (penales)' : ' (prórroga)') : '';
-      const c = await notifyWatchers(mm.our.id, '🏁 Resultado final', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${suffix}`);
+      const suffix = extraTime ? (penWinner ? ' (penales)' : ' (prÃ³rroga)') : '';
+      const c = await notifyWatchers(mm.our.id, 'ðŸ Resultado final', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${suffix}`);
       nt.final = true; nt.closed = true; nt.soon = true;
       await db.collection('odds').doc(mm.our.id).set({ notified: nt }, { merge: true });
-      if (c) console.log(`  AVISO final ${mm.our.id} → ${c} seguidor(es)`);
+      if (c) console.log(`  AVISO final ${mm.our.id} â†’ ${c} seguidor(es)`);
     }
     const n = await settle(mm.our, ourResult, extraTime, penWinner, ghOur, gaOur);
-    if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} → ${ourResult}${extraTime ? ' ET' : ''}${penWinner ? '/Pen:'+penWinner : ''}): ${n} apuesta(s).`); }
+    if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} â†’ ${ourResult}${extraTime ? ' ET' : ''}${penWinner ? '/Pen:'+penWinner : ''}): ${n} apuesta(s).`); }
 
-    // Liquidar desafíos del partido (Q1: gol 1T, Q2: penales)
+    // Liquidar desafÃ­os del partido (Q1: gol 1T, Q2: penales)
     if (mm.our.stage && mm.our.stage !== 'Grupos') {
       const oddsNow = await db.collection('odds').doc(mm.our.id).get();
       const od = oddsNow.exists ? oddsNow.data() : {};
@@ -1229,7 +1229,7 @@ async function main() {
       if (typeof od.htGoal === 'undefined') {
         let htGoal;
         if (ghOur + gaOur === 0) {
-          htGoal = false; // sin goles en todo el partido → sin gol en 1T
+          htGoal = false; // sin goles en todo el partido â†’ sin gol en 1T
         } else if (scorers.length > 0) {
           htGoal = scorers.some(function(s) {
             const base = parseInt(String(s.minute || '').split(':')[0].split('+')[0], 10);
@@ -1244,7 +1244,7 @@ async function main() {
       await settleChallengePicks(mm.our, od);
     }
 
-    // Premio del campeón por avance: cuando terminan TODOS los partidos de una ronda knockout,
+    // Premio del campeÃ³n por avance: cuando terminan TODOS los partidos de una ronda knockout,
     // paga el bonus de CHAMP_LADDER a quienes eligieron al equipo ganador de ese enfrentamiento.
     if (mm.our.stage && mm.our.stage !== 'Grupos' && BONUS.champRounds[mm.our.stage]) {
       const stageFixtures = OURS.filter((f) => f.stage === mm.our.stage);
@@ -1256,17 +1256,17 @@ async function main() {
             const res = stageDocs[i].data().result;
             return res === 'home' ? f.homeCode : f.awayCode;
           });
-          try { await payChampionRoundBonus(mm.our.stage, winnerCodes); } catch (e) { console.warn(`Campeón ${mm.our.stage} falló:`, (e && e.message) || e); }
+          try { await payChampionRoundBonus(mm.our.stage, winnerCodes); } catch (e) { console.warn(`CampeÃ³n ${mm.our.stage} fallÃ³:`, (e && e.message) || e); }
           // Semi_picks: pagar cuando terminan los QF
           if (mm.our.stage === 'qf') {
-            try { await paySemiBonus(winnerCodes.filter(Boolean)); } catch (e) { console.warn('Semi bonus falló:', (e && e.message) || e); }
+            try { await paySemiBonus(winnerCodes.filter(Boolean)); } catch (e) { console.warn('Semi bonus fallÃ³:', (e && e.message) || e); }
           }
         }
       }
     }
   }
 
-  // Fallback: usa football-data.org para cualquier partido terminado que ESPN no devolvió.
+  // Fallback: usa football-data.org para cualquier partido terminado que ESPN no devolviÃ³.
   try {
     const fdFallbackN = await settleFdFallback();
     if (fdFallbackN) { settled += fdFallbackN; console.log(`FD fallback: ${fdFallbackN} apuesta(s) liquidada(s).`); }
@@ -1286,8 +1286,8 @@ async function main() {
 }
 
 // Recalcula currentStreak para TODOS los usuarios con apuestas liquidadas.
-// Se ejecuta en cada corrida (self-healing): así se rellena para jugadores
-// cuya racha nunca se tocó (p. ej. si su última apuesta liquidada fue antes
+// Se ejecuta en cada corrida (self-healing): asÃ­ se rellena para jugadores
+// cuya racha nunca se tocÃ³ (p. ej. si su Ãºltima apuesta liquidada fue antes
 // de que existiera este campo) y no solo para quien acaba de liquidar ahora.
 async function recomputeAllStreaks() {
   const betsSnap = await db.collection('bets').where('status', 'in', ['won', 'lost']).get();
@@ -1302,7 +1302,7 @@ async function recomputeAllStreaks() {
   for (const uid of uids) {
     const { cur, best } = computeStreaks(byUid[uid]);
     // Leer bestStreak previo para no retrocederlo (solo avanza)
-    // (no leemos Firestore aquí para mantener el batch eficiente; el agente lo protege en el settle individual)
+    // (no leemos Firestore aquÃ­ para mantener el batch eficiente; el agente lo protege en el settle individual)
     batch.set(db.collection('users').doc(uid), { currentStreak: cur, bestStreak: best }, { merge: true });
     ops++;
     if (ops >= 400) { await batch.commit(); batch = db.batch(); ops = 0; }
@@ -1311,13 +1311,13 @@ async function recomputeAllStreaks() {
   console.log(`Rachas recalculadas para ${uids.length} usuario(s).`);
 }
 
-// Repara apuestas 'draw' (Prórr./Pen.) liquidadas incorrectamente como 'lost'
-// en partidos KO que sí fueron a prórroga/penales.
+// Repara apuestas 'draw' (PrÃ³rr./Pen.) liquidadas incorrectamente como 'lost'
+// en partidos KO que sÃ­ fueron a prÃ³rroga/penales.
 // Problema conocido: race condition entre ESPN actualizando statusDesc con keywords
-// ET/Pen y el agente liquidando. Si ESPN era lento, extraTime=false quedó en el doc
-// odds aunque el partido sí fue a ET/PKs. ESPN tampoco sirve partidos viejos en el
+// ET/Pen y el agente liquidando. Si ESPN era lento, extraTime=false quedÃ³ en el doc
+// odds aunque el partido sÃ­ fue a ET/PKs. ESPN tampoco sirve partidos viejos en el
 // scoreboard, por lo que el doc odds nunca se repara con el path normal.
-// Solución: usa football-data.org (retorna TODOS los partidos del torneo, con
+// SoluciÃ³n: usa football-data.org (retorna TODOS los partidos del torneo, con
 // score.extraTime / score.penalties) como fuente de verdad para ET. Si FD confirma
 // ET, repara el doc odds (extraTime=true) y paga la apuesta.
 async function resettleDrawBets() {
@@ -1325,7 +1325,7 @@ async function resettleDrawBets() {
   if (snap.empty) return 0;
 
   // Pre-fetch football-data para verificar ET en partidos donde odds.extraTime=false.
-  // fdETMap: matchId → true si FD confirma que el partido terminó en ET/PKs.
+  // fdETMap: matchId â†’ true si FD confirma que el partido terminÃ³ en ET/PKs.
   const fdETMap = {};
   try {
     const fdAll = await fdMatches();
@@ -1335,7 +1335,7 @@ async function resettleDrawBets() {
       if (!mm) continue;
       const ft = m.score && m.score.fullTime;
       if (!ft || ft.home == null || ft.away == null) continue;
-      if (ft.home !== ft.away) continue; // sin empate en 90' → no aplica
+      if (ft.home !== ft.away) continue; // sin empate en 90' â†’ no aplica
       const etScore = m.score && m.score.extraTime;
       const pkScore = m.score && m.score.penalties;
       const hasET = (etScore && (etScore.home != null || etScore.away != null)) ||
@@ -1356,10 +1356,10 @@ async function resettleDrawBets() {
     const confirmedET = od.extraTime || fdETMap[bet.matchId];
     if (!confirmedET) continue;
 
-    // Si el doc odds tenía extraTime=false incorrecto, repararlo ahora
+    // Si el doc odds tenÃ­a extraTime=false incorrecto, repararlo ahora
     if (!od.extraTime && fdETMap[bet.matchId]) {
       await db.collection('odds').doc(bet.matchId).set({ extraTime: true }, { merge: true });
-      console.log(`  resettleDrawBets: reparó odds.extraTime para ${bet.matchId}`);
+      console.log(`  resettleDrawBets: reparÃ³ odds.extraTime para ${bet.matchId}`);
     }
 
     const payout = Math.round((bet.stake || 0) * (bet.odd || 1));
@@ -1372,8 +1372,8 @@ async function resettleDrawBets() {
       tx.set(doc.ref, { status: 'won', payout: payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
       tx.set(userRef, { prevSaldo: saldo, saldo: saldo + payout }, { merge: true });
     });
-    await notify(bet.uid, '✅ Apuesta corregida', `${od._home || ''} vs ${od._away || ''}: tu apuesta Prórr./Pen. era ganadora. +${payout} puntos.`);
-    console.log(`  resettleDrawBets: ${bet.matchId} uid=${bet.uid} → won, payout=${payout}`);
+    await notify(bet.uid, 'âœ… Apuesta corregida', `${od._home || ''} vs ${od._away || ''}: tu apuesta PrÃ³rr./Pen. era ganadora. +${payout} puntos.`);
+    console.log(`  resettleDrawBets: ${bet.matchId} uid=${bet.uid} â†’ won, payout=${payout}`);
     fixed++;
   }
   return fixed;
@@ -1420,8 +1420,8 @@ async function settleFdFallback() {
     }, { merge: true });
     const nt = (odoc.exists && odoc.data().notified) || {};
     if (!nt.final) {
-      const suffix = extraTime ? (penWinner ? ' (penales)' : ' (prórroga)') : '';
-      await notifyWatchers(mm.our.id, '🏁 Resultado final', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${suffix}`);
+      const suffix = extraTime ? (penWinner ? ' (penales)' : ' (prÃ³rroga)') : '';
+      await notifyWatchers(mm.our.id, 'ðŸ Resultado final', `${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away}${suffix}`);
       nt.final = true; nt.closed = true; nt.soon = true;
       await db.collection('odds').doc(mm.our.id).set({ notified: nt }, { merge: true });
     }
@@ -1433,7 +1433,7 @@ async function settleFdFallback() {
         await db.collection('odds').doc(mm.our.id).set({ penalties: !!(extraTime && penWinner) }, { merge: true });
         od2.penalties = !!(extraTime && penWinner);
       }
-      // htGoal desde marcador de 1T de football-data.org (más directo que ESPN)
+      // htGoal desde marcador de 1T de football-data.org (mÃ¡s directo que ESPN)
       if (typeof od2.htGoal === 'undefined') {
         const ht = m.score && m.score.halfTime;
         let htGoal;
@@ -1459,9 +1459,9 @@ main().catch((e) => {
   // Cuota de Firestore agotada (plan gratuito): es transitorio y se repone solo
   // (cada ~24h). El cron corre cada 5 min; si esto se trata como fallo de build
   // se manda un correo de error cada 5 min hasta que se repone la cuota. Lo
-  // registramos como advertencia y salimos en éxito para no inundar el correo.
+  // registramos como advertencia y salimos en Ã©xito para no inundar el correo.
   if (/RESOURCE_EXHAUSTED|Quota exceeded/i.test(msg)) {
-    console.warn('Cuota de Firestore agotada por hoy; reintenta en la próxima corrida.');
+    console.warn('Cuota de Firestore agotada por hoy; reintenta en la prÃ³xima corrida.');
     process.exit(0);
   }
   process.exit(1);
