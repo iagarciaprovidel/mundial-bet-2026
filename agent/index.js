@@ -1283,8 +1283,6 @@ async function main() {
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
-  try { await auditBetsTotal(); } catch (e) { console.warn('auditBetsTotal:', (e&&e.message)||e); }
-  try { await auditRAMBOP(); } catch (e) { console.warn('auditRAMBOP:', (e&&e.message)||e); }
 }
 
 // Recalcula currentStreak para TODOS los usuarios con apuestas liquidadas.
@@ -1453,68 +1451,6 @@ async function settleFdFallback() {
     }
   }
   return n;
-}
-
-async function auditRAMBOP() {
-  // Buscar por nombre para obtener el uid real (evita truncamiento)
-  const usersSnap = await db.collection('users').get();
-  const rambopDoc = usersSnap.docs.find(d => (d.data().nombre||'').toLowerCase() === 'rambop');
-  if (!rambopDoc) { console.log('RAMBOP no encontrado por nombre'); return; }
-  const UID = rambopDoc.id;
-  console.log(`  RAMBOP uid COMPLETO: ${UID}`);
-  const [bSnap, pSnap] = await Promise.all([
-    db.collection('bets').where('uid', '==', UID).get(),
-    db.collection('parlays').where('uid', '==', UID).get(),
-  ]);
-  const user = rambopDoc.data();
-  const rewards = user.rewards || {};
-  console.log(`\n====== AUDIT RAMBOP (${UID}) ======`);
-  console.log(`  saldo=${user.saldo} staked=${user.staked} betsCount=${user.betsCount||0}`);
-  console.log(`  bonos: recarga=${rewards.recarga||0} precision=${rewards.precision||0} streak=${rewards.streak||0} champBonus=${rewards.champBonus||0} groupsClosed=${rewards.groupsClosed||false}`);
-  let totalStaked=0, totalPayout=0, openStake=0;
-  const bets = bSnap.docs.map(d=>({id:d.id,...d.data()}));
-  bets.sort((a,b)=>((a.creado&&a.creado.seconds)||0)-((b.creado&&b.creado.seconds)||0));
-  bets.forEach(b => {
-    const s=b.stake||0, p=b.payout||0;
-    if(b.status==='open') openStake+=s; else { totalStaked+=s; totalPayout+=p; }
-    const ts=b.creado?new Date(b.creado.seconds*1000).toISOString().slice(0,10):'?';
-    console.log(`  [${ts}] ${b.matchId} pick=${b.pick} stake=${s} odd=${b.odd} status=${b.status} payout=${p} sm=${b.streakMult||1}`);
-  });
-  pSnap.docs.forEach(d => {
-    const p=d.data(), s=p.stake||0, pay=p.payout||0;
-    if(p.status==='open') openStake+=s; else { totalStaked+=s; totalPayout+=pay; }
-    console.log(`  PARLAY ${d.id} legs=${(p.legs||[]).length} stake=${s} status=${p.status} payout=${pay}`);
-  });
-  const bonusTotal=(rewards.recarga||0)+(rewards.precision||0)+(rewards.streak||0)+(rewards.champBonus||0);
-  const expectedSaldo=SALDO_INICIAL-totalStaked+totalPayout+bonusTotal;
-  console.log(`  --- RESUMEN RAMBOP ---`);
-  console.log(`  bets=${bSnap.size} parlays=${pSnap.size} open=${openStake}`);
-  console.log(`  staked_liq=${totalStaked} cobrado=${totalPayout} P&L=${totalPayout-totalStaked} bonos=${bonusTotal}`);
-  console.log(`  esperado=${expectedSaldo} firestore=${user.saldo} DIFF=${(user.saldo||0)-expectedSaldo}`);
-  console.log(`====== FIN AUDIT RAMBOP ======\n`);
-}
-
-async function auditBetsTotal() {
-  const [bSnap, uSnap] = await Promise.all([
-    db.collection('bets').get(),
-    db.collection('users').get(),
-  ]);
-  // Contar bets por uid
-  const countByUid = {};
-  bSnap.forEach(d => { const uid=d.data().uid||'(sin uid)'; countByUid[uid]=(countByUid[uid]||0)+1; });
-  // Mapa uid→nombre
-  const nameByUid = {};
-  uSnap.forEach(d => { nameByUid[d.id] = d.data().nombre || d.id; });
-  // Listar usuarios con al menos 1 apuesta
-  const sorted = Object.entries(countByUid).sort((a,b)=>b[1]-a[1]);
-  console.log(`\n====== BETS TOTALES EN FIRESTORE: ${bSnap.size} ======`);
-  sorted.forEach(([uid, n]) => {
-    const ud = uSnap.docs.find(d=>d.id===uid);
-    const bc = ud ? (ud.data().betsCount||0) : '?';
-    const saldo = ud ? ud.data().saldo : '?';
-    console.log(`  ${(nameByUid[uid]||uid).padEnd(20)} uid=${uid}  bets=${n}  betsCount=${bc}  saldo=${saldo}`);
-  });
-  console.log(`====== FIN BETS TOTALES ======\n`);
 }
 
 main().catch((e) => {
