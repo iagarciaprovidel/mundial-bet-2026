@@ -1283,7 +1283,6 @@ async function main() {
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
-  try { await auditRAMBOP(); } catch (e) { console.warn('auditRAMBOP:', (e && e.message) || e); }
 }
 
 // Recalcula currentStreak para TODOS los usuarios con apuestas liquidadas.
@@ -1452,53 +1451,6 @@ async function settleFdFallback() {
     }
   }
   return n;
-}
-
-async function auditRAMBOP() {
-  const UID = '67GA2ltdsabGTk1jtXaNhWZCVM72';
-  const [bSnap, pSnap, uDoc] = await Promise.all([
-    db.collection('bets').where('uid', '==', UID).get(),
-    db.collection('parlays').where('uid', '==', UID).get(),
-    db.collection('users').doc(UID).get(),
-  ]);
-  const user = uDoc.exists ? uDoc.data() : {};
-  console.log(`\n====== AUDIT RAMBOP (${UID}) ======`);
-  console.log(`  Firestore: saldo=${user.saldo} staked=${user.staked} MB_worth=${(user.saldo||0)+(user.staked||0)}`);
-
-  let totalStaked = 0, totalPayout = 0, openStake = 0;
-  const bets = bSnap.docs.map(d => d.data());
-  bets.sort((a, b) => ((a.createdAt && a.createdAt.seconds)||0) - ((b.createdAt && b.createdAt.seconds)||0));
-  for (const b of bets) {
-    const s = b.stake || 0, p = b.payout || 0, st = b.status;
-    if (st === 'open') { openStake += s; }
-    else { totalStaked += s; totalPayout += p; }
-    const ts = b.createdAt ? new Date(b.createdAt.seconds * 1000).toISOString().slice(0,10) : '?';
-    console.log(`  [${ts}] ${b.matchId} pick=${b.pick} stake=${s} odd=${b.odd} status=${st} payout=${p} sm=${b.streakMult||1}`);
-  }
-  const parlays = pSnap.docs.map(d => d.data());
-  for (const p of parlays) {
-    const s = p.stake || 0, pay = p.payout || 0, st = p.status;
-    if (st === 'open') { openStake += s; }
-    else { totalStaked += s; totalPayout += pay; }
-    const ts = p.createdAt ? new Date(p.createdAt.seconds * 1000).toISOString().slice(0,10) : '?';
-    console.log(`  [${ts}] PARLAY ${p.id||'?'} legs=${(p.legs||[]).length} stake=${s} status=${st} payout=${pay}`);
-  }
-  const expectedSaldo = SALDO_INICIAL - totalStaked + totalPayout;
-  console.log(`  ---- RESUMEN ----`);
-  console.log(`  SALDO_INICIAL:  ${SALDO_INICIAL}`);
-  console.log(`  Apuestas liquidadas: ${bets.filter(b=>b.status!=='open').length + parlays.filter(p=>p.status!=='open').length}`);
-  console.log(`  Total apostado (liquidado): ${totalStaked}`);
-  console.log(`  Total cobrado (liquidado):  ${totalPayout}`);
-  console.log(`  P&L neto:  ${totalPayout - totalStaked}`);
-  console.log(`  Abiertas (staked):  ${openStake}`);
-  console.log(`  Saldo ESPERADO:  ${expectedSaldo}  (Firestore: ${user.saldo})`);
-  console.log(`  MB_worth ESPERADO:  ${expectedSaldo + openStake}  (Firestore: ${(user.saldo||0)+(user.staked||0)})`);
-  if (expectedSaldo !== user.saldo) {
-    console.log(`  !! DISCREPANCIA: ${user.saldo - expectedSaldo} puntos de diferencia !!`);
-  } else {
-    console.log(`  OK: saldo coincide con el recalculo.`);
-  }
-  console.log(`====== FIN AUDIT RAMBOP ======\n`);
 }
 
 main().catch((e) => {
