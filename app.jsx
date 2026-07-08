@@ -114,10 +114,24 @@ function MobileFlagTicker({ onSelect }) {
   const toCode = window.MB_flagToCode || (() => 'xx');
   const allFx = (window.MB && window.MB.WC_FIXTURES) || [];
   const dynFxA = (storeA && storeA.dynFixtures) || [];
-  const r32Codes = new Set([...allFx, ...dynFxA].filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const allDynA = [...allFx, ...dynFxA];
+  const r32Codes = new Set(allDynA.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const r16Codes = new Set(allDynA.filter(f => f.stage === 'r16').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const qfCodes  = new Set(allDynA.filter(f => f.stage === 'qf').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const sfCodes  = new Set(allDynA.filter(f => f.stage === 'sf').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+  const finCodes = new Set(allDynA.filter(f => f.stage === 'final').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
   const groupFx = allFx.filter(f => !f.stage || f.stage === 'Grupos');
   const lastKO = groupFx.length ? Math.max.apply(null, groupFx.map(f => new Date(f.kickoff).getTime())) : Infinity;
   const groupsClosed = r32Codes.size > 0 && isFinite(lastKO) && Date.now() >= lastKO + 2 * 60 * 60 * 1000;
+  const flagOpacityA = (code) => {
+    if (!groupsClosed) return 1;
+    if (r32Codes.size > 0 && !r32Codes.has(code)) return 0.22;
+    if (r16Codes.size > 0 && !r16Codes.has(code)) return 0.38;
+    if (qfCodes.size  > 0 && !qfCodes.has(code))  return 0.55;
+    if (sfCodes.size  > 0 && !sfCodes.has(code))  return 0.72;
+    if (finCodes.size > 0 && !finCodes.has(code)) return 0.88;
+    return 1;
+  };
   const items = teams.concat(teams);
   const mask = 'linear-gradient(90deg, transparent, white 4%, white 96%, transparent)';
   const tickerRef = useRefA(null);
@@ -156,13 +170,12 @@ function MobileFlagTicker({ onSelect }) {
       }}>
         {items.map((tm, i) => {
           const code = tm.code || toCode(tm.flag);
-          const eliminated = groupsClosed && !r32Codes.has(code);
+          const opA = flagOpacityA(code);
           return (
-            <button key={i} onClick={() => onSelect(tm)} title={eliminated ? tm.name + ' ❌' : tm.name} style={{
+            <button key={i} onClick={() => onSelect(tm)} title={tm.name} style={{
               background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0,
-              opacity: eliminated ? 0.45 : 1,
-              filter: eliminated ? 'grayscale(0.7)' : 'none',
-              transition: 'opacity 0.3s, filter 0.3s',
+              opacity: opA,
+              transition: 'opacity 0.3s',
             }}>
               <img src={`https://flagcdn.com/h40/${code}.png`} alt={tm.name}
                 style={{ height: 20, width: 'auto', borderRadius: 3, display: 'block', boxShadow: '0 1px 3px rgba(0,0,0,0.45)' }} />
