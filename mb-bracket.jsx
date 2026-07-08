@@ -288,6 +288,8 @@
     const fx       = [...staticFx, ...dynFx.filter((d) => !staticFx.some((s) => s.id === d.id))];
     const byStage = {};
     ['r32','r16','qf','sf','final'].forEach(s => { byStage[s] = fx.filter(m => m.stage === s); });
+    // Dedup QF mobile: si un equipo aparece por datos corruptos en Firestore, queda solo el fixture más reciente
+    { const seen = new Set(); byStage.qf = [...byStage.qf].sort((a,b)=>new Date(b.kickoff)-new Date(a.kickoff)).filter(m=>{ if(seen.has(m.homeCode)||seen.has(m.awayCode)) return false; seen.add(m.homeCode);seen.add(m.awayCode);return true; }); }
 
     // Detectar fase activa: primera con partidos sin terminar o futuros
     const PHASES = ['r32','r16','qf','sf','final'];
