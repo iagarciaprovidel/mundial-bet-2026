@@ -975,6 +975,21 @@ async function main() {
 
   initFirebase();
 
+  // Migración: corregir fixtures con stage="qf" cuyo kickoff es anterior al 9-Jul-2026 (primer QF real)
+  try {
+    const QF_EARLIEST = new Date('2026-07-09T00:00:00Z').getTime();
+    const wrongQF = await db.collection('fixtures').where('stage', '==', 'qf').get();
+    const fixes = [];
+    for (const doc of wrongQF.docs) {
+      const f = doc.data();
+      if (f.kickoff && new Date(f.kickoff).getTime() < QF_EARLIEST) {
+        console.log(`Corrigiendo stage qf→r16: ${doc.id} (kickoff ${f.kickoff})`);
+        fixes.push(db.collection('fixtures').doc(doc.id).update({ stage: 'r16' }));
+      }
+    }
+    if (fixes.length) await Promise.all(fixes);
+  } catch (e) { console.warn('migration stage fix:', e && e.message); }
+
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
     const dynSnap = await db.collection('fixtures').get();
