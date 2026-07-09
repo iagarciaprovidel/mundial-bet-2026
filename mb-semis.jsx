@@ -60,13 +60,15 @@
         await FB().saveSemiPick(sel);
         onSave(sel);
       } catch (e) {
-        setErr('Error al guardar. Intenta de nuevo.');
+        console.error('[SemisPick] saveSemiPick error:', e);
+        const code = (e && e.code) || e;
+        setErr('Error al guardar' + (code && typeof code === 'string' && code !== '[object Object]' ? ' (' + code + ')' : '') + '. Intenta de nuevo.');
       }
       setSaving(false);
     };
 
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.87)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.87)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div style={{ flexShrink: 0, padding: '52px 16px 14px', background: 'linear-gradient(180deg, #061209 80%, transparent)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-1)', color: 'var(--text)', fontSize: 16, cursor: 'pointer', flexShrink: 0 }}>←</button>
