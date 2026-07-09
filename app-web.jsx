@@ -494,7 +494,8 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             })()}
           </p>
         </div>
-        {/* Banners de acción: elegir campeón + reclamar premios */}
+        {/* Banners de acción: pronóstico semifinalistas + elegir campeón + reclamar premios */}
+        {authUser && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
         {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
         {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
         {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
@@ -668,8 +669,10 @@ function PartidosWeb({ onTeam }) {
     const played = list.filter(m => isDoneP(m) && !isLiveP(m)).sort(byKickoffDescP);
     return [...live, ...bettable, ...played];
   };
+  const authUserP = window.MB_useAuth ? window.MB_useAuth() : null;
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
+      {authUserP && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
       {[1, 2, 3].map(md => (
         <div key={md} style={{ marginBottom: 26 }}>
           <SectionHead title={`Fase de grupos · Jornada ${md}`} />
