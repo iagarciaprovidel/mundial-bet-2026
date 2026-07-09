@@ -214,7 +214,7 @@
     // redondeado), si el monto actual era el mínimo por defecto o no alcanza.
     useEffect(() => {
       if (!sel) return;
-      const maxS = (typeof saldo === 'number' ? saldo : SALDO_INICIAL) + ((bet && bet.status === 'open') ? (bet.stake || 0) : 0);
+      const maxS = typeof saldo === 'number' ? saldo : SALDO_INICIAL;
       if (maxS < MIN_BET) return;
       const sugg = Math.min(Math.floor(maxS), Math.max(MIN_BET, Math.round((maxS * 0.25) / 1000) * 1000));
       setStake((cur) => (cur === MIN_BET || cur > maxS) ? sugg : cur);
@@ -230,8 +230,6 @@
       const onPens = !!odds.penWinner;
       const wentET = !onPens && !!odds.extraTime;
       const advances = onPens ? (odds.penWinner === 'home' ? m.home : m.away) : null;
-      const settledBet = bet && (bet.status === 'won' || bet.status === 'lost');
-      const won = bet && bet.status === 'won';
       return (
         <div style={{ marginTop: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 11px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', background: 'var(--surface-2)' }}>
@@ -249,12 +247,15 @@
           )}
           {scorersEl(odds.scorers)}
           {cardsEl(odds.cards)}
-          {settledBet && (
-            <div style={{ marginTop: 6, padding: '7px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (won ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: won ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: won ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}{exactLabel(bet)}{won && bet.streakMult > 1 ? ' 🔥×' + Number(bet.streakMult).toFixed(2) : ''}</span>
-              <span className="num">{won ? '+' + fmt(bet.payout || Math.round(bet.stake * bet.odd)) : '−' + fmt(bet.stake)}</span>
-            </div>
-          )}
+          {myBets.filter(b => b && (b.status === 'won' || b.status === 'lost')).map((b, i) => {
+            const bWon = b.status === 'won';
+            return (
+              <div key={b.id || i} style={{ marginTop: 6, padding: '7px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (bWon ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: bWon ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: bWon ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span>{bWon ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, b.pick)} @ {Number(b.odd).toFixed(2)}{exactLabel(b)}{bWon && b.streakMult > 1 ? ' 🔥×' + Number(b.streakMult).toFixed(2) : ''}</span>
+                <span className="num">{bWon ? '+' + fmt(b.payout || Math.round(b.stake * b.odd)) : '−' + fmt(b.stake)}</span>
+              </div>
+            );
+          })}
         </div>
       );
     }
@@ -278,20 +279,26 @@
           </div>
           {scorersEl(odds && odds.scorers)}
           {cardsEl(odds && odds.cards)}
-          {bet && bet.status === 'open' && (
-            <div style={{ marginTop: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}{exactLabel(bet)}</div>
-          )}
+          {myBets.filter(b => b && b.status === 'open').map((b, i) => (
+            <div key={b.id || i} style={{ marginTop: 6, fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, b.pick)}</span> · {fmt(b.stake)} @ {Number(b.odd).toFixed(2)}{exactLabel(b)}</div>
+          ))}
         </div>
       );
     }
 
     // Resultado ya liquidado (por si el marcador aún no llegó pero la apuesta sí)
     if (bet && bet.status && bet.status !== 'open') {
-      const won = bet.status === 'won';
       return (
-        <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (won ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: won ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: won ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span>{won ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, bet.pick)} @ {Number(bet.odd).toFixed(2)}</span>
-          <span className="num">{won ? '+' + fmt(Math.round(bet.stake * bet.odd)) : '−' + fmt(bet.stake)}</span>
+        <div style={{ marginTop: 10 }}>
+          {myBets.filter(b => b && b.status !== 'open').map((b, i) => {
+            const bWon = b.status === 'won';
+            return (
+              <div key={b.id || i} style={{ marginTop: i > 0 ? 4 : 0, padding: '9px 11px', borderRadius: 'var(--r-md)', border: '1px solid ' + (bWon ? 'rgba(46,160,67,0.5)' : 'rgba(220,80,80,0.4)'), background: bWon ? 'var(--success-bg)' : 'rgba(220,80,80,0.10)', fontSize: 'var(--t-2xs)', fontWeight: 700, color: bWon ? 'var(--success)' : '#e98b8b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span>{bWon ? '✓ Ganaste' : '✕ Perdiste'} · {PICK_LABEL(m, b.pick)} @ {Number(b.odd).toFixed(2)}</span>
+                <span className="num">{bWon ? '+' + fmt(Math.round(b.stake * b.odd)) : '−' + fmt(b.stake)}</span>
+              </div>
+            );
+          })}
         </div>
       );
     }
