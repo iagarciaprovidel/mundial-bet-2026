@@ -682,18 +682,38 @@ function PartidosWeb({ onTeam }) {
         </div>
       ))}
 
-      {hasKO && Object.keys(byKO).map(stage => {
-        const matches = byKO[stage];
-        if (!matches.length) return null;
+      {hasKO && (() => {
+        const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
+        const koPlayedByStage = {};
+        stageOrder.forEach(s => {
+          koPlayedByStage[s] = byKO[s].filter(m => isDoneP(m) && !isLiveP(m)).sort(byKickoffDescP);
+        });
+        const allKoPlayed = stageOrder.flatMap(s => koPlayedByStage[s]).sort(byKickoffDescP);
         return (
-          <div key={stage} style={{ marginBottom: 26 }}>
-            <SectionHead title={KO_STAGE_NAMES[stage] || stage} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-              {orderGroup(matches).map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
-            </div>
-          </div>
+          <>
+            {stageOrder.map(stage => {
+              const active = byKO[stage].filter(m => isLiveP(m) || (!isDoneP(m)));
+              if (!active.length) return null;
+              return (
+                <div key={stage} style={{ marginBottom: 26 }}>
+                  <SectionHead title={KO_STAGE_NAMES[stage] || stage} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+                    {orderGroup(active).map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
+                  </div>
+                </div>
+              );
+            })}
+            {allKoPlayed.length > 0 && (
+              <div style={{ marginBottom: 26 }}>
+                <SectionHead title="✓ Jugados" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+                  {allKoPlayed.map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
+                </div>
+              </div>
+            )}
+          </>
         );
-      })}
+      })()}
     </div>
   );
 }
