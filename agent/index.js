@@ -990,13 +990,13 @@ async function main() {
     if (fixes.length) await Promise.all(fixes);
   } catch (e) { console.warn('migration stage fix:', e && e.message); }
 
-  // Seed QF 2026: crear fixtures si no existen (el agente los sobreescribirá con datos reales de football-data.org)
+  // Seed QF 2026 + corrección de kickoffs reales (horarios confirmados FIFA)
   try {
     const QF_SEED = [
-      { id: 'dyn_fr_ma',     homeCode: 'fr',     awayCode: 'ma',     home: 'Francia',    away: 'Marruecos',  kickoff: '2026-07-09T19:00:00Z', stage: 'qf' },
-      { id: 'dyn_be_es',     homeCode: 'be',     awayCode: 'es',     home: 'Bélgica',    away: 'España',     kickoff: '2026-07-09T22:00:00Z', stage: 'qf' },
-      { id: 'dyn_gb-eng_no', homeCode: 'gb-eng', awayCode: 'no',     home: 'Inglaterra', away: 'Noruega',    kickoff: '2026-07-10T22:00:00Z', stage: 'qf' },
-      { id: 'dyn_ar_ch',     homeCode: 'ar',     awayCode: 'ch',     home: 'Argentina',  away: 'Suiza',      kickoff: '2026-07-10T19:00:00Z', stage: 'qf' },
+      { id: 'dyn_fr_ma',     homeCode: 'fr',     awayCode: 'ma',     home: 'Francia',    away: 'Marruecos',  kickoff: '2026-07-09T20:00:00Z', stage: 'qf' },
+      { id: 'dyn_be_es',     homeCode: 'be',     awayCode: 'es',     home: 'Bélgica',    away: 'España',     kickoff: '2026-07-10T19:00:00Z', stage: 'qf' },
+      { id: 'dyn_gb-eng_no', homeCode: 'gb-eng', awayCode: 'no',     home: 'Inglaterra', away: 'Noruega',    kickoff: '2026-07-11T21:00:00Z', stage: 'qf' },
+      { id: 'dyn_ar_ch',     homeCode: 'ar',     awayCode: 'ch',     home: 'Argentina',  away: 'Suiza',      kickoff: '2026-07-12T01:00:00Z', stage: 'qf' },
     ];
     for (const qf of QF_SEED) {
       const ref = db.collection('fixtures').doc(qf.id);
@@ -1005,6 +1005,14 @@ async function main() {
         console.log(`Seed QF: ${qf.id} (${qf.home} vs ${qf.away})`);
         await ref.set(qf);
         await db.collection('odds').doc(qf.id).set({ _home: qf.home, _away: qf.away, _homeCode: qf.homeCode, _awayCode: qf.awayCode, _kickoff: qf.kickoff, _stage: 'qf' }, { merge: true });
+      } else {
+        // Corregir kickoff si el doc existe con el horario incorrecto
+        const d = snap.data();
+        if (d.kickoff !== qf.kickoff) {
+          console.log(`Corrigiendo kickoff QF: ${qf.id} ${d.kickoff} → ${qf.kickoff}`);
+          await ref.update({ kickoff: qf.kickoff });
+          await db.collection('odds').doc(qf.id).set({ _kickoff: qf.kickoff }, { merge: true });
+        }
       }
     }
   } catch (e) { console.warn('seed QF:', e && e.message); }
