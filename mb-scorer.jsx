@@ -74,13 +74,27 @@
     return n;
   }
 
-  // Lista plana de jugadores elegibles: {name, pos, t, team, teamCode, goals} —
+  // Partidos jugados (terminados) por la selección del jugador — da contexto
+  // al conteo de goles (ej. "4 goles en 5 PJ" vs "4 goles en 2 PJ").
+  function playedCountFor(teamCode, fx, odds) {
+    let n = 0;
+    fx.forEach((f) => {
+      if (f.homeCode !== teamCode && f.awayCode !== teamCode) return;
+      const o = odds[f.id];
+      if (o && o.finished) n++;
+    });
+    return n;
+  }
+
+  // Lista plana de jugadores elegibles: {name, pos, t, team, teamCode, goals, pj} —
   // sin agrupar por país primero, la selección se muestra al lado del nombre.
   // Ordenados por goles reales del torneo (los que van liderando, primero).
-  function allEligiblePlayers(teams, odds) {
+  function allEligiblePlayers(teams, fx, odds) {
+    const pjByTeam = {};
+    teams.forEach((t) => { pjByTeam[t.code] = playedCountFor(t.code, fx, odds); });
     const out = [];
     teams.forEach((t) => {
-      playersOf(t.name).forEach((p) => out.push({ name: p.name, pos: p.pos, t: p.t, team: t.name, teamCode: t.code, goals: goalsFor(p.name, odds) }));
+      playersOf(t.name).forEach((p) => out.push({ name: p.name, pos: p.pos, t: p.t, team: t.name, teamCode: t.code, goals: goalsFor(p.name, odds), pj: pjByTeam[t.code] }));
     });
     return out.sort((a, b) => (b.goals - a.goals) || (b.t - a.t) || a.name.localeCompare(b.name));
   }
@@ -90,7 +104,9 @@
     const teams = useMemo(getQFTeams, []);
     const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
     const odds = (store && store.odds) || {};
-    const players = useMemo(() => allEligiblePlayers(teams, odds), [teams, odds]);
+    const staticFX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const fx = useMemo(() => [...staticFX, ...(window.MB_dynFixtures || []).filter(d => !staticFX.some(s => s.id === d.id))], []);
+    const players = useMemo(() => allEligiblePlayers(teams, fx, odds), [teams, fx, odds]);
     const topGoals = players.length ? players[0].goals : 0;
     const [q, setQ] = useState('');
     const [picked, setPicked] = useState(myBet ? { name: myBet.player, teamCode: myBet.teamCode, team: myBet.team } : null);
@@ -145,11 +161,11 @@
                 <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar jugador o selección…"
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: 'var(--text)', fontSize: 'var(--t-sm)', marginBottom: 12, boxSizing: 'border-box' }} />
               )}
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 7 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 5 }}>
                 <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>1. Jugador</span>
-                <span style={{ fontSize: 8.5, color: 'var(--muted-2)' }}>Ordenados por goles hechos en el torneo</span>
+                <span style={{ fontSize: 8, color: 'var(--muted-2)' }}>Por goles en el torneo</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, maxHeight: locked ? 'none' : 340, overflowY: locked ? 'visible' : 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14, maxHeight: locked ? 'none' : 320, overflowY: locked ? 'visible' : 'auto' }}>
                 {filtered.length === 0 && <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-xs)', padding: '16px 0' }}>Sin resultados para "{q}"</div>}
                 {filtered.map((p) => {
                   const active = picked && picked.name === p.name;
@@ -157,20 +173,18 @@
                   return (
                     <button key={p.teamCode + p.name} disabled={locked} onClick={() => { if (!locked) { setPicked(p); setErr(''); } }}
                       className={locked ? '' : 'mb-press'}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 'var(--r-md)', border: active ? '2px solid #FF9D4D' : '1px solid var(--border)', background: active ? 'rgba(255,157,77,0.14)' : 'rgba(255,255,255,0.03)', cursor: locked ? 'default' : 'pointer', textAlign: 'left' }}>
-                      <img src={`https://flagcdn.com/h40/${p.teamCode}.png`} alt={p.team} style={{ height: 16, width: 'auto', borderRadius: 2, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
-                      <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 800, width: 22, flexShrink: 0 }}>{p.pos}</span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <span style={{ fontSize: 'var(--t-xs)', fontWeight: 700, color: active ? '#FFC08A' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                          {isLeader && <span title="Líder de goleo" style={{ fontSize: 9 }}>🔥</span>}
-                        </span>
-                        <span style={{ display: 'block', fontSize: 8.5, color: 'var(--muted-2)' }}>{p.team}</span>
+                      style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', borderRadius: 'var(--r-md)', border: active ? '2px solid #FF9D4D' : '1px solid var(--border)', background: active ? 'rgba(255,157,77,0.14)' : 'rgba(255,255,255,0.03)', cursor: locked ? 'default' : 'pointer', textAlign: 'left' }}>
+                      <img src={`https://flagcdn.com/h40/${p.teamCode}.png`} alt={p.team} style={{ height: 14, width: 'auto', borderRadius: 2, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
+                      <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ fontSize: 'var(--t-xs)', fontWeight: 700, color: active ? '#FFC08A' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                        {isLeader && <span title="Líder de goleo" style={{ fontSize: 9, flexShrink: 0 }}>🔥</span>}
+                        <span style={{ fontSize: 8, color: 'var(--muted-2)', flexShrink: 0 }}>· {p.team}</span>
                       </span>
-                      {p.goals > 0 && (
-                        <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: isLeader ? '#FFC08A' : 'var(--gold-light)', flexShrink: 0, whiteSpace: 'nowrap' }}>⚽ {p.goals}</span>
+                      {p.goals > 0 ? (
+                        <span style={{ fontSize: 'var(--t-3xs)', fontWeight: 800, color: isLeader ? '#FFC08A' : 'var(--gold-light)', flexShrink: 0, whiteSpace: 'nowrap' }}>⚽{p.goals} · {p.pj}PJ</span>
+                      ) : (
+                        <span style={{ fontSize: 8, color: 'var(--muted-2)', flexShrink: 0, whiteSpace: 'nowrap' }}>{p.pj}PJ</span>
                       )}
-                      {p.goals === 0 && p.t && <span style={{ fontSize: 8, color: 'var(--gold-light)', fontWeight: 800, flexShrink: 0 }}>TITULAR</span>}
                     </button>
                   );
                 })}
@@ -217,6 +231,7 @@
     const [open, setOpen] = useState(false);
     const [myBet, setMyBet] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [claiming, setClaiming] = useState(false);
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
     const saldo = window.MB_avail ? window.MB_avail(store) : 90000;
@@ -236,6 +251,12 @@
     }, [user && user.uid]);
 
     const handleSave = useCallback((bet) => { setMyBet(bet); setOpen(false); }, []);
+    const claim = useCallback((ev) => {
+      ev.stopPropagation();
+      if (claiming || !FB().claimScorerWin) return;
+      setClaiming(true);
+      FB().claimScorerWin().then(() => setMyBet((b) => b ? Object.assign({}, b, { claimed: true }) : b)).catch(() => {}).finally(() => setClaiming(false));
+    }, [claiming]);
 
     if (!user || loading) return null;
     if (!banner) return null;
@@ -246,29 +267,34 @@
       <React.Fragment>
         {open && <ScorerModal myBet={myBet} saldo={saldo} onClose={() => setOpen(false)} onSave={handleSave} locked={locked} />}
         <div onClick={canEdit ? () => setOpen(true) : undefined} className={canEdit ? 'mb-press mb-card-hover' : ''}
-          style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderRadius: 'var(--r-lg)', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(255,157,77,0.5)', boxShadow: '0 0 0 1px rgba(255,157,77,0.12), var(--sh-1)', cursor: canEdit ? 'pointer' : 'default', marginBottom: 12, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+          style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderRadius: 'var(--r-lg)', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(255,157,77,0.5)', boxShadow: '0 0 0 1px rgba(255,157,77,0.12), var(--sh-1)', cursor: canEdit ? 'pointer' : 'default', marginBottom: 8, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
           {!myBet && !locked && (
-            <div style={{ position: 'absolute', top: -9, right: 12, background: 'linear-gradient(135deg,#FF9D4D,#E0752B)', color: '#fff', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 'var(--r-pill)', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(255,157,77,0.5)' }}>✨ Nuevo</div>
+            <div style={{ position: 'absolute', top: -7, right: 10, background: 'linear-gradient(135deg,#FF9D4D,#E0752B)', color: '#fff', fontSize: 7.5, fontWeight: 900, letterSpacing: '0.1em', padding: '1.5px 7px', borderRadius: 'var(--r-pill)', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(255,157,77,0.5)' }}>✨ Nuevo</div>
           )}
-          <span style={{ fontSize: 24 }}>{locked ? '🔒' : '⚽'}</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: locked ? 'var(--muted)' : '#FFC08A' }}>
+          <span style={{ fontSize: 18 }}>{locked ? '🔒' : '⚽'}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 'var(--t-2xs)', color: locked ? 'var(--muted)' : '#FFC08A' }}>
               {locked ? 'Apuesta a goleador cerrada' : myBet ? 'Tu apuesta al goleador' : '¿Quién será el goleador del torneo?'}
             </div>
             {myBet ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
-                <img src={`https://flagcdn.com/h40/${myBet.teamCode}.png`} alt={myBet.team} style={{ height: 18, width: 'auto', borderRadius: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.5)' }} />
-                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700 }}>{myBet.player}</span>
-                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>· {fmt(myBet.stake)} pts</span>
-                {myBet.status === 'won' && <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800 }}>✓ Ganada</span>}
-                {myBet.status === 'lost' && <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', fontWeight: 700 }}>Sin premio</span>}
-                {canEdit && myBet.status === 'open' && <span style={{ fontSize: 'var(--t-2xs)', color: '#FF9D4D', fontWeight: 700, marginLeft: 2 }}>· Cambiar</span>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
+                <img src={`https://flagcdn.com/h40/${myBet.teamCode}.png`} alt={myBet.team} style={{ height: 14, width: 'auto', borderRadius: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.5)' }} />
+                <span style={{ fontSize: 8.5, color: 'var(--text)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{myBet.player}</span>
+                <span style={{ fontSize: 8.5, color: 'var(--muted-2)', flexShrink: 0 }}>· {fmt(myBet.stake)}</span>
+                {myBet.status === 'won' && myBet.claimed && <span style={{ fontSize: 8.5, color: 'var(--success)', fontWeight: 800, flexShrink: 0 }}>✓ +{fmt(myBet.payout)}</span>}
+                {myBet.status === 'lost' && <span style={{ fontSize: 8.5, color: 'var(--muted-2)', fontWeight: 700, flexShrink: 0 }}>✗</span>}
+                {canEdit && myBet.status === 'open' && <span style={{ fontSize: 8.5, color: '#FF9D4D', fontWeight: 700, flexShrink: 0 }}>· Cambiar</span>}
               </div>
             ) : (
-              <div style={{ fontSize: 'var(--t-2xs)', color: 'rgba(255,157,77,0.75)', marginTop: 2 }}>Apuesta puntos a un jugador de cuartos · ×{MULT} si acierta</div>
+              <div style={{ fontSize: 8.5, color: 'rgba(255,157,77,0.75)', marginTop: 1 }}>Apuesta puntos a un jugador de cuartos · ×{MULT} si acierta</div>
             )}
           </div>
-          {canEdit && !myBet && <span style={{ fontSize: 16, color: '#FF9D4D' }}>→</span>}
+          {canEdit && !myBet && <span style={{ fontSize: 14, color: '#FF9D4D', flexShrink: 0 }}>→</span>}
+          {myBet && myBet.status === 'won' && !myBet.claimed && (
+            <button onClick={claim} disabled={claiming} className="mb-press" style={{ flexShrink: 0, padding: '6px 10px', borderRadius: 'var(--r-pill)', border: 'none', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', cursor: claiming ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 8.5, opacity: claiming ? 0.7 : 1 }}>
+              {claiming ? '…' : `🎁 +${fmt(myBet.payout)}`}
+            </button>
+          )}
         </div>
       </React.Fragment>
     );

@@ -30,12 +30,26 @@ jobs:
           projectId: mundialbet-club
 
       # Reglas de Firestore: se despliegan con el mismo service account.
+      # No hacemos fallar el job si esto falla (el deploy del hosting es lo
+      # crítico), pero SI el service account no tiene permiso IAM para
+      # firestore:rules (error típico: 403 en serviceusage.googleapis.com),
+      # antes esto quedaba invisible — el job reportaba éxito igual y las
+      # reglas nunca se publicaban. Ahora queda bien visible en el summary.
       - name: Deploy Firestore rules
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/sa.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
-          npx firebase-tools@latest deploy --only firestore:rules --project mundialbet-club --non-interactive 2>&1 || true
-          rm -f /tmp/sa.json
+          if npx firebase-tools@latest deploy --only firestore:rules --project mundialbet-club --non-interactive 2>&1 | tee /tmp/rules-deploy.log; then
+            echo "✅ Reglas de Firestore publicadas." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## ⚠️ Las reglas de Firestore NO se publicaron" >> "$GITHUB_STEP_SUMMARY"
+            echo "El service account no pudo desplegar firestore.rules (ver log abajo)." >> "$GITHUB_STEP_SUMMARY"
+            echo "Hay que publicarlas a mano: Firebase Console → Firestore Database → Rules." >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -20 /tmp/rules-deploy.log >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          rm -f /tmp/sa.json /tmp/rules-deploy.log
 
       # La action a veces reporta "failure" aunque el deploy SI se publicó: una
       # reconexión de red ("premature close") hace que firebase-tools reintente

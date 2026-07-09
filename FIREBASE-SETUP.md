@@ -16,8 +16,26 @@ Authentication → **Settings** → **Authorized domains** → agrega (si no est
 (El correo de confirmación solo funciona desde dominios autorizados.)
 
 ## 3) Reglas de Firestore
-Firestore Database → **Rules** → pega esto y publica:
 
+**⚠️ El deploy automático de reglas vía GitHub Actions está roto** (el service
+account de `FIREBASE_SERVICE_ACCOUNT` no tiene permiso IAM para consultar
+`serviceusage.googleapis.com`, así que `firebase deploy --only firestore:rules`
+falla con 403 en cada push — el workflow lo esconde con `|| true` y el deploy
+del *hosting* sigue reportando éxito igual). Esto viene pasando desde antes,
+no es nuevo. Hasta que se arregle el permiso IAM (ver abajo), **cualquier
+cambio a `firestore.rules` hay que publicarlo a mano**:
+
+Firestore Database → **Rules** → pega el contenido de `firestore.rules` (la
+fuente única del repo) y publica.
+
+### Arreglo permanente del deploy automático
+En Google Cloud Console → IAM del proyecto `mundialbet-club`, busca el
+service account usado en el secreto `FIREBASE_SERVICE_ACCOUNT` (el email
+termina en `.iam.gserviceaccount.com`) y agrégale el rol **Service Usage
+Consumer** (`roles/serviceusage.serviceUsageConsumer`) — o si prefieres no
+andar afinando roles uno por uno, dale **Firebase Admin** directamente.
+
+### Reglas actuales (copia de `firestore.rules`)
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -60,6 +78,11 @@ service cloud.firestore {
       allow read:  if signedIn();
       allow write: if signedIn();
     }
+    // Fixtures dinámicos (octavos, cuartos, semis, final) descubiertos por el
+    // agente. Solo lectura para usuarios autenticados.
+    match /fixtures/{fid} {
+      allow read: if signedIn();
+    }
     // Apuestas: cada quien crea/edita/borra las suyas. El agente liquida.
     // (resource == null permite leer un doc que aún no existe: necesario para
     //  la transacción de placeBet al apostar por primera vez en un partido.)
@@ -82,6 +105,20 @@ service cloud.firestore {
     match /predictions/{pid} {
       allow read:  if signedIn();
       allow write: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+    // Desafíos por partido (ahora son apuesta real con stake, ver mb-challenges.jsx).
+    // ID = uid_matchId_q1|q2|q3|q4. "update" hace falta para poder cambiar la
+    // respuesta antes de que arranque el partido — sin esto el guardado falla
+    // en silencio ("no se pudo guardar") apenas el doc ya existe.
+    match /challenge_picks/{id} {
+      allow read:           if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+    // Pronóstico de semifinalistas (histórico — el pick real vive en
+    // users/{uid}.semiPick desde v269; esta regla queda por si se usa a futuro).
+    match /semi_picks/{uid} {
+      allow read:           if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid;
     }
     // Álbum de figuritas COMPARTIDO por equipo (co-op). Aparte de las apuestas.
     // Desbloqueado: cualquier integrante edita o pone candado.

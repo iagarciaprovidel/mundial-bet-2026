@@ -619,12 +619,15 @@ async function settleChallengePicks(our, oddsData) {
           if (!cp.exists || cp.data().status !== 'open') return;
           const us = await tx.get(userRef);
           const ud = us.exists ? us.data() : {};
-          const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
           const staked0 = (typeof ud.staked === 'number') ? ud.staked : 0;
-          tx.set(userRef, { saldo: saldo + payout, staked: Math.max(0, staked0 - stake) }, { merge: true });
-          tx.set(doc.ref, { status: won ? 'won' : 'lost', payout: payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+          // El saldo NO se acredita acá: el desafío queda "ganado, por reclamar"
+          // (claimed:false) y el usuario lo reclama con un botón en la app
+          // (claimChallengeWin en mb-firebase.js) - mismo patrón que ClaimBonusBanner.
+          // El stake sí sale de "en juego" apenas se liquida, gane o pierda.
+          tx.set(userRef, { staked: Math.max(0, staked0 - stake) }, { merge: true });
+          tx.set(doc.ref, { status: won ? 'won' : 'lost', payout: payout, claimed: false, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
         });
-        if (won) await notify(pick.uid, '🎯 Desafío acertado', `${our.home} vs ${our.away}: +${payout} puntos por el desafío del partido.`);
+        if (won) await notify(pick.uid, '🎯 ¡Desafío acertado!', `${our.home} vs ${our.away}: +${payout} puntos por reclamar en la app.`);
       }
       console.log(`  Desafíos ${qkey} liquidados (${our.id}): ${snap.size}`);
     }
@@ -944,20 +947,20 @@ async function settleScorerBets() {
     const bet = doc.data().scorerBet;
     if (!bet) continue;
     const won = topScorers.some((n) => playerNamesMatch(bet.player, n));
-    const winAmount = won ? (bet.stake || 0) * MULT : 0;
+    const payout = won ? (bet.stake || 0) * MULT : 0;
     await db.runTransaction(async (tx) => {
       const uRef = db.collection('users').doc(doc.id);
       const us = await tx.get(uRef);
       const ud = us.exists ? us.data() : {};
-      const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
       const staked0 = (typeof ud.staked === 'number') ? ud.staked : 0;
+      // Igual que en settleChallengePicks: el saldo no se acredita acá, queda
+      // "por reclamar" (claimScorerWin en mb-firebase.js / botón en la app).
       tx.set(uRef, {
-        saldo: saldo + winAmount,
         staked: Math.max(0, staked0 - (bet.stake || 0)),
-        scorerBet: Object.assign({}, bet, { status: won ? 'won' : 'lost', resultGoals: maxGoals }),
+        scorerBet: Object.assign({}, bet, { status: won ? 'won' : 'lost', payout: payout, claimed: false, resultGoals: maxGoals }),
       }, { merge: true });
     });
-    if (won) await notify(doc.id, `⚽ ¡${bet.player} fue el goleador del torneo!`, `Acertaste con ${maxGoals} goles → +${winAmount} puntos.`);
+    if (won) await notify(doc.id, `⚽ ¡${bet.player} fue el goleador del torneo!`, `Acertaste con ${maxGoals} goles → +${payout} puntos por reclamar en la app.`);
     paid++;
   }
   await db.collection('meta').doc('bonuses').set({ [metaKey]: true, scorerTop: Array.from(topScorers), scorerGoals: maxGoals, [`${metaKey}At`]: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });

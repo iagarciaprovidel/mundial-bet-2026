@@ -473,8 +473,9 @@ function Partidos() {
         })}
       </div>
 
-      {/* Pronóstico de semifinalistas — banner accionable en Apostar */}
+      {/* Pronóstico de semifinalistas + apuesta al goleador — banners accionables en Apostar */}
       {window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
+      {window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
 
       {filter !== 'all' ? (
         <>

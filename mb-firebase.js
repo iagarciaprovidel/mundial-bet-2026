@@ -49,8 +49,8 @@
       getMyPrediction() { return Promise.resolve(null); },
       subscribePredictions() { return () => {}; },
       saveSemiPick: noFB, getSemiPick() { return Promise.resolve(null); },
-      saveChallengePick: noFB, getChallengePicks() { return Promise.resolve(null); },
-      placeScorerBet: noFB, getMyScorerBet() { return Promise.resolve(null); }, cancelScorerBet: noFB,
+      saveChallengePick: noFB, getChallengePicks() { return Promise.resolve(null); }, claimChallengeWin: noFB,
+      placeScorerBet: noFB, getMyScorerBet() { return Promise.resolve(null); }, cancelScorerBet: noFB, claimScorerWin: noFB,
     };
     if (!configured) console.warn('[MundialBet] Firebase no configurado: edita firebase-config.js');
     return;
@@ -711,14 +711,55 @@
         });
       });
     },
+    // Devuelve el doc completo por qkey (pick, stake, status, payout, claimed) —
+    // no solo el pick, para poder mostrar el botón "Reclamar" cuando ganó.
     async getChallengePicks(matchId) {
       const u = auth.currentUser; if (!u) return null;
       const keys = ['q1', 'q2', 'q3', 'q4'];
       const docs = await Promise.all(keys.map(k => db.collection('challenge_picks').doc(u.uid + '_' + matchId + '_' + k).get()));
       const out = {};
       let any = false;
-      docs.forEach((d, i) => { if (d.exists) { out[keys[i]] = d.data().pick; any = true; } });
+      docs.forEach((d, i) => { if (d.exists) { out[keys[i]] = Object.assign({ id: d.id }, d.data()); any = true; } });
       return any ? out : null;
+    },
+    // El agente liquida (status:'won'/'lost' + payout) pero NO acredita el saldo
+    // todavía — el usuario reclama el premio con este botón, igual que
+    // ClaimBonusBanner. Evita el doble-reclamo con el flag `claimed`.
+    async claimChallengeWin(pickId) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      if (!pickId) return Promise.reject('pick-invalido');
+      const pickRef = db.collection('challenge_picks').doc(pickId);
+      const userRef = db.collection('users').doc(u.uid);
+      return db.runTransaction(async function (tx) {
+        const ps = await tx.get(pickRef);
+        if (!ps.exists) throw 'no-existe';
+        const d = ps.data();
+        if (d.uid !== u.uid) throw 'no-autorizado';
+        if (d.status !== 'won' || d.claimed) return;
+        const us = await tx.get(userRef);
+        const ud = us.exists ? us.data() : {};
+        const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
+        tx.set(userRef, { saldo: saldo + (d.payout || 0) }, { merge: true });
+        tx.set(pickRef, { claimed: true, claimedAt: FV.serverTimestamp() }, { merge: true });
+      });
+    },
+    // Igual que claimChallengeWin pero para la apuesta al goleador
+    // (users/{uid}.scorerBet, liquidada por settleScorerBets en el agente).
+    async claimScorerWin() {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const userRef = db.collection('users').doc(u.uid);
+      return db.runTransaction(async function (tx) {
+        const us = await tx.get(userRef);
+        if (!us.exists) return;
+        const ud = us.data();
+        const bet = ud.scorerBet;
+        if (!bet || bet.status !== 'won' || bet.claimed) return;
+        const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
+        tx.set(userRef, {
+          saldo: saldo + (bet.payout || 0),
+          scorerBet: Object.assign({}, bet, { claimed: true }),
+        }, { merge: true });
+      });
     },
   };
 
