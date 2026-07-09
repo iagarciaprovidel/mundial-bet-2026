@@ -342,6 +342,7 @@ function Partidos() {
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
   const odds = (store && store.odds) || {};
   const bets = (store && store.bets) || {};
+  const allBetsMap = (store && store.allBets) || {};
   const myParlays = (store && store.parlays) || [];
   const dynFx = (store && store.dynFixtures) || [];
   const fx = [...((window.MB && window.MB.WC_FIXTURES) || []), ...dynFx.filter((d) => !((window.MB && window.MB.WC_FIXTURES) || []).some((s) => s.id === d.id))];
@@ -374,11 +375,13 @@ function Partidos() {
   const hoyLive     = hoyAll.filter((m) => isLiveS(m));
   const hoyDone     = hoyAll.filter((m) => isDoneS(m) && !isLiveS(m));
   const hoyUpcoming = hoyAll.filter((m) => !isLiveS(m) && !isDoneS(m));
-  // Partidos de hoy apostables (para la sección combinada — solo mismo día)
+  // Partidos de hoy apostables
   const hoyOpen = hoyUpcoming;
+  // Todos los partidos próximos apostables (para combinadas: incluye KO de días siguientes)
+  const parlayOpen = fx.filter((m) => !isDoneS(m) && !isLiveS(m) && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
   // Para el chip legacy
   const liveMatches = fx.filter((m) => { const o = odds[m.id]; const k = new Date(m.kickoff).getTime(); return !!(o && o.live && !o.finished) || (now >= k + BET_GRACE_MS_S && now < k + MATCH_MS_S); });
-  const mineMatches = fx.filter((m) => bets[m.id]);
+  const mineMatches = fx.filter((m) => allBetsMap[m.id] ? allBetsMap[m.id].length > 0 : !!bets[m.id]);
   const byKickoffAsc = (a, b) => new Date(a.kickoff) - new Date(b.kickoff);
 
   // Sync chip ↔ modo combinada
@@ -398,14 +401,18 @@ function Partidos() {
     prevFilter.current = filter;
   }, [filter]);
 
-  const openBets = Object.values(bets).filter((b) => b && b.status === 'open');
+  const allOpenBets = Object.values(allBetsMap).flat().filter((b) => b && b.status === 'open');
+  const openBets = allOpenBets.length > 0 ? allOpenBets : Object.values(bets).filter((b) => b && b.status === 'open');
   const openParlays = myParlays.filter((p) => p && p.status === 'open');
   const openTotal = openBets.reduce((s, b) => s + (b.stake || 0), 0) + openParlays.reduce((s, p) => s + (p.stake || 0), 0);
   const openCount = openBets.length + openParlays.length;
   const _getTs = (obj) => obj && obj.creado && obj.creado.seconds ? obj.creado.seconds : 0;
   const sortedBetItems = [
     ...myParlays.map((p) => ({ type: 'parlay', data: p, ts: _getTs(p) })),
-    ...mineMatches.map((m) => ({ type: 'bet', data: m, ts: _getTs(bets[m.id]) })),
+    ...mineMatches.map((m) => {
+      const all = allBetsMap[m.id] || (bets[m.id] ? [bets[m.id]] : []);
+      return { type: 'bet', data: m, ts: Math.max(0, ...all.map(_getTs)) };
+    }),
   ].sort((a, b) => b.ts - a.ts);
   const _todayStr = new Date(now).toLocaleDateString('sv');
   const todayParlays = (() => {
@@ -465,6 +472,9 @@ function Partidos() {
         })}
       </div>
 
+      {/* Pronóstico de semifinalistas — banner accionable en Apostar */}
+      {window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
+
       {filter !== 'all' ? (
         <>
           {filter === 'hoy' && (
@@ -495,26 +505,25 @@ function Partidos() {
           )}
           {filter === 'parlay' && (
             <>
-              {/* Combinada(s) de hoy ya registradas */}
-              {todayParlays.length > 0 && (
+              {/* Combinadas registradas (abiertas) */}
+              {myParlays.filter(p => p && p.status === 'open').length > 0 && (
                 <>
-                  <SectionHead title="🎰 Tu combinada de hoy" />
-                  {todayParlays.map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
+                  <SectionHead title="🎰 Tus combinadas activas" />
+                  {myParlays.filter(p => p && p.status === 'open').map((p) => window.MB_ParlayCard ? <window.MB_ParlayCard key={p.id} p={p} /> : null)}
                 </>
               )}
 
               {/* Banner + partidos disponibles */}
-              {hoyOpen.length === 0 ? (
-                todayParlays.length === 0 && (
+              {parlayOpen.length === 0 ? (
+                myParlays.filter(p => p && p.status === 'open').length === 0 && (
                   <div style={{ padding: '28px 16px', textAlign: 'center' }}>
                     <div style={{ fontSize: 32, marginBottom: 8 }}>🎰</div>
-                    <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800, marginBottom: 4 }}>No hay partidos disponibles hoy para combinada</div>
-                    <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Las combinadas solo incluyen partidos del mismo día que aún no comenzaron.<br />Vuelve cuando haya partidos por jugar.</div>
+                    <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800, marginBottom: 4 }}>No hay partidos disponibles para combinada</div>
+                    <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Vuelve cuando haya partidos por jugar.</div>
                   </div>
                 )
               ) : (
                 <>
-                  {/* Banner rediseñado */}
                   <div style={{ marginBottom: 12, borderRadius: 'var(--r-lg)', overflow: 'hidden', border: '1px solid rgba(97,218,251,0.35)', background: 'rgba(13,20,15,0.92)' }}>
                     <div style={{ padding: '10px 14px', background: 'linear-gradient(135deg, rgba(97,218,251,0.15), rgba(74,144,226,0.10))', borderBottom: '1px solid rgba(97,218,251,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 16 }}>🎰</span>
@@ -522,7 +531,7 @@ function Partidos() {
                     </div>
                     <div style={{ padding: '10px 14px' }}>
                       <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', lineHeight: 1.5, marginBottom: 8 }}>
-                        Elige el resultado de cada partido de hoy y confírmalos en un solo ticket.
+                        Elige el resultado de 2 a 6 partidos y confírmalos en un solo ticket.
                       </div>
                       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                         <div style={{ padding: '7px 10px', borderRadius: 'var(--r-md)', background: 'rgba(97,218,251,0.08)', border: '1px solid rgba(97,218,251,0.25)', textAlign: 'center', minWidth: 60 }}>
@@ -535,12 +544,12 @@ function Partidos() {
                         </div>
                       </div>
                       <div style={{ fontSize: 9, color: 'var(--muted-2)', lineHeight: 1.4 }}>
-                        Las cuotas se <strong style={{ color: '#61DAFB' }}>multiplican entre sí</strong> · Solo partidos de hoy que aún no empezaron
+                        Las cuotas se <strong style={{ color: '#61DAFB' }}>multiplican entre sí</strong> · Incluye todos los partidos que aún no empezaron
                       </div>
                     </div>
                   </div>
-                  <SectionHead title={`Partidos disponibles hoy · ${hoyOpen.length}`} />
-                  {hoyOpen.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  <SectionHead title={`Partidos disponibles · ${parlayOpen.length}`} />
+                  {parlayOpen.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
                 </>
               )}
             </>
