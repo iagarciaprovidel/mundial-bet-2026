@@ -649,12 +649,12 @@
     },
     async getChallengePicks(matchId) {
       const u = auth.currentUser; if (!u) return null;
-      const q1 = await db.collection('challenge_picks').doc(u.uid + '_' + matchId + '_q1').get();
-      const q2 = await db.collection('challenge_picks').doc(u.uid + '_' + matchId + '_q2').get();
+      const keys = ['q1', 'q2', 'q3', 'q4'];
+      const docs = await Promise.all(keys.map(k => db.collection('challenge_picks').doc(u.uid + '_' + matchId + '_' + k).get()));
       const out = {};
-      if (q1.exists) out.q1 = q1.data().pick;
-      if (q2.exists) out.q2 = q2.data().pick;
-      return (q1.exists || q2.exists) ? out : null;
+      let any = false;
+      docs.forEach((d, i) => { if (d.exists) { out[keys[i]] = d.data().pick; any = true; } });
+      return any ? out : null;
     },
   };
 
