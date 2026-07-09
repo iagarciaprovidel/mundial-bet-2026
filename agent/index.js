@@ -580,28 +580,35 @@ async function settleParlays() {
 }
 
 // ── Liquida los desafíos por partido (challenge_picks) ──────
-// Q1: ¿Habrá gol en el primer tiempo? — necesita odds.htGoal (bool)
-// Q2: ¿Irá a penales? — necesita odds.penalties (bool derivado de extraTime)
-// POINTS por etapa KO: r32/r16→1500  qf/sf→2500  final→4000
+// Q1: ¿Habrá gol en el primer tiempo? (bool) — solo KO
+// Q2: ¿Irá a penales? (bool) — solo KO
+// Q3: ¿Más de 3 tarjetas amarillas? (bool) — todos los partidos
+// Q4: ¿Quién marca primero? (string: 'home'/'away'/'none') — todos los partidos
+// POINTS KO: r32/r16→1500  qf/sf→2500  final→4000  | Group/extra: 500
 const CHALLENGE_PTS = { r32: 1500, r16: 1500, qf: 2500, sf: 2500, final: 4000 };
+const CHALLENGE_PTS_EXTRA = 500; // para q3/q4 en grupos; para KO es mitad del KO pts
 async function settleChallengePicks(our, oddsData) {
   try {
-    const pts = CHALLENGE_PTS[our.stage] || 1500;
+    const isKOStage = ['r32', 'r16', 'qf', 'sf', 'final'].includes(our.stage);
+    const ptsKO = CHALLENGE_PTS[our.stage] || 1500;
+    const ptsExtra = isKOStage ? Math.round(ptsKO * 0.5) : CHALLENGE_PTS_EXTRA;
+    // { qkey → { correct: bool|string, pts: number } }
     const results = {};
-    if (typeof oddsData.htGoal === 'boolean') results.q1 = oddsData.htGoal;
-    if (typeof oddsData.penalties === 'boolean') results.q2 = oddsData.penalties;
+    if (isKOStage && typeof oddsData.htGoal === 'boolean') results.q1 = { correct: oddsData.htGoal, pts: ptsKO };
+    if (isKOStage && typeof oddsData.penalties === 'boolean') results.q2 = { correct: oddsData.penalties, pts: ptsKO };
+    if (typeof oddsData.yellowCardsOver3 === 'boolean') results.q3 = { correct: oddsData.yellowCardsOver3, pts: ptsExtra };
+    if (typeof oddsData.firstGoalSide === 'string') results.q4 = { correct: oddsData.firstGoalSide, pts: ptsExtra };
     if (!Object.keys(results).length) return;
 
-    // Busca challenge_picks de este partido
-    const qkeys = Object.keys(results);
-    for (const qkey of qkeys) {
+    for (const qkey of Object.keys(results)) {
+      const { correct, pts } = results[qkey];
       const snap = await db.collection('challenge_picks')
         .where('matchId', '==', our.id).where('qkey', '==', qkey).where('status', '==', 'open').get();
       if (snap.empty) continue;
-      const correct = results[qkey]; // bool: la respuesta correcta
       for (const doc of snap.docs) {
         const pick = doc.data();
-        const won = (pick.pick === 'yes') === correct;
+        // bool questions: 'yes'/'no' vs bool; string questions: direct comparison
+        const won = typeof correct === 'boolean' ? (pick.pick === 'yes') === correct : pick.pick === correct;
         const payout = won ? pts : 0;
         const userRef = db.collection('users').doc(pick.uid);
         await db.runTransaction(async (tx) => {
@@ -1268,31 +1275,49 @@ async function main() {
     const n = await settle(mm.our, ourResult, extraTime, penWinner, ghOur, gaOur);
     if (n) { settled += n; console.log(`  Liquidado ${mm.our.id} (${mm.our.home} ${ghOur}-${gaOur} ${mm.our.away} → ${ourResult}${extraTime ? ' ET' : ''}${penWinner ? '/Pen:'+penWinner : ''}): ${n} apuesta(s).`); }
 
-    // Liquidar desafíos del partido (Q1: gol 1T, Q2: penales)
-    if (mm.our.stage && mm.our.stage !== 'Grupos') {
+    // Liquidar desafíos del partido (Q1/Q2: solo KO; Q3/Q4: todos los partidos)
+    {
       const oddsNow = await db.collection('odds').doc(mm.our.id).get();
       const od = oddsNow.exists ? oddsNow.data() : {};
-      // Escribir penalties (true/false) si hubo penales
-      if (typeof od.penalties === 'undefined') {
-        await db.collection('odds').doc(mm.our.id).set({ penalties: !!(extraTime && penWinner) }, { merge: true });
-        od.penalties = !!(extraTime && penWinner);
+      const isKOMatch = mm.our.stage && mm.our.stage !== 'Grupos';
+      // Q1/Q2 solo para KO
+      if (isKOMatch) {
+        if (typeof od.penalties === 'undefined') {
+          await db.collection('odds').doc(mm.our.id).set({ penalties: !!(extraTime && penWinner) }, { merge: true });
+          od.penalties = !!(extraTime && penWinner);
+        }
+        if (typeof od.htGoal === 'undefined') {
+          let htGoal;
+          if (ghOur + gaOur === 0) {
+            htGoal = false;
+          } else if (scorers.length > 0) {
+            htGoal = scorers.some(function(s) {
+              const base = parseInt(String(s.minute || '').split(':')[0].split('+')[0], 10);
+              return !isNaN(base) && base <= 45;
+            });
+          }
+          if (typeof htGoal === 'boolean') {
+            await db.collection('odds').doc(mm.our.id).set({ htGoal: htGoal }, { merge: true });
+            od.htGoal = htGoal;
+          }
+        }
       }
-      // Escribir htGoal (true/false): hubo gol en el primer tiempo
-      // Minuto ESPN viene como "MM:SS" o "MM+SS:SS"; comparamos la parte entera base con 45.
-      if (typeof od.htGoal === 'undefined') {
-        let htGoal;
-        if (ghOur + gaOur === 0) {
-          htGoal = false; // sin goles en todo el partido → sin gol en 1T
-        } else if (scorers.length > 0) {
-          htGoal = scorers.some(function(s) {
-            const base = parseInt(String(s.minute || '').split(':')[0].split('+')[0], 10);
-            return !isNaN(base) && base <= 45;
-          });
+      // Q3: ¿Más de 3 tarjetas amarillas? — todos los partidos
+      if (typeof od.yellowCardsOver3 === 'undefined') {
+        const yellowCount = cards.filter(function(c) { return !c.red; }).length;
+        const yellowCardsOver3 = yellowCount > 3;
+        await db.collection('odds').doc(mm.our.id).set({ yellowCardsOver3: yellowCardsOver3, yellowCardsTotal: yellowCount }, { merge: true });
+        od.yellowCardsOver3 = yellowCardsOver3;
+      }
+      // Q4: ¿Quién marca primero? — todos los partidos
+      if (typeof od.firstGoalSide === 'undefined') {
+        let firstGoalSide = 'none';
+        if (scorers.length > 0) {
+          const first = scorers[0];
+          firstGoalSide = first.code === mm.our.homeCode ? 'home' : 'away';
         }
-        if (typeof htGoal === 'boolean') {
-          await db.collection('odds').doc(mm.our.id).set({ htGoal: htGoal }, { merge: true });
-          od.htGoal = htGoal;
-        }
+        await db.collection('odds').doc(mm.our.id).set({ firstGoalSide: firstGoalSide }, { merge: true });
+        od.firstGoalSide = firstGoalSide;
       }
       await settleChallengePicks(mm.our, od);
     }
@@ -1480,25 +1505,36 @@ async function settleFdFallback() {
     }
     const count = await settle(mm.our, ourResult, !!extraTime, penWinner, ghOur, gaOur);
     if (count) n += count;
-    if (isKO) {
+    {
       const od2 = (await db.collection('odds').doc(mm.our.id).get()).data() || {};
-      if (typeof od2.penalties === 'undefined') {
-        await db.collection('odds').doc(mm.our.id).set({ penalties: !!(extraTime && penWinner) }, { merge: true });
-        od2.penalties = !!(extraTime && penWinner);
+      if (isKO) {
+        if (typeof od2.penalties === 'undefined') {
+          await db.collection('odds').doc(mm.our.id).set({ penalties: !!(extraTime && penWinner) }, { merge: true });
+          od2.penalties = !!(extraTime && penWinner);
+        }
+        if (typeof od2.htGoal === 'undefined') {
+          const ht = m.score && m.score.halfTime;
+          let htGoal;
+          if (ghOur + gaOur === 0) {
+            htGoal = false;
+          } else if (ht && ht.home != null && ht.away != null) {
+            htGoal = (ht.home + ht.away) > 0;
+          }
+          if (typeof htGoal === 'boolean') {
+            await db.collection('odds').doc(mm.our.id).set({ htGoal: htGoal }, { merge: true });
+            od2.htGoal = htGoal;
+          }
+        }
       }
-      // htGoal desde marcador de 1T de football-data.org (más directo que ESPN)
-      if (typeof od2.htGoal === 'undefined') {
-        const ht = m.score && m.score.halfTime;
-        let htGoal;
-        if (ghOur + gaOur === 0) {
-          htGoal = false;
-        } else if (ht && ht.home != null && ht.away != null) {
-          htGoal = (ht.home + ht.away) > 0;
-        }
-        if (typeof htGoal === 'boolean') {
-          await db.collection('odds').doc(mm.our.id).set({ htGoal: htGoal }, { merge: true });
-          od2.htGoal = htGoal;
-        }
+      // Q3/Q4 para todos los partidos (FD fallback no trae tarjetas ni goles detallados)
+      if (typeof od2.yellowCardsOver3 === 'undefined') {
+        od2.yellowCardsOver3 = false; od2.yellowCardsTotal = 0;
+        await db.collection('odds').doc(mm.our.id).set({ yellowCardsOver3: false, yellowCardsTotal: 0 }, { merge: true });
+      }
+      if (typeof od2.firstGoalSide === 'undefined') {
+        const fgs = ghOur > 0 ? 'home' : gaOur > 0 ? 'away' : 'none';
+        od2.firstGoalSide = fgs;
+        await db.collection('odds').doc(mm.our.id).set({ firstGoalSide: fgs }, { merge: true });
       }
       await settleChallengePicks(mm.our, od2);
     }
