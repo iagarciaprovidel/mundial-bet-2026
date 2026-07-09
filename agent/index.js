@@ -1006,12 +1006,13 @@ async function main() {
         await ref.set(qf);
         await db.collection('odds').doc(qf.id).set({ _home: qf.home, _away: qf.away, _homeCode: qf.homeCode, _awayCode: qf.awayCode, _kickoff: qf.kickoff, _stage: 'qf' }, { merge: true });
       } else {
-        // Corregir kickoff si el doc existe con el horario incorrecto
+        // Forzar stage=qf + kickoff correcto para fixtures QF que fueron auto-registrados con stage='r16'
         const d = snap.data();
-        if (d.kickoff !== qf.kickoff) {
-          console.log(`Corrigiendo kickoff QF: ${qf.id} ${d.kickoff} → ${qf.kickoff}`);
-          await ref.update({ kickoff: qf.kickoff });
-          await db.collection('odds').doc(qf.id).set({ _kickoff: qf.kickoff }, { merge: true });
+        const needsFix = d.kickoff !== qf.kickoff || d.stage !== 'qf' || d.homeCode !== qf.homeCode;
+        if (needsFix) {
+          console.log(`Corrigiendo QF fixture: ${qf.id} stage=${d.stage}→qf kickoff=${d.kickoff}→${qf.kickoff}`);
+          await ref.update({ kickoff: qf.kickoff, stage: 'qf', home: qf.home, away: qf.away, homeCode: qf.homeCode, awayCode: qf.awayCode });
+          await db.collection('odds').doc(qf.id).set({ _kickoff: qf.kickoff, _stage: 'qf', _home: qf.home, _away: qf.away, _homeCode: qf.homeCode, _awayCode: qf.awayCode }, { merge: true });
         }
       }
     }
