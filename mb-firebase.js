@@ -620,19 +620,20 @@
     },
 
     // ── Pronóstico de semifinalistas ──
-    // semi_picks/{uid} → { teams: [code,...], ts }
+    // Guardado en users/{uid}.semiPick para evitar reglas de Firestore separadas
     async saveSemiPick(teams) {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       if (!Array.isArray(teams) || teams.length !== 4) return Promise.reject('pick-invalido');
-      await db.collection('semi_picks').doc(u.uid).set({
-        uid: u.uid, teams: teams, ts: FV.serverTimestamp(),
-      });
+      await db.collection('users').doc(u.uid).set(
+        { semiPick: { teams: teams, ts: FV.serverTimestamp() } },
+        { merge: true }
+      );
       return true;
     },
     async getSemiPick() {
       const u = auth.currentUser; if (!u) return null;
-      const doc = await db.collection('semi_picks').doc(u.uid).get();
-      return doc.exists ? (doc.data().teams || null) : null;
+      const doc = await db.collection('users').doc(u.uid).get();
+      return doc.exists ? ((doc.data().semiPick && doc.data().semiPick.teams) || null) : null;
     },
 
     // ── Desafíos por partido (challenge_picks) ──
