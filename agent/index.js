@@ -1042,6 +1042,12 @@ async function main() {
     });
     if (oddsMetaWrites.length) await Promise.all(oddsMetaWrites);
     if (dynSnap.size) console.log(`Fixtures dinámicos cargados: ${dynSnap.size}`);
+    // DEBUG: mostrar stage de cada fixture QF para diagnóstico
+    const QF_IDS = ['dyn_fr_ma','dyn_be_es','dyn_gb-eng_no','dyn_ar_ch'];
+    dynSnap.docs.filter(d => QF_IDS.includes(d.id)).forEach(d => {
+      const f = d.data();
+      console.log(`  QF debug: ${d.id} stage=${f.stage} kickoff=${f.kickoff} homeCode=${f.homeCode}`);
+    });
   } catch (e) { console.warn('loadDynamicFixtures:', e && e.message); }
 
   // Estas NO dependen de football-data → corren SIEMPRE (aunque la API falle):
