@@ -33,19 +33,30 @@
     const status = doc && doc.status;
     const isWon = status === 'won';
     const isLost = status === 'lost';
+    const resolved = isWon || isLost;
     const canClaim = isWon && doc && !doc.claimed;
     const myStake = doc ? (doc.stake || pts) : pts * mult;
+    // Si ya había una respuesta guardada (de una sesión anterior), arranca el
+    // selector en el multiplicador que usó — si no, se resetea a x1 cada vez
+    // que este chip vuelve a montarse aunque el usuario ya hubiera elegido x25.
+    useEffect(() => {
+      if (doc && doc.stake) setMult(Math.max(1, Math.round(doc.stake / pts)));
+    }, [doc && doc.id]);
     // "locked" = ya no se puede responder (partido empezó y nunca respondiste).
     // Sin esto, un botón bloqueado se ve IGUAL a uno habilitado y parece que
     // "no hace nada" al tocarlo — con opacidad + texto queda claro que cerró.
     const closedNoAnswer = locked && !pick;
+    // El selector de monto y los botones quedan editables mientras la pregunta
+    // siga abierta (podés cambiar de opción o de monto hasta que arranque el
+    // partido) — solo se congelan cuando el agente ya liquidó (won/lost).
+    const canEdit = !locked && !resolved;
     return (
       <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--r-md)', padding: '10px 12px', border: '1px solid var(--border)', opacity: closedNoAnswer ? 0.55 : 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{label}</span>
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 800 }}>Cuesta {fmt(myStake)} · gana {fmt(myStake)} más</span>
         </div>
-        {!pick && !locked && (
+        {canEdit && (
           <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
             {STAKE_MULTS.map((m) => (
               <button key={m} onClick={() => setMult(m)} className="mb-press"
@@ -60,11 +71,11 @@
             const active = pick === opt.value;
             const won = isWon && active;
             const lost = isLost && active;
-            const disabled = !!locked || !!status;
+            const disabled = !canEdit;
             return (
-              <button key={opt.value} onClick={() => !disabled && onPick(opt.value, pts * mult)}
+              <button key={opt.value} onClick={() => canEdit && onPick(opt.value, pts * mult)}
                 disabled={disabled}
-                className={!disabled ? 'mb-press' : ''}
+                className={canEdit ? 'mb-press' : ''}
                 style={{ flex: 1, padding: '7px 4px', borderRadius: 'var(--r-md)', border: won ? '2px solid var(--success)' : lost ? '2px solid var(--danger)' : active ? '2px solid rgba(97,218,251,0.7)' : '1px solid var(--border)', background: won ? 'rgba(0,200,90,0.15)' : lost ? 'rgba(255,60,60,0.12)' : active ? 'rgba(97,218,251,0.1)' : disabled ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.03)', cursor: disabled ? 'not-allowed' : 'pointer', textAlign: 'center', fontSize: 'var(--t-xs)', fontWeight: 700, color: won ? 'var(--success)' : lost ? 'var(--danger)' : active ? '#61DAFB' : disabled ? 'var(--muted-2)' : 'var(--text)', transition: 'all 0.15s' }}>
                 {opt.label}
                 {won && ' ✓'}
@@ -80,7 +91,7 @@
         )}
         {isWon && doc && doc.claimed && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 700, marginTop: 6, textAlign: 'center' }}>✓ +{fmt(doc.payout)} puntos reclamados</div>}
         {isLost && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>Perdiste los {fmt(myStake)} pts apostados</div>}
-        {!status && pick && !closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>Apostaste {fmt(myStake)} pts · espera el resultado</div>}
+        {!resolved && pick && !closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>Apostaste {fmt(myStake)} pts · podés cambiar hasta que arranque</div>}
         {closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>🔒 Cerrado — el partido ya empezó</div>}
         {disabledReason && !locked && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>{disabledReason}</div>}
       </div>

@@ -52,11 +52,35 @@ service cloud.firestore {
       return signedIn() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.groupId == gid;
     }
+    // bestStreak/currentStreak los mantiene SOLO el agente (recomputeAllStreaks).
+    // Si el cliente pudiera escribirlos directo, cualquiera podría inflar su
+    // racha y reclamar premios de racha que nunca ganó (claimStreakTier).
+    function streakFieldsUnchanged() {
+      return request.resource.data.get('bestStreak', null) == resource.data.get('bestStreak', null)
+          && request.resource.data.get('currentStreak', null) == resource.data.get('currentStreak', null);
+    }
+    // scorerBet.status/payout los pone SOLO el agente al liquidar (settleScorerBets).
+    // El cliente puede crear/reemplazar su apuesta mientras siga 'open' (elegir
+    // o cambiar jugador), o marcarla 'claimed' sin tocar status/payout — pero
+    // nunca fabricar un 'won' con premio directo vía Firestore.
+    function scorerBetOk() {
+      return !('scorerBet' in request.resource.data.diff(resource.data).affectedKeys())
+        || request.resource.data.scorerBet == null
+        || request.resource.data.scorerBet.status == 'open'
+        || (resource.data.get('scorerBet', null) != null
+            && resource.data.scorerBet.status == 'won'
+            && resource.data.scorerBet.claimed == false
+            && request.resource.data.scorerBet.claimed == true
+            && request.resource.data.scorerBet.status == resource.data.scorerBet.status
+            && request.resource.data.scorerBet.payout == resource.data.scorerBet.payout);
+    }
     match /users/{uid} {
       allow read:   if signedIn();
       allow create: if signedIn() && request.auth.uid == uid;
-      // el dueño edita su perfil; un admin de un equipo puede asignar a alguien a ESE equipo (aprobar)
-      allow update: if signedIn() && (request.auth.uid == uid
+      // el dueño edita su perfil (sin poder fabricar racha ni ganar el goleador
+      // directo); un admin de un equipo puede asignar a alguien a ESE equipo (aprobar)
+      allow update: if signedIn() && (
+                      (request.auth.uid == uid && streakFieldsUnchanged() && scorerBetOk())
                       || (request.resource.data.groupId != null && isTeamAdmin(request.resource.data.groupId)));
       allow delete: if signedIn() && request.auth.uid == uid;
     }
@@ -106,13 +130,26 @@ service cloud.firestore {
       allow read:  if signedIn();
       allow write: if signedIn() && request.resource.data.uid == request.auth.uid;
     }
-    // Desafíos por partido (ahora son apuesta real con stake, ver mb-challenges.jsx).
-    // ID = uid_matchId_q1|q2|q3|q4. "update" hace falta para poder cambiar la
-    // respuesta antes de que arranque el partido — sin esto el guardado falla
-    // en silencio ("no se pudo guardar") apenas el doc ya existe.
+    // Desafíos por partido (challenge_picks). ID = uid_matchId_q1|q2|...
+    // El agente (Admin SDK, se salta las reglas) es el único que puede poner
+    // status:'won'/'lost' + payout al liquidar. El cliente solo puede:
+    //  · crear/reemplazar su respuesta mientras el doc no exista o siga 'open'
+    //  · marcar 'claimed' en un doc ya 'won', sin tocar status ni payout
+    // Así nadie puede escribirse un desafío ganado directo por Firestore.
     match /challenge_picks/{id} {
-      allow read:           if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
-      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read:   if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+                      && request.resource.data.status == 'open'
+                      && request.resource.data.claimed == false;
+      allow update: if signedIn() && resource.data.uid == request.auth.uid
+                      && ((resource.data.status == 'open'
+                           && request.resource.data.uid == request.auth.uid
+                           && request.resource.data.status == 'open')
+                          || (resource.data.status == 'won'
+                              && resource.data.claimed == false
+                              && request.resource.data.claimed == true
+                              && request.resource.data.status == resource.data.status
+                              && request.resource.data.payout == resource.data.payout));
     }
     // Pronóstico de semifinalistas (histórico — el pick real vive en
     // users/{uid}.semiPick desde v269; esta regla queda por si se usa a futuro).
@@ -135,6 +172,11 @@ service cloud.firestore {
   }
 }
 ```
+
+**⚠️ Este cambio de reglas es importante para la equidad del juego** (cierra un
+hueco donde cualquiera podía inflar su racha o fabricar un desafío/goleador
+"ganado" escribiendo directo a Firestore desde la consola del navegador) —
+hay que publicarlo a mano en cuanto puedas, con el mismo paso de arriba.
 
 > Modelo nuevo: **no hay un admin global**. Cada equipo tiene su lista `adminEmails`
 > (el creador entra ahí, y puede agregar más correos como admins desde "Mis equipos").

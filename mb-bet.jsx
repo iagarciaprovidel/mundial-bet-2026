@@ -1048,24 +1048,27 @@
     const claimedStreakTiers = (me && me.rewards && Array.isArray(me.rewards.streakTiers)) ? me.rewards.streakTiers : [];
     const [claimedStreakLocal, setClaimedStreakLocal] = useState([]);
     const [claimingStreakTier, setClaimingStreakTier] = useState(null);
-    const doClaimStreak = (tier, amount) => {
+    const doClaimStreak = (tier) => {
       const fb = window.MBFirebase;
       if (!fb || !fb.claimStreakTier) return;
       setClaimingStreakTier(tier);
-      fb.claimStreakTier(tier, amount)
+      fb.claimStreakTier(tier)
         .then(() => { setClaimedStreakLocal((prev) => [...prev, tier]); setClaimingStreakTier(null); })
         .catch(() => { setClaimingStreakTier(null); });
     };
     const claimableStreaks = STREAK_TIERS.filter((t) =>
       bestStreakMe >= t[0] && !claimedStreakTiers.includes(t[0]) && !claimedStreakLocal.includes(t[0])
     );
+    // El bono del campeón NO va en este reclamo: se paga solo, automático, cada
+    // vez que su selección avanza de ronda (payChampionRoundBonus en el agente).
+    // champEarnedTotal acá es solo informativo (lo que ya cobró por eso).
     const doClaim = () => {
       const fb = window.MBFirebase;
       if (!fb || !fb.claimGroupBonuses) return;
       setClaiming(true); setClaimErr('');
-      fb.claimGroupBonuses({ ...bd, champBonus: champEarnedTotal, total: securedTotal })
+      fb.claimGroupBonuses()
         .then(() => { setClaimDone(true); setClaiming(false); })
-        .catch((e) => { if (e === 'ya-reclamado') { setClaimDone(true); } else { setClaimErr('Error al reclamar. Intenta de nuevo.'); } setClaiming(false); });
+        .catch((e) => { if (e === 'ya-reclamado') { setClaimDone(true); } else if (e === 'sin-premios') { setClaimDone(true); } else { setClaimErr('Error al reclamar. Intenta de nuevo.'); } setClaiming(false); });
     };
 
     // ── Avance del campeón elegido ──
@@ -1272,7 +1275,7 @@
       const fb = window.MBFirebase;
       if (!fb || !fb.claimGroupBonuses || claiming) return;
       setClaiming(true);
-      fb.claimGroupBonuses(bd2).then(() => setDone(true)).catch(() => setClaiming(false));
+      fb.claimGroupBonuses().then(() => setDone(true)).catch((e) => { if (e === 'ya-reclamado' || e === 'sin-premios') setDone(true); setClaiming(false); });
     };
     if (done) return (
       <div style={{ padding: '12px 14px', borderRadius: 'var(--r-lg)', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)', textAlign: 'center', fontSize: 'var(--t-sm)', color: 'var(--success)', fontWeight: 800 }}>

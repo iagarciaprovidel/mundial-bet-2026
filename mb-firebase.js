@@ -312,16 +312,30 @@
     },
 
     // ── Reclamo manual de premios de fase de grupos + bono campeón ──
-    async claimGroupBonuses(bd) {
+    // El monto NO se recibe del cliente (antes `claimGroupBonuses(bd)` confiaba
+    // ciegamente en bd.total — cualquiera podía llamarla desde la consola del
+    // navegador con un total inventado y regalarse puntos). Ahora se recalcula
+    // acá adentro, dentro de la transacción, a partir de datos reales
+    // (apuestas propias + bestStreak, que mantiene el agente) usando la misma
+    // fórmula que window.MB_bonusBreakdown (mb-bet.jsx).
+    async claimGroupBonuses() {
       const u = auth.currentUser;
       if (!u) return Promise.reject('no-auth');
-      if (!bd || !bd.total) return Promise.resolve();
       const ref = db.collection('users').doc(u.uid);
+      const betsQuery = db.collection('bets').where('uid', '==', u.uid);
       return db.runTransaction(async (tx) => {
-        const snap = await tx.get(ref);
+        const [snap, betsSnap] = await Promise.all([tx.get(ref), tx.get(betsQuery)]);
         const data = snap.exists ? snap.data() : {};
         if (data.rewards && data.rewards.groupsClosed) throw 'ya-reclamado';
-        const saldo = typeof data.saldo === 'number' ? data.saldo : 90000;
+        const allBets = betsSnap.docs.map((d) => d.data());
+        const settled = allBets.filter((b) => b.status === 'won' || b.status === 'lost');
+        const wonN = settled.filter((b) => b.status === 'won').length;
+        const acc = settled.length ? Math.round((wonN * 100) / settled.length) : 0;
+        const bestStreak = typeof data.bestStreak === 'number' ? data.bestStreak : 0;
+        const calc = window.MB_bonusBreakdown || function () { return { total: 0 }; };
+        const bd = calc({ bets: allBets.length, settled: settled.length, accuracy: acc, bestStreak: bestStreak });
+        if (!bd.total) throw 'sin-premios';
+        const saldo = typeof data.saldo === 'number' ? data.saldo : SALDO_INICIAL;
         tx.set(ref, {
           saldo: saldo + bd.total,
           rewards: Object.assign({}, data.rewards || {}, {
@@ -329,15 +343,22 @@
             recarga: bd.recarga || 0,
             precision: bd.precision || 0,
             streak: bd.streak || 0,
-            champBonus: bd.champBonus || 0,
           }),
         }, { merge: true });
+        return bd;
       });
     },
 
-    async claimStreakTier(tier, amount) {
+    // Igual que arriba: el monto NO viene del cliente, se recalcula acá con la
+    // tabla real de tramos (STREAK_TIERS) contra bestStreak (server-maintained).
+    // Antes `claimStreakTier(tier, amount)` confiaba en `amount` tal cual.
+    async claimStreakTier(tier) {
       const u = auth.currentUser;
       if (!u) return Promise.reject('no-auth');
+      const STREAK_TIERS = (window.MB_REBAL && window.MB_REBAL.STREAK_TIERS) || [[3, 2000], [5, 5000], [7, 10000]];
+      const found = STREAK_TIERS.find((t) => t[0] === tier);
+      if (!found) return Promise.reject('tier-invalido');
+      const amount = found[1];
       const ref = db.collection('users').doc(u.uid);
       return db.runTransaction(async (tx) => {
         const snap = await tx.get(ref);
@@ -347,7 +368,7 @@
         // bestStreak = máximo histórico; fallback a currentStreak para usuarios sin el campo aún.
         const bestStr = typeof data.bestStreak === 'number' ? data.bestStreak : (typeof data.currentStreak === 'number' ? data.currentStreak : 0);
         if (bestStr < tier) throw 'streak-insuficiente';
-        const saldo = typeof data.saldo === 'number' ? data.saldo : 90000;
+        const saldo = typeof data.saldo === 'number' ? data.saldo : SALDO_INICIAL;
         tx.set(ref, {
           saldo: saldo + amount,
           rewards: Object.assign({}, data.rewards || {}, { streakTiers: [...claimedTiers, tier] }),
@@ -707,7 +728,7 @@
         if (available < stake) throw 'saldo-insuficiente';
         tx.set(userRef, { saldo: available - stake, staked: staked0 - refund + stake }, { merge: true });
         tx.set(pickRef, {
-          uid: u.uid, matchId: matchId, qkey: qkey, pick: pick, stake: stake, status: 'open', ts: FV.serverTimestamp(),
+          uid: u.uid, matchId: matchId, qkey: qkey, pick: pick, stake: stake, status: 'open', claimed: false, ts: FV.serverTimestamp(),
         });
       });
     },
