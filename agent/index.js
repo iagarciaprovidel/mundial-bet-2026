@@ -607,20 +607,24 @@ async function settleChallengePicks(our, oddsData) {
       if (snap.empty) continue;
       for (const doc of snap.docs) {
         const pick = doc.data();
+        // stake > 0: apuesta real (cobrada al elegir en mb-firebase.js saveChallengePick).
+        // stake == 0/ausente: pick viejo de antes de v281, era gratis - se paga como antes.
+        const stake = typeof pick.stake === 'number' ? pick.stake : 0;
         // bool questions: 'yes'/'no' vs bool; string questions: direct comparison
         const won = typeof correct === 'boolean' ? (pick.pick === 'yes') === correct : pick.pick === correct;
-        const payout = won ? pts : 0;
+        const payout = won ? (stake > 0 ? stake * 2 : pts) : 0;
         const userRef = db.collection('users').doc(pick.uid);
         await db.runTransaction(async (tx) => {
           const cp = await tx.get(doc.ref);
           if (!cp.exists || cp.data().status !== 'open') return;
-          if (!payout) { tx.set(doc.ref, { status: 'lost', settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true }); return; }
           const us = await tx.get(userRef);
-          const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
-          tx.set(userRef, { saldo: saldo + payout }, { merge: true });
-          tx.set(doc.ref, { status: 'won', payout: payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+          const ud = us.exists ? us.data() : {};
+          const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
+          const staked0 = (typeof ud.staked === 'number') ? ud.staked : 0;
+          tx.set(userRef, { saldo: saldo + payout, staked: Math.max(0, staked0 - stake) }, { merge: true });
+          tx.set(doc.ref, { status: won ? 'won' : 'lost', payout: payout, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
         });
-        if (won) await notify(pick.uid, '🎯 Desafío acertado', `${our.home} vs ${our.away}: +${pts} puntos por el desafío del partido.`);
+        if (won) await notify(pick.uid, '🎯 Desafío acertado', `${our.home} vs ${our.away}: +${payout} puntos por el desafío del partido.`);
       }
       console.log(`  Desafíos ${qkey} liquidados (${our.id}): ${snap.size}`);
     }

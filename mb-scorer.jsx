@@ -43,24 +43,40 @@
     return (P[teamName] || []).filter((p) => p.pos !== 'POR');
   }
 
-  // ── Modal: elegir jugador + monto ──────────────────────────
+  // Lista plana de jugadores elegibles: {name, pos, t, team, teamCode} — sin
+  // agrupar por país primero, la selección se muestra al lado de cada jugador.
+  function allEligiblePlayers(teams) {
+    const out = [];
+    teams.forEach((t) => {
+      playersOf(t.name).forEach((p) => out.push({ name: p.name, pos: p.pos, t: p.t, team: t.name, teamCode: t.code }));
+    });
+    // Titulares primero, luego alfabético — más fácil de escanear que por equipo.
+    return out.sort((a, b) => (b.t - a.t) || a.name.localeCompare(b.name));
+  }
+
+  // ── Modal: elegir jugador (lista única, filtrable) + monto ──
   function ScorerModal({ myBet, saldo, onClose, onSave, locked }) {
     const teams = useMemo(getQFTeams, []);
-    const [team, setTeam] = useState(myBet ? { name: myBet.team, code: myBet.teamCode } : null);
-    const [player, setPlayer] = useState(myBet ? myBet.player : null);
+    const players = useMemo(() => allEligiblePlayers(teams), [teams]);
+    const [q, setQ] = useState('');
+    const [picked, setPicked] = useState(myBet ? { name: myBet.player, teamCode: myBet.teamCode, team: myBet.team } : null);
     const [stake, setStake] = useState(myBet ? myBet.stake : MIN_STAKE);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState('');
     const noData = teams.length === 0;
+    const qLower = q.trim().toLowerCase();
+    const filtered = qLower
+      ? players.filter((p) => p.name.toLowerCase().includes(qLower) || p.team.toLowerCase().includes(qLower))
+      : players;
 
     const save = async () => {
-      if (!player || !team) { setErr('Elige un jugador'); return; }
+      if (!picked) { setErr('Elige un jugador'); return; }
       if (stake < MIN_STAKE) { setErr(`El mínimo es ${fmt(MIN_STAKE)} pts`); return; }
       if (stake > saldo) { setErr('No tienes suficiente saldo'); return; }
       setSaving(true);
       try {
-        await FB().placeScorerBet(player, team.name, team.code, stake);
-        onSave({ player, team: team.name, teamCode: team.code, stake, status: 'open' });
+        await FB().placeScorerBet(picked.name, picked.team, picked.teamCode, stake);
+        onSave({ player: picked.name, team: picked.team, teamCode: picked.teamCode, stake, status: 'open' });
       } catch (e) {
         console.error('[ScorerBet] placeScorerBet error:', e);
         const code = (e && e.code) || e;
@@ -78,7 +94,7 @@
               {locked ? '🔒 Cerrado' : '⚽ Goleador del Torneo'}
             </div>
             <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2 }}>
-              Elige un jugador de los 8 de cuartos · si termina como máximo goleador, ×{MULT} tu apuesta
+              Elige un jugador de los 8 equipos de cuartos · si termina como máximo goleador, ×{MULT} tu apuesta
             </div>
           </div>
         </div>
@@ -91,38 +107,34 @@
             </div>
           ) : (
             <>
-              <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>1. Selección</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 16 }}>
-                {teams.map((t) => (
-                  <button key={t.code} disabled={locked} onClick={() => { if (locked) return; setTeam(t); setPlayer(null); setErr(''); }}
-                    className={locked ? '' : 'mb-press'}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '8px 4px', borderRadius: 'var(--r-md)', border: team && team.code === t.code ? '2px solid #FF9D4D' : '1px solid var(--border)', background: team && team.code === t.code ? 'rgba(255,157,77,0.14)' : 'rgba(255,255,255,0.035)', cursor: locked ? 'default' : 'pointer' }}>
-                    <img src={`https://flagcdn.com/h40/${t.code}.png`} alt={t.name} style={{ height: 20, width: 'auto', borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
-                    <span style={{ fontSize: 8.5, fontWeight: 700, color: team && team.code === t.code ? '#FFC08A' : 'var(--muted)', textAlign: 'center', lineHeight: 1.15 }}>{t.name}</span>
-                  </button>
-                ))}
+              {!locked && (
+                <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar jugador o selección…"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: 'var(--text)', fontSize: 'var(--t-sm)', marginBottom: 12, boxSizing: 'border-box' }} />
+              )}
+              <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>1. Jugador</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, maxHeight: locked ? 'none' : 340, overflowY: locked ? 'visible' : 'auto' }}>
+                {filtered.length === 0 && <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-xs)', padding: '16px 0' }}>Sin resultados para "{q}"</div>}
+                {filtered.map((p) => {
+                  const active = picked && picked.name === p.name;
+                  return (
+                    <button key={p.teamCode + p.name} disabled={locked} onClick={() => { if (!locked) { setPicked(p); setErr(''); } }}
+                      className={locked ? '' : 'mb-press'}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 'var(--r-md)', border: active ? '2px solid #FF9D4D' : '1px solid var(--border)', background: active ? 'rgba(255,157,77,0.14)' : 'rgba(255,255,255,0.03)', cursor: locked ? 'default' : 'pointer', textAlign: 'left' }}>
+                      <img src={`https://flagcdn.com/h40/${p.teamCode}.png`} alt={p.team} style={{ height: 16, width: 'auto', borderRadius: 2, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
+                      <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 800, width: 22, flexShrink: 0 }}>{p.pos}</span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 'var(--t-xs)', fontWeight: 700, color: active ? '#FFC08A' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                        <span style={{ display: 'block', fontSize: 8.5, color: 'var(--muted-2)' }}>{p.team}</span>
+                      </span>
+                      {p.t && <span style={{ fontSize: 8, color: 'var(--gold-light)', fontWeight: 800, flexShrink: 0 }}>TITULAR</span>}
+                    </button>
+                  );
+                })}
               </div>
 
-              {team && (
+              {picked && !locked && (
                 <>
-                  <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>2. Jugador</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
-                    {playersOf(team.name).map((p) => (
-                      <button key={p.name} disabled={locked} onClick={() => { if (!locked) { setPlayer(p.name); setErr(''); } }}
-                        className={locked ? '' : 'mb-press'}
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 'var(--r-md)', border: player === p.name ? '2px solid #FF9D4D' : '1px solid var(--border)', background: player === p.name ? 'rgba(255,157,77,0.14)' : 'rgba(255,255,255,0.03)', cursor: locked ? 'default' : 'pointer', textAlign: 'left' }}>
-                        <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 800, width: 24, flexShrink: 0 }}>{p.pos}</span>
-                        <span style={{ flex: 1, fontSize: 'var(--t-xs)', fontWeight: 700, color: player === p.name ? '#FFC08A' : 'var(--text)' }}>{p.name}</span>
-                        {p.t && <span style={{ fontSize: 8, color: 'var(--gold-light)', fontWeight: 800 }}>TITULAR</span>}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {player && !locked && (
-                <>
-                  <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>3. Monto a apostar</div>
+                  <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>2. Monto a apostar</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <input type="number" min={MIN_STAKE} step={1000} value={stake}
                       onChange={(e) => setStake(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
@@ -135,7 +147,7 @@
                     ))}
                   </div>
                   <div style={{ padding: '10px 12px', borderRadius: 'var(--r-md)', background: 'rgba(255,157,77,0.08)', border: '1px solid rgba(255,157,77,0.3)', fontSize: 'var(--t-2xs)', color: '#FFC08A', fontWeight: 700 }}>
-                    Si {player} termina como máximo goleador del torneo, ganas {fmt(stake * MULT)} pts (×{MULT}).
+                    Si {picked.name} termina como máximo goleador del torneo, ganas {fmt(stake * MULT)} pts (×{MULT}).
                   </div>
                 </>
               )}
@@ -144,7 +156,7 @@
           {err && <div style={{ textAlign: 'center', color: 'var(--danger)', fontSize: 'var(--t-xs)', fontWeight: 700, padding: '10px 0' }}>{err}</div>}
         </div>
 
-        {!locked && !noData && player && (
+        {!locked && !noData && picked && (
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 16px 28px', background: 'linear-gradient(0deg, rgba(6,18,9,0.98) 60%, transparent)', backdropFilter: 'blur(8px)' }}>
             <button onClick={save} disabled={saving}
               style={{ width: '100%', padding: '13px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #FF9D4D, #E0752B)', color: '#fff', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-md)', transition: 'all 0.2s' }}>

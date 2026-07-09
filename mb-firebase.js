@@ -682,15 +682,34 @@
     },
 
     // ── Desafíos por partido (challenge_picks) ──
-    // challenge_picks/{uid_matchId_qkey} → { uid, matchId, qkey, pick, ts }
-    async saveChallengePick(matchId, qkey, pick) {
+    // Apuesta real: cuesta `stake` puntos al elegir. Si acierta, el agente paga
+    // ×2 (stake de vuelta + la misma ganancia); si falla, el stake ya se perdió
+    // (no se hace nada más al liquidar). Reemplazar una respuesta ya guardada
+    // devuelve el stake anterior antes de cobrar el nuevo.
+    // challenge_picks/{uid_matchId_qkey} → { uid, matchId, qkey, pick, stake, status, ts }
+    async saveChallengePick(matchId, qkey, pick, stake) {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       if (!matchId || !qkey || !pick) return Promise.reject('pick-invalido');
+      stake = Math.floor(Number(stake) || 0);
+      if (stake < 100) return Promise.reject('min-100');
       const id = u.uid + '_' + matchId + '_' + qkey;
-      await db.collection('challenge_picks').doc(id).set({
-        uid: u.uid, matchId: matchId, qkey: qkey, pick: pick, status: 'open', ts: FV.serverTimestamp(),
+      const pickRef = db.collection('challenge_picks').doc(id);
+      const userRef = db.collection('users').doc(u.uid);
+      return db.runTransaction(async function (tx) {
+        const ps = await tx.get(pickRef);
+        const us = await tx.get(userRef);
+        const ud = us.exists ? us.data() : {};
+        const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
+        const staked0 = (typeof ud.staked === 'number') ? ud.staked : 0;
+        const prevOpen = (ps.exists && ps.data().status === 'open') ? ps.data() : null;
+        const refund = prevOpen ? (prevOpen.stake || 0) : 0;
+        const available = saldo + refund;
+        if (available < stake) throw 'saldo-insuficiente';
+        tx.set(userRef, { saldo: available - stake, staked: staked0 - refund + stake }, { merge: true });
+        tx.set(pickRef, {
+          uid: u.uid, matchId: matchId, qkey: qkey, pick: pick, stake: stake, status: 'open', ts: FV.serverTimestamp(),
+        });
       });
-      return true;
     },
     async getChallengePicks(matchId) {
       const u = auth.currentUser; if (!u) return null;

@@ -93,8 +93,8 @@ service cloud.firestore {
 
     // Desafíos por partido (challenge_picks). ID = uid_matchId_q1|q2.
     match /challenge_picks/{id} {
-      allow read:   if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read:           if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid;
     }
 
     // Pronóstico de semifinalistas. ID = uid del usuario.

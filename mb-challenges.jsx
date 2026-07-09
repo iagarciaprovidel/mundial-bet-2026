@@ -24,24 +24,28 @@
 
   // Estado de una respuesta a una pregunta
   // result: null (pendiente) | 'won' | 'lost'
-  function QuestionChip({ label, opts, pick, result, pts, onPick, locked }) {
+  function QuestionChip({ label, opts, pick, result, pts, onPick, locked, disabledReason }) {
+    // "locked" = ya no se puede responder (partido empezó y nunca respondiste).
+    // Sin esto, un botón bloqueado se ve IGUAL a uno habilitado y parece que
+    // "no hace nada" al tocarlo — con opacidad + texto queda claro que cerró.
+    const closedNoAnswer = locked && !pick;
     return (
-      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--r-md)', padding: '10px 12px', border: '1px solid var(--border)' }}>
+      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--r-md)', padding: '10px 12px', border: '1px solid var(--border)', opacity: closedNoAnswer ? 0.55 : 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{label}</span>
-          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(pts)} pts</span>
+          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 800 }}>Cuesta {fmt(pts)} · gana {fmt(pts)} más</span>
         </div>
         <div style={{ display: 'flex', gap: 7 }}>
           {opts.map((opt) => {
             const active = pick === opt.value;
             const isWon = result === 'won' && active;
             const isLost = result === 'lost' && active;
-            const isCorrect = result === 'won' && !active; // the correct answer (not mine)
+            const disabled = !!locked || !!result;
             return (
-              <button key={opt.value} onClick={() => !locked && !result && onPick(opt.value)}
-                disabled={!!locked || !!result}
-                className={!locked && !result ? 'mb-press' : ''}
-                style={{ flex: 1, padding: '7px 4px', borderRadius: 'var(--r-md)', border: isWon ? '2px solid var(--success)' : isLost ? '2px solid var(--danger)' : active ? '2px solid rgba(97,218,251,0.7)' : '1px solid var(--border)', background: isWon ? 'rgba(0,200,90,0.15)' : isLost ? 'rgba(255,60,60,0.12)' : active ? 'rgba(97,218,251,0.1)' : 'rgba(255,255,255,0.03)', cursor: locked || result ? 'default' : 'pointer', textAlign: 'center', fontSize: 'var(--t-xs)', fontWeight: 700, color: isWon ? 'var(--success)' : isLost ? 'var(--danger)' : active ? '#61DAFB' : 'var(--text)', transition: 'all 0.15s' }}>
+              <button key={opt.value} onClick={() => !disabled && onPick(opt.value)}
+                disabled={disabled}
+                className={!disabled ? 'mb-press' : ''}
+                style={{ flex: 1, padding: '7px 4px', borderRadius: 'var(--r-md)', border: isWon ? '2px solid var(--success)' : isLost ? '2px solid var(--danger)' : active ? '2px solid rgba(97,218,251,0.7)' : '1px solid var(--border)', background: isWon ? 'rgba(0,200,90,0.15)' : isLost ? 'rgba(255,60,60,0.12)' : active ? 'rgba(97,218,251,0.1)' : disabled ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.03)', cursor: disabled ? 'not-allowed' : 'pointer', textAlign: 'center', fontSize: 'var(--t-xs)', fontWeight: 700, color: isWon ? 'var(--success)' : isLost ? 'var(--danger)' : active ? '#61DAFB' : disabled ? 'var(--muted-2)' : 'var(--text)', transition: 'all 0.15s' }}>
                 {opt.label}
                 {isWon && ' ✓'}
                 {isLost && ' ✗'}
@@ -49,9 +53,11 @@
             );
           })}
         </div>
-        {result === 'won' && pick && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 700, marginTop: 6, textAlign: 'center' }}>+{fmt(pts)} puntos ganados</div>}
-        {result === 'lost' && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 6, textAlign: 'center' }}>Sin puntos esta vez</div>}
-        {!result && pick && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>Respuesta guardada · espera el resultado</div>}
+        {result === 'won' && pick && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 700, marginTop: 6, textAlign: 'center' }}>+{fmt(pts * 2)} puntos ganados</div>}
+        {result === 'lost' && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>Perdiste los {fmt(pts)} pts apostados</div>}
+        {!result && pick && !closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>Apostaste {fmt(pts)} pts · espera el resultado</div>}
+        {closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>🔒 Cerrado — el partido ya empezó</div>}
+        {disabledReason && !locked && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>{disabledReason}</div>}
       </div>
     );
   }
@@ -63,6 +69,7 @@
     const store = window.MB_useBetStore ? window.MB_useBetStore() : {};
     const [picks, setPicks] = useState({});
     const [saving, setSaving] = useState(null);
+    const [err, setErr] = useState(null);
 
     // Los hooks deben llamarse siempre en el mismo orden (Rules of Hooks): el
     // return temprano va DESPUÉS de todos los hooks, nunca antes de un useEffect.
@@ -88,14 +95,19 @@
 
     const ptsKO = PTS[match.stage] || 1500;
     const ptsExtra = isKO ? Math.round(ptsKO * 0.5) : PTS_EXTRA;
+    const saldo = window.MB_avail ? window.MB_avail(store) : 90000;
 
-    const savePick = async (qkey, value) => {
+    const savePick = async (qkey, value, cost) => {
       if (saving || started) return;
+      setErr(null);
+      if (!picks[qkey] && saldo < cost) { setErr({ qkey: qkey, msg: 'No te alcanzan los puntos' }); return; }
       setSaving(qkey);
       try {
-        await FB().saveChallengePick(match.id, qkey, value);
+        await FB().saveChallengePick(match.id, qkey, value, cost);
         setPicks((prev) => ({ ...prev, [qkey]: value }));
-      } catch (e) {}
+      } catch (e) {
+        setErr({ qkey: qkey, msg: e === 'saldo-insuficiente' ? 'No te alcanzan los puntos' : 'No se pudo guardar' });
+      }
       setSaving(null);
     };
 
@@ -122,8 +134,9 @@
             pick={picks.q3}
             result={q3Result}
             pts={ptsExtra}
-            onPick={(v) => savePick('q3', v)}
+            onPick={(v) => savePick('q3', v, ptsExtra)}
             locked={started}
+            disabledReason={err && err.qkey === 'q3' ? err.msg : null}
           />
           {/* Q4: Primer gol — todos los partidos */}
           <QuestionChip
@@ -132,8 +145,9 @@
             pick={picks.q4}
             result={q4Result}
             pts={ptsExtra}
-            onPick={(v) => savePick('q4', v)}
+            onPick={(v) => savePick('q4', v, ptsExtra)}
             locked={started}
+            disabledReason={err && err.qkey === 'q4' ? err.msg : null}
           />
           {/* Q1/Q2: solo partidos KO */}
           {isKO && (
@@ -143,8 +157,9 @@
               pick={picks.q1}
               result={q1Result}
               pts={ptsKO}
-              onPick={(v) => savePick('q1', v)}
+              onPick={(v) => savePick('q1', v, ptsKO)}
               locked={started}
+              disabledReason={err && err.qkey === 'q1' ? err.msg : null}
             />
           )}
           {isKO && (
@@ -154,8 +169,9 @@
               pick={picks.q2}
               result={q2Result}
               pts={ptsKO}
-              onPick={(v) => savePick('q2', v)}
+              onPick={(v) => savePick('q2', v, ptsKO)}
               locked={started}
+              disabledReason={err && err.qkey === 'q2' ? err.msg : null}
             />
           )}
         </div>
