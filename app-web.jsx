@@ -647,21 +647,34 @@ function PartidosWeb({ onTeam }) {
   const staticFxP = (window.MB && window.MB.WC_FIXTURES) || [];
   const dynFxP = (store && store.dynFixtures) || [];
   const fx = [...staticFxP, ...dynFxP.filter(d => !staticFxP.some(s => s.id === d.id))];
+  const odds = (store && store.odds) || {};
+  const now = Date.now();
+  const BET_GRACE_MS_P = 5 * 60 * 1000;
+  const MATCH_MS_P = 150 * 60 * 1000;
+  const isLiveP = (m) => { const o = odds[m.id]; const k = new Date(m.kickoff).getTime(); return !!(o && o.live && !o.finished) || (now >= k + BET_GRACE_MS_P && now < k + MATCH_MS_P); };
+  const isDoneP = (m) => { const o = odds[m.id]; if (o && o.finished) return true; return new Date(m.kickoff).getTime() + MATCH_MS_P < now; };
+  const byKickoffAscP = (a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime();
+  const byKickoffDescP = (a, b) => new Date(b.kickoff).getTime() - new Date(a.kickoff).getTime();
   const byMd = { 1: [], 2: [], 3: [] };
   const byKO = { r32: [], r16: [], qf: [], sf: [], final: [] };
   fx.forEach(m => {
     if (byMd[m.md] !== undefined) byMd[m.md].push(m);
     else if (byKO[m.stage] !== undefined) byKO[m.stage].push(m);
   });
-  Object.keys(byKO).forEach(s => byKO[s].sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime()));
   const hasKO = Object.values(byKO).some(arr => arr.length > 0);
+  const orderGroup = (list) => {
+    const live = list.filter(isLiveP).sort(byKickoffAscP);
+    const bettable = list.filter(m => !isLiveP(m) && !isDoneP(m)).sort(byKickoffAscP);
+    const played = list.filter(m => isDoneP(m) && !isLiveP(m)).sort(byKickoffDescP);
+    return [...live, ...bettable, ...played];
+  };
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       {[1, 2, 3].map(md => (
         <div key={md} style={{ marginBottom: 26 }}>
           <SectionHead title={`Fase de grupos · Jornada ${md}`} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-            {byMd[md].map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
+            {orderGroup(byMd[md]).map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
           </div>
         </div>
       ))}
@@ -673,7 +686,7 @@ function PartidosWeb({ onTeam }) {
           <div key={stage} style={{ marginBottom: 26 }}>
             <SectionHead title={KO_STAGE_NAMES[stage] || stage} />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-              {matches.map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
+              {orderGroup(matches).map(m => <FixtureCardWeb key={m.id} m={m} onTeam={onTeam} />)}
             </div>
           </div>
         );
