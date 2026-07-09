@@ -22,15 +22,19 @@
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
   const KO_STAGES = new Set(['r32', 'r16', 'qf', 'sf', 'final']);
 
+  const STAKE_MULTS = [1, 5, 10, 25, 50];
+
   // Estado de una respuesta a una pregunta. `doc` es el challenge_pick completo
   // ({pick, stake, status, payout, claimed}) o null si no respondió todavía.
   // status: 'open' (pendiente) | 'won' | 'lost' — lo pone el agente al liquidar.
   function QuestionChip({ label, opts, doc, pts, onPick, onClaim, claiming, locked, disabledReason }) {
+    const [mult, setMult] = useState(1);
     const pick = doc && doc.pick;
     const status = doc && doc.status;
     const isWon = status === 'won';
     const isLost = status === 'lost';
     const canClaim = isWon && doc && !doc.claimed;
+    const myStake = doc ? (doc.stake || pts) : pts * mult;
     // "locked" = ya no se puede responder (partido empezó y nunca respondiste).
     // Sin esto, un botón bloqueado se ve IGUAL a uno habilitado y parece que
     // "no hace nada" al tocarlo — con opacidad + texto queda claro que cerró.
@@ -39,8 +43,18 @@
       <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--r-md)', padding: '10px 12px', border: '1px solid var(--border)', opacity: closedNoAnswer ? 0.55 : 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{label}</span>
-          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 800 }}>Cuesta {fmt(pts)} · gana {fmt(pts)} más</span>
+          <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--gold-light)', fontWeight: 800 }}>Cuesta {fmt(myStake)} · gana {fmt(myStake)} más</span>
         </div>
+        {!pick && !locked && (
+          <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
+            {STAKE_MULTS.map((m) => (
+              <button key={m} onClick={() => setMult(m)} className="mb-press"
+                style={{ flex: 1, padding: '4px 2px', borderRadius: 'var(--r-pill)', border: mult === m ? '1px solid var(--gold-light)' : '1px solid var(--border)', background: mult === m ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.03)', color: mult === m ? 'var(--gold-light)' : 'var(--muted)', fontSize: 8.5, fontWeight: 800, cursor: 'pointer' }}>
+                ×{m}
+              </button>
+            ))}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 7 }}>
           {opts.map((opt) => {
             const active = pick === opt.value;
@@ -48,7 +62,7 @@
             const lost = isLost && active;
             const disabled = !!locked || !!status;
             return (
-              <button key={opt.value} onClick={() => !disabled && onPick(opt.value)}
+              <button key={opt.value} onClick={() => !disabled && onPick(opt.value, pts * mult)}
                 disabled={disabled}
                 className={!disabled ? 'mb-press' : ''}
                 style={{ flex: 1, padding: '7px 4px', borderRadius: 'var(--r-md)', border: won ? '2px solid var(--success)' : lost ? '2px solid var(--danger)' : active ? '2px solid rgba(97,218,251,0.7)' : '1px solid var(--border)', background: won ? 'rgba(0,200,90,0.15)' : lost ? 'rgba(255,60,60,0.12)' : active ? 'rgba(97,218,251,0.1)' : disabled ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.03)', cursor: disabled ? 'not-allowed' : 'pointer', textAlign: 'center', fontSize: 'var(--t-xs)', fontWeight: 700, color: won ? 'var(--success)' : lost ? 'var(--danger)' : active ? '#61DAFB' : disabled ? 'var(--muted-2)' : 'var(--text)', transition: 'all 0.15s' }}>
@@ -65,8 +79,8 @@
           </button>
         )}
         {isWon && doc && doc.claimed && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 700, marginTop: 6, textAlign: 'center' }}>✓ +{fmt(doc.payout)} puntos reclamados</div>}
-        {isLost && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>Perdiste los {fmt(pts)} pts apostados</div>}
-        {!status && pick && !closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>Apostaste {fmt(pts)} pts · espera el resultado</div>}
+        {isLost && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>Perdiste los {fmt(myStake)} pts apostados</div>}
+        {!status && pick && !closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>Apostaste {fmt(myStake)} pts · espera el resultado</div>}
         {closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>🔒 Cerrado — el partido ya empezó</div>}
         {disabledReason && !locked && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>{disabledReason}</div>}
       </div>
@@ -110,7 +124,12 @@
         await FB().saveChallengePick(match.id, qkey, value, cost);
         setPicks((prev) => ({ ...prev, [qkey]: { id: user.uid + '_' + match.id + '_' + qkey, pick: value, stake: cost, status: 'open', claimed: false } }));
       } catch (e) {
-        setErr({ qkey: qkey, msg: e === 'saldo-insuficiente' ? 'No te alcanzan los puntos' : 'No se pudo guardar' });
+        console.error('[MatchChallenges] saveChallengePick error:', e);
+        const code = (e && e.code) || (typeof e === 'string' ? e : null);
+        const msg = code === 'saldo-insuficiente' ? 'No te alcanzan los puntos'
+          : code === 'permission-denied' ? 'Sin permiso para guardar (avísale al admin)'
+          : code ? `No se pudo guardar (${code})` : 'No se pudo guardar';
+        setErr({ qkey: qkey, msg: msg });
       }
       setSaving(null);
     };
@@ -139,7 +158,7 @@
             opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
             doc={picks.q3}
             pts={ptsExtra}
-            onPick={(v) => savePick('q3', v, ptsExtra)}
+            onPick={(v, cost) => savePick('q3', v, cost)}
             onClaim={() => claimPick('q3')}
             claiming={claiming === 'q3'}
             locked={started}
@@ -151,20 +170,20 @@
             opts={[{ label: match.home, value: 'home' }, { label: 'Sin goles', value: 'none' }, { label: match.away, value: 'away' }]}
             doc={picks.q4}
             pts={ptsExtra}
-            onPick={(v) => savePick('q4', v, ptsExtra)}
+            onPick={(v, cost) => savePick('q4', v, cost)}
             onClaim={() => claimPick('q4')}
             claiming={claiming === 'q4'}
             locked={started}
             disabledReason={err && err.qkey === 'q4' ? err.msg : null}
           />
-          {/* Q1/Q2: solo partidos KO */}
+          {/* Q1/Q5/Q2: solo partidos KO */}
           {isKO && (
             <QuestionChip
               label="🕐 ¿Habrá gol en el primer tiempo?"
               opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
               doc={picks.q1}
               pts={ptsKO}
-              onPick={(v) => savePick('q1', v, ptsKO)}
+              onPick={(v, cost) => savePick('q1', v, cost)}
               onClaim={() => claimPick('q1')}
               claiming={claiming === 'q1'}
               locked={started}
@@ -173,11 +192,24 @@
           )}
           {isKO && (
             <QuestionChip
+              label="🕑 ¿Habrá gol en el segundo tiempo?"
+              opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
+              doc={picks.q5}
+              pts={ptsKO}
+              onPick={(v, cost) => savePick('q5', v, cost)}
+              onClaim={() => claimPick('q5')}
+              claiming={claiming === 'q5'}
+              locked={started}
+              disabledReason={err && err.qkey === 'q5' ? err.msg : null}
+            />
+          )}
+          {isKO && (
+            <QuestionChip
               label="⚠️ ¿Irá a penales?"
               opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
               doc={picks.q2}
               pts={ptsKO}
-              onPick={(v) => savePick('q2', v, ptsKO)}
+              onPick={(v, cost) => savePick('q2', v, cost)}
               onClaim={() => claimPick('q2')}
               claiming={claiming === 'q2'}
               locked={started}

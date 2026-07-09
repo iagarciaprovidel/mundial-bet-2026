@@ -715,7 +715,7 @@
     // no solo el pick, para poder mostrar el botón "Reclamar" cuando ganó.
     async getChallengePicks(matchId) {
       const u = auth.currentUser; if (!u) return null;
-      const keys = ['q1', 'q2', 'q3', 'q4'];
+      const keys = ['q1', 'q2', 'q3', 'q4', 'q5'];
       const docs = await Promise.all(keys.map(k => db.collection('challenge_picks').doc(u.uid + '_' + matchId + '_' + k).get()));
       const out = {};
       let any = false;

@@ -598,6 +598,7 @@ async function settleChallengePicks(our, oddsData) {
     if (isKOStage && typeof oddsData.penalties === 'boolean') results.q2 = { correct: oddsData.penalties, pts: ptsKO };
     if (typeof oddsData.yellowCardsOver3 === 'boolean') results.q3 = { correct: oddsData.yellowCardsOver3, pts: ptsExtra };
     if (typeof oddsData.firstGoalSide === 'string') results.q4 = { correct: oddsData.firstGoalSide, pts: ptsExtra };
+    if (isKOStage && typeof oddsData.ftGoal === 'boolean') results.q5 = { correct: oddsData.ftGoal, pts: ptsKO };
     if (!Object.keys(results).length) return;
 
     for (const qkey of Object.keys(results)) {
@@ -1385,6 +1386,22 @@ async function main() {
           if (typeof htGoal === 'boolean') {
             await db.collection('odds').doc(mm.our.id).set({ htGoal: htGoal }, { merge: true });
             od.htGoal = htGoal;
+          }
+        }
+        // Q5: ¿Gol en el segundo tiempo? — espejo de Q1, mismo parseo de minuto.
+        if (typeof od.ftGoal === 'undefined') {
+          let ftGoal;
+          if (ghOur + gaOur === 0) {
+            ftGoal = false;
+          } else if (scorers.length > 0) {
+            ftGoal = scorers.some(function(s) {
+              const base = parseInt(String(s.minute || '').split(':')[0].split('+')[0], 10);
+              return !isNaN(base) && base > 45;
+            });
+          }
+          if (typeof ftGoal === 'boolean') {
+            await db.collection('odds').doc(mm.our.id).set({ ftGoal: ftGoal }, { merge: true });
+            od.ftGoal = ftGoal;
           }
         }
       }
