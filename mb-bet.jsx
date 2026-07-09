@@ -208,6 +208,7 @@
     const [ok, setOk] = useState('');
     const [exactH, setExactH] = useState('');
     const [exactA, setExactA] = useState('');
+    const [exactBet, setExactBet] = useState(MIN_BET); // stake separado para la apuesta del marcador exacto
     const [allInArm, setAllInArm] = useState(false); // primer toque activa, segundo dispara
 
     // Al elegir un resultado, pre-rellena un monto SUGERIDO (~25% de tu saldo,
@@ -322,8 +323,8 @@
         return;
       }
       setErr(''); setOk(''); setBusy(true); setAllInArm(false);
-      FB().placeBet(m, pick, stake, hasExact ? eh : null, hasExact ? ea : null)
-        .then(() => { setOk('¡Apuesta registrada!'); setSel(null); setExactH(''); setExactA(''); })
+      FB().placeBet(m, pick, stake, hasExact ? eh : null, hasExact ? ea : null, hasExact ? exactBet : 0)
+        .then(() => { setOk('¡Apuesta registrada!'); setSel(null); setExactH(''); setExactA(''); setExactBet(MIN_BET); })
         .catch((e) => {
           const code = (e && e.code) || e;
           setErr(ERRORS[code] || ('No se pudo: ' + ((e && e.message) || code)));
@@ -480,11 +481,11 @@
               <span className="num" style={{ fontSize: 'var(--t-md)', fontWeight: 800, color: 'var(--success)' }}>{fmt(win)}</span>
             </div>
 
-            {/* ── Marcador exacto opcional (×3 si aciertas exacto) ── */}
+            {/* ── Marcador exacto: apuesta separada con cobro adicional (×10 si acierta) ── */}
             <div style={{ marginBottom: 9, padding: '9px 11px', background: 'rgba(97,218,251,0.04)', borderRadius: 'var(--r-md)', border: '1px dashed rgba(97,218,251,0.22)' }}>
               <div style={{ fontSize: 8.5, color: 'rgba(97,218,251,0.65)', fontWeight: 800, marginBottom: 7, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>🎯 Marcador exacto (opcional)</span>
-                <span style={{ color: 'var(--gold)', fontWeight: 800 }}>×3 si aciertas exacto</span>
+                <span style={{ color: 'var(--gold)', fontWeight: 800 }}>×10 si aciertas exacto</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                 <input type="number" min="0" max="20" value={exactH} onChange={(e) => setExactH(e.target.value)} placeholder="—"
@@ -497,7 +498,24 @@
                 <div style={{ fontSize: 8, color: '#e98b8b', fontWeight: 700, textAlign: 'center', marginTop: 5 }}>⚠ Ese marcador no es compatible con tu apuesta a {PICK_LABEL(m, sel)}. Ajústalo o bórralo.</div>
               )}
               {hasExactInput && !exactBad && (
-                <div style={{ fontSize: 8, color: 'rgba(97,218,251,0.5)', textAlign: 'center', marginTop: 5 }}>Si sale {exactH}–{exactA}: <span style={{ color: 'var(--gold)', fontWeight: 800 }}>+{fmt(win * 3)} pts</span></div>
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 8.5, color: 'rgba(97,218,251,0.65)', fontWeight: 700 }}>Apuesta al marcador exacto</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <button onClick={() => setExactBet((v) => Math.max(MIN_BET, v - 1000))} className="mb-press" style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: 14, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>−</button>
+                      <span className="num" style={{ fontSize: 'var(--t-xs)', fontWeight: 800, color: '#61DAFB', minWidth: 52, textAlign: 'center' }}>{fmt(exactBet)}</span>
+                      <button onClick={() => setExactBet((v) => Math.min(maxSaldo - stake, v + 1000))} className="mb-press" style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: 14, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>+</button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 9px', background: 'rgba(97,218,251,0.07)', borderRadius: 'var(--r-md)', fontSize: 8.5 }}>
+                    <span style={{ color: 'var(--muted)' }}>Si sale {exactH}–{exactA} exacto:</span>
+                    <span style={{ color: 'var(--gold)', fontWeight: 800 }}>+{fmt(exactBet * 10)} pts adicionales</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3px 9px', fontSize: 8, color: 'var(--muted-2)' }}>
+                    <span>Total a cobrar:</span>
+                    <span className="num" style={{ fontWeight: 700 }}>{fmt(stake + exactBet)} pts</span>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -512,11 +530,11 @@
               </button>
             )}
 
-            <button onClick={() => place(sel)} disabled={busy || stake < MIN_BET || stake > maxSaldo || exactBad} className="mb-press" style={{
+            <button onClick={() => place(sel)} disabled={busy || stake < MIN_BET || stake + (hasExactInput && !exactBad ? exactBet : 0) > maxSaldo || exactBad} className="mb-press" style={{
               width: '100%', padding: '10px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)',
               border: 'none', color: '#1a1206',
-              background: (busy || stake < MIN_BET || stake > maxSaldo || exactBad) ? 'var(--surface-2)' : 'linear-gradient(180deg, var(--gold-light), var(--gold))',
-              opacity: (busy || stake < MIN_BET || stake > maxSaldo || exactBad) ? 0.55 : 1,
+              background: (busy || stake < MIN_BET || stake + (hasExactInput && !exactBad ? exactBet : 0) > maxSaldo || exactBad) ? 'var(--surface-2)' : 'linear-gradient(180deg, var(--gold-light), var(--gold))',
+              opacity: (busy || stake < MIN_BET || stake + (hasExactInput && !exactBad ? exactBet : 0) > maxSaldo || exactBad) ? 0.55 : 1,
             }}>{busy ? 'Registrando…' : 'Apostar · ' + PICK_LABEL(m, sel)}</button>
           </div>
         )}
