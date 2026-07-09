@@ -481,7 +481,6 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       const w = evalWin(bet.pick);
       const hasEx = typeof bet.exactHome === 'number' && typeof bet.exactAway === 'number';
       const exOk = w && hasEx && ghOur != null && gaOur != null && bet.exactHome === ghOur && bet.exactAway === gaOur;
-      const m = exOk ? 3 : 1;
       const userRef = db.collection('users').doc(bet.uid);
       const us = await tx.get(userRef);
       const userData = us.exists ? us.data() : {};
@@ -491,9 +490,14 @@ async function settle(our, ourResult, extraTime, penWinner, ghOur, gaOur) {
       const streakNow = (typeof userData.currentStreak === 'number') ? userData.currentStreak : 0;
       const SMULT = (s) => s >= 7 ? 2.0 : s >= 5 ? 1.75 : s >= 4 ? 1.5 : s >= 3 ? 1.35 : s >= 2 ? 1.2 : s >= 1 ? 1.1 : 1.0;
       const sm = w ? SMULT(streakNow) : 1.0;
-      const pay = w ? Math.round((bet.stake || 0) * (bet.odd || 0) * m * sm) : 0;
+      // Exacto: si la apuesta tiene exactBet separado → ×10 sobre exactBet; si no → ×3 sobre stake (retrocompat)
+      const hasExactBet = (bet.exactBet || 0) > 0;
+      const exMult = exOk && !hasExactBet ? 3 : 1;
+      const exactBetPay = exOk && hasExactBet ? Math.round((bet.exactBet || 0) * 10) : 0;
+      const pay = w ? Math.round((bet.stake || 0) * (bet.odd || 0) * exMult * sm) + exactBetPay : 0;
+      const totalStaked = (bet.stake || 0) + (bet.exactBet || 0);
       // Actualizar saldo y marcar la apuesta
-      tx.set(userRef, { prevSaldo: saldo, saldo: saldo + pay, staked: Math.max(0, staked0 - (bet.stake || 0)) }, { merge: true });
+      tx.set(userRef, { prevSaldo: saldo, saldo: saldo + pay, staked: Math.max(0, staked0 - totalStaked) }, { merge: true });
       tx.set(doc.ref, { status: w ? 'won' : 'lost', result: ourResult, payout: pay, exactCorrect: exOk, streakMult: sm, settledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     });
 
