@@ -47,11 +47,52 @@
     return list;
   }
 
+  // Calcula qué códigos de equipos están eliminados revisando resultados KO
+  function computeEliminatedCodes(allFx, odds) {
+    const eliminated = new Set();
+    const groupFx = allFx.filter(f => !f.stage || f.stage === 'Grupos');
+    const lastGroup = groupFx.length ? Math.max.apply(null, groupFx.map(f => new Date(f.kickoff).getTime())) : Infinity;
+    const r32Fx = allFx.filter(f => f.stage === 'r32');
+    const r32Codes = new Set(r32Fx.flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+    const groupsClosed = r32Codes.size > 0 && isFinite(lastGroup) && Date.now() >= lastGroup + 2 * 60 * 60 * 1000;
+    if (!groupsClosed) return eliminated;
+    // Equipos que no pasaron grupos
+    const allGroupCodes = new Set(groupFx.flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
+    allGroupCodes.forEach(c => { if (!r32Codes.has(c)) eliminated.add(c); });
+    // KO stages: ver quién perdió en cada partido terminado
+    ['r32', 'r16', 'qf', 'sf', 'final'].forEach(stage => {
+      allFx.filter(f => f.stage === stage).forEach(m => {
+        const od = odds && odds[m.id];
+        if (!od || !od.finished || od.gh == null || od.ga == null) return;
+        let loserCode;
+        if (od.penWinner) {
+          loserCode = od.penWinner === 'home' ? m.awayCode : m.homeCode;
+        } else {
+          loserCode = od.gh > od.ga ? m.awayCode : od.ga > od.gh ? m.homeCode : null;
+        }
+        if (loserCode) eliminated.add(loserCode);
+      });
+    });
+    return eliminated;
+  }
+
   // ── Picker full-screen ────────────────────────────────────
   function ChampionModal({ myCode, onClose, onPick, locked, dist, total }) {
+    const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
     const teams = useMemo(allTeams, []);
     const [q, setQ] = useState('');
     const [saving, setSaving] = useState(null); // code being saved
+
+    const allFxComb = useMemo(() => {
+      const st = (window.MB && window.MB.WC_FIXTURES) || [];
+      const dy = (store && store.dynFixtures) || [];
+      return [...st, ...dy.filter(d => !st.some(s => s.id === d.id))];
+    }, [store && store.dynFixtures]);
+
+    const eliminatedCodes = useMemo(
+      () => computeEliminatedCodes(allFxComb, (store && store.odds) || {}),
+      [allFxComb, store && store.odds]
+    );
 
     const filtered = q
       ? teams.filter((t) => t.name.toLowerCase().includes(q.toLowerCase()))
@@ -108,18 +149,19 @@
               <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '14px 0 6px' }}>Grupo {g}</div>
               {byGroup[g].map((t) => {
                 const isMine = t.code === myCode;
+                const isElim = eliminatedCodes.has(t.code);
                 const pct = total > 0 ? Math.round(((dist[t.code] || 0) / total) * 100) : 0;
                 const cnt = dist[t.code] || 0;
                 return (
-                  <button key={t.code} onClick={() => pick(t.name, t.code)} disabled={!!locked}
-                    className="mb-press"
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginBottom: 4, borderRadius: 'var(--r-md)', border: isMine ? '2px solid var(--gold)' : '1px solid var(--border)', background: isMine ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.035)', cursor: locked ? 'default' : 'pointer', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
-                    {/* progress bar de fondo */}
+                  <button key={t.code} onClick={() => !isElim && pick(t.name, t.code)} disabled={!!locked || isElim}
+                    className={isElim ? '' : 'mb-press'}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginBottom: 4, borderRadius: 'var(--r-md)', border: isMine ? '2px solid var(--gold)' : isElim ? '1px solid rgba(232,64,64,0.2)' : '1px solid var(--border)', background: isMine ? 'rgba(212,175,55,0.12)' : isElim ? 'rgba(232,64,64,0.04)' : 'rgba(255,255,255,0.035)', cursor: (locked || isElim) ? 'default' : 'pointer', textAlign: 'left', position: 'relative', overflow: 'hidden', opacity: isElim ? 0.45 : 1 }}>
                     {pct > 0 && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: pct + '%', background: isMine ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)', transition: 'width 0.6s var(--ease-out)', pointerEvents: 'none' }} />}
                     <img src={`https://flagcdn.com/h40/${t.code}.png`} alt={t.name}
-                      style={{ height: 26, width: 'auto', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.5)', flexShrink: 0 }} />
-                    <span style={{ flex: 1, fontWeight: 700, fontSize: 'var(--t-sm)', color: isMine ? 'var(--gold-light)' : 'var(--text)' }}>{t.name}</span>
-                    {cnt > 0 && <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>{cnt > 1 ? cnt + ' votos' : '1 voto'}</span>}
+                      style={{ height: 26, width: 'auto', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.5)', flexShrink: 0, filter: isElim ? 'grayscale(0.7)' : 'none' }} />
+                    <span style={{ flex: 1, fontWeight: 700, fontSize: 'var(--t-sm)', color: isMine ? 'var(--gold-light)' : isElim ? 'var(--muted-2)' : 'var(--text)' }}>{t.name}</span>
+                    {isElim && <span style={{ fontSize: 8, fontWeight: 800, color: 'rgba(232,64,64,0.7)', background: 'rgba(232,64,64,0.12)', padding: '2px 6px', borderRadius: 'var(--r-pill)' }}>ELIMINADO</span>}
+                    {cnt > 0 && !isElim && <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>{cnt > 1 ? cnt + ' votos' : '1 voto'}</span>}
                     {isMine && <span style={{ fontSize: 14 }}>✓</span>}
                     {saving === t.code && <span style={{ fontSize: 11, color: 'var(--gold)' }}>…</span>}
                   </button>
