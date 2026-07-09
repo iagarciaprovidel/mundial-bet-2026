@@ -48,7 +48,11 @@
       const derived = Object.entries(o || {})
         .filter(([, d]) => d._homeCode && d._awayCode && d._kickoff)
         .map(([id, d]) => ({ id, home: d._home || '', away: d._away || '', homeCode: d._homeCode, awayCode: d._awayCode, kickoff: d._kickoff, stage: d._stage || 'r16' }));
-      if (derived.length > 0) { store.dynFixtures = derived; window.MB_dynFixtures = derived; }
+      if (derived.length > 0) {
+        store.dynFixtures = derived; window.MB_dynFixtures = derived;
+        try { localStorage.setItem('mb_dynfx_cache', JSON.stringify(derived)); } catch (e) {}
+        window.dispatchEvent(new Event('mb-dynfx-updated'));
+      }
       emit();
     }));
     if (fb.subscribeMyBets) unsubs.push(fb.subscribeMyBets((list) => {
