@@ -221,22 +221,26 @@
         <React.Fragment>
           {open && <SemisModal myPick={myPick} onClose={() => setOpen(false)} onSave={handleSave} locked={locked} />}
           <div onClick={canEdit ? () => setOpen(true) : undefined} className={canEdit ? 'mb-press mb-card-hover' : ''}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderRadius: 'var(--r-lg)', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(74,144,226,0.45)', boxShadow: 'var(--sh-1)', cursor: canEdit ? 'pointer' : 'default', marginBottom: 12 }}>
+            style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderRadius: 'var(--r-lg)', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(155,109,255,0.5)', boxShadow: '0 0 0 1px rgba(155,109,255,0.12), var(--sh-1)', cursor: canEdit ? 'pointer' : 'default', marginBottom: 12, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+            {/* Badge NUEVO */}
+            {!myPick && !locked && (
+              <div style={{ position: 'absolute', top: -9, right: 12, background: 'linear-gradient(135deg,#9B6DFF,#7A4FE0)', color: '#fff', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 'var(--r-pill)', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(155,109,255,0.5)' }}>✨ Nuevo</div>
+            )}
             <span style={{ fontSize: 24 }}>{locked ? '🔒' : '🔮'}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: locked ? 'var(--muted)' : 'var(--text)' }}>
+              <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: locked ? 'var(--muted)' : '#C4A0FF' }}>
                 {locked ? 'Pronóstico de semifinalistas cerrado' : myPick ? 'Tu pronóstico de semifinalistas' : '¿Quiénes llegan a semifinales?'}
               </div>
               {myPick ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
                   {myPick.map((c) => <img key={c} src={`https://flagcdn.com/h40/${c}.png`} alt={c} style={{ height: 20, width: 'auto', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.5)' }} />)}
-                  {canEdit && <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--info)', fontWeight: 700, marginLeft: 4 }}>· Cambiar</span>}
+                  {canEdit && <span style={{ fontSize: 'var(--t-2xs)', color: '#9B6DFF', fontWeight: 700, marginLeft: 4 }}>· Cambiar</span>}
                 </div>
               ) : (
-                <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2 }}>Elige 4 de los 8 clasificados · +{fmt(PTS_PER * 4)} pts máximo</div>
+                <div style={{ fontSize: 'var(--t-2xs)', color: 'rgba(155,109,255,0.7)', marginTop: 2 }}>Elige 4 de los 8 clasificados · +{fmt(PTS_PER * 4)} pts máximo</div>
               )}
             </div>
-            {canEdit && !myPick && <span style={{ fontSize: 16, color: 'var(--info)' }}>→</span>}
+            {canEdit && !myPick && <span style={{ fontSize: 16, color: '#9B6DFF' }}>→</span>}
           </div>
         </React.Fragment>
       );
