@@ -64,6 +64,13 @@
     const [picks, setPicks] = useState({});
     const [saving, setSaving] = useState(null);
 
+    // Los hooks deben llamarse siempre en el mismo orden (Rules of Hooks): el
+    // return temprano va DESPUÉS de todos los hooks, nunca antes de un useEffect.
+    useEffect(() => {
+      if (!user || !match || !FB().getChallengePicks) return;
+      FB().getChallengePicks(match.id).then((p) => { if (p) setPicks(p); }).catch(() => {});
+    }, [user && user.uid, match && match.id]);
+
     if (!user || !match) return null;
 
     const isKO = match.stage && KO_STAGES.has(match.stage);
@@ -81,12 +88,6 @@
 
     const ptsKO = PTS[match.stage] || 1500;
     const ptsExtra = isKO ? Math.round(ptsKO * 0.5) : PTS_EXTRA;
-
-    // Cargar mis picks desde Firestore
-    useEffect(() => {
-      if (!user || !FB().getChallengePicks) return;
-      FB().getChallengePicks(match.id).then((p) => { if (p) setPicks(p); }).catch(() => {});
-    }, [user && user.uid, match.id]);
 
     const savePick = async (qkey, value) => {
       if (saving || started) return;
