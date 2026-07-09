@@ -459,9 +459,10 @@
     },
     // Apuesta al ganador. pick: 'home' | 'draw' | 'away'. stake en puntos (mín 1.000).
     // exactHome/exactAway opcionales: si se aciertan ×3. Si ya había apuesta abierta, la reemplaza.
-    async placeBet(match, pick, stake, exactHome, exactAway) {
+    async placeBet(match, pick, stake, exactHome, exactAway, exactBet) {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       stake = Math.floor(Number(stake) || 0);
+      exactBet = Math.max(0, Math.floor(Number(exactBet) || 0));
       if (['home', 'draw', 'away'].indexOf(pick) === -1) return Promise.reject('pick-invalido');
       if (stake < 1000) return Promise.reject('min-1000');
       // Margen de 5 min tras el kickoff para cambiar/cancelar (igual que la UI, mb-bet.jsx).
@@ -470,21 +471,24 @@
       const odds = oddsSnap.exists ? oddsSnap.data() : null;
       if (!odds || !odds[pick]) return Promise.reject('sin-cuota');
       const odd = Number(odds[pick]);
+      const hasExact = exactHome != null && exactAway != null && !isNaN(exactHome) && !isNaN(exactAway);
+      const totalCharge = stake + (hasExact && exactBet > 0 ? exactBet : 0);
       const userRef = db.collection('users').doc(u.uid);
       const betRef = db.collection('bets').doc(u.uid + '_' + match.id + '_' + Date.now());
       return db.runTransaction(async function (tx) {
         const us = await tx.get(userRef);
         const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
         const staked0 = (us.exists && typeof us.data().staked === 'number') ? us.data().staked : 0;
-        if (saldo < stake) throw 'saldo-insuficiente';
-        tx.set(userRef, { saldo: saldo - stake, staked: staked0 + stake }, { merge: true });
+        if (saldo < totalCharge) throw 'saldo-insuficiente';
+        tx.set(userRef, { saldo: saldo - totalCharge, staked: staked0 + totalCharge }, { merge: true });
         const betData = {
           uid: u.uid, nombre: u.displayName || 'Jugador', matchId: match.id, md: match.md || null, pick: pick, stake: stake, odd: odd,
           home: match.home, away: match.away, status: 'open', creado: FV.serverTimestamp(),
         };
-        if (exactHome != null && exactAway != null && !isNaN(exactHome) && !isNaN(exactAway)) {
+        if (hasExact) {
           betData.exactHome = Number(exactHome);
           betData.exactAway = Number(exactAway);
+          if (exactBet > 0) betData.exactBet = exactBet;
         }
         tx.set(betRef, betData);
       });
