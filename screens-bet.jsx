@@ -574,42 +574,58 @@ function Partidos() {
           </div>
           {tab !== 'KO' ? (
             (() => {
-              const bettable = fx.filter((m) => m.md === mdMap[tab] && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now && !isDoneS(m));
-              return bettable.length === 0 ? (
-                <div style={{ padding: '28px 16px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                  <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800, marginBottom: 4 }}>Jornada {mdMap[tab]} completada</div>
-                  <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', lineHeight: 1.5 }}>Todos los partidos de esta jornada ya se jugaron.<br />Revisa <strong>Hoy</strong> para ver los resultados o cambia de jornada para apostar.</div>
-                </div>
-              ) : (
+              const md = mdMap[tab];
+              const bettable = fx.filter((m) => m.md === md && !isLiveS(m) && !isDoneS(m) && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now).sort(byKickoffAsc);
+              const live = fx.filter((m) => m.md === md && isLiveS(m)).sort(byKickoffAsc);
+              const played = fx.filter((m) => m.md === md && isDoneS(m)).sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));
+              return (
                 <>
-                  <SectionHead title={`Fase de grupos · Jornada ${mdMap[tab]}`} />
+                  {live.length > 0 && <SectionHead title="🔴 En vivo" />}
+                  {live.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  {bettable.length > 0 && <SectionHead title={`Fase de grupos · Jornada ${md} · apostar`} />}
                   {bettable.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  {played.length > 0 && <SectionHead title="✓ Jugados" />}
+                  {played.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                  {live.length === 0 && bettable.length === 0 && played.length === 0 && (
+                    <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
+                      <div style={{ fontSize: 'var(--t-sm)', color: 'var(--text)', fontWeight: 800 }}>Sin partidos en esta jornada</div>
+                    </div>
+                  )}
                 </>
               );
             })()
           ) : (
             <>
-              {/* Partidos de eliminatorias ya conocidos (tienen equipos definidos) */}
+              {/* Partidos de eliminatorias */}
               {(() => {
                 const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
                 const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', final: 'Final' };
-                const koFx = fx.filter((m) => m.stage && m.stage !== 'Grupos' && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now && !isDoneS(m)).sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime());
-                const byStage = {};
-                koFx.forEach((m) => { (byStage[m.stage] = byStage[m.stage] || []).push(m); });
-                const hasKoFx = koFx.length > 0;
+                const isKoFx = (m) => m.stage && m.stage !== 'Grupos';
+                const koLive     = fx.filter((m) => isKoFx(m) && isLiveS(m)).sort(byKickoffAsc);
+                const koUpcoming = fx.filter((m) => isKoFx(m) && !isLiveS(m) && !isDoneS(m) && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now).sort(byKickoffAsc);
+                const koPlayed   = fx.filter((m) => isKoFx(m) && isDoneS(m)).sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));
+                const byStageUp = {}, byStageLive = {};
+                koUpcoming.forEach((m) => { (byStageUp[m.stage] = byStageUp[m.stage] || []).push(m); });
+                koLive.forEach((m) => { (byStageLive[m.stage] = byStageLive[m.stage] || []).push(m); });
+                const byStageAll = {};
+                [...koLive, ...koUpcoming].forEach((m) => { (byStageAll[m.stage] = byStageAll[m.stage] || []).push(m); });
                 return (
                   <>
-                    {hasKoFx && stageOrder.filter((s) => byStage[s]).map((s) => (
+                    {/* En vivo primero */}
+                    {koLive.length > 0 && <SectionHead title="🔴 En vivo" />}
+                    {koLive.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                    {/* Próximos por ronda */}
+                    {stageOrder.filter((s) => byStageUp[s]).map((s) => (
                       <React.Fragment key={s}>
                         <SectionHead title={stageLabel[s] || s} />
-                        {byStage[s].map((m) => <MobileFixtureCard key={m.id} m={m} />)}
+                        {byStageUp[s].map((m) => <MobileFixtureCard key={m.id} m={m} />)}
                       </React.Fragment>
                     ))}
                     {/* Rondas aún sin equipos definidos */}
                     {ko.filter((k) => {
                       const key = k.stage === 'Dieciseisavos (R32)' ? 'r32' : k.stage === 'Octavos de final' ? 'r16' : k.stage === 'Cuartos de final' ? 'qf' : k.stage === 'Semifinales' ? 'sf' : k.stage === 'FINAL' ? 'final' : null;
-                      return !key || !byStage[key];
+                      return !key || !byStageAll[key];
                     }).map((k, i) => (
                       <Card key={i} style={{ marginBottom: 10, padding: '12px 14px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -619,6 +635,9 @@ function Partidos() {
                         <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{k.partidos} {k.partidos === 1 ? 'partido' : 'partidos'} · {k.sedes}</div>
                       </Card>
                     ))}
+                    {/* Jugados — más reciente primero */}
+                    {koPlayed.length > 0 && <SectionHead title="✓ Jugados" />}
+                    {koPlayed.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
                   </>
                 );
               })()}
