@@ -15,15 +15,23 @@
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
   const PTS_PER = 500;
 
-  // Los 8 equipos de QF: se derivan de los fixtures con stage === 'qf'
-  function getQFTeams() {
+  // Cruces de QF: retorna array de { home:{name,code}, away:{name,code} }
+  function getQFMatchups() {
     const staticFX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
     const FX = [...staticFX, ...(window.MB_dynFixtures || []).filter(d => !staticFX.some(s => s.id === d.id))];
-    const qf = FX.filter((f) => f.stage === 'qf');
+    return FX
+      .filter((f) => f.stage === 'qf' && f.homeCode && f.awayCode)
+      .sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1))
+      .map((f) => ({ home: { name: f.home, code: f.homeCode }, away: { name: f.away, code: f.awayCode } }));
+  }
+
+  // Lista plana de equipos (para el banner compact)
+  function getQFTeams() {
+    const matchups = getQFMatchups();
     const seen = new Set(), teams = [];
-    qf.forEach((f) => {
-      if (f.homeCode && !seen.has(f.homeCode)) { seen.add(f.homeCode); teams.push({ name: f.home, code: f.homeCode }); }
-      if (f.awayCode && !seen.has(f.awayCode)) { seen.add(f.awayCode); teams.push({ name: f.away, code: f.awayCode }); }
+    matchups.forEach((m) => {
+      if (!seen.has(m.home.code)) { seen.add(m.home.code); teams.push(m.home); }
+      if (!seen.has(m.away.code)) { seen.add(m.away.code); teams.push(m.away); }
     });
     return teams;
   }
@@ -40,14 +48,23 @@
     const [sel, setSel] = useState(myPick ? [...myPick] : []);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState('');
-    const teams = useMemo(getQFTeams, []);
-    const noData = teams.length === 0;
+    const matchups = useMemo(getQFMatchups, []);
+    const noData = matchups.length === 0;
+
+    // Mapa rival: código → código del rival en el mismo cruce QF
+    const rivalMap = useMemo(() => {
+      const m = {};
+      matchups.forEach((mu) => { m[mu.home.code] = mu.away.code; m[mu.away.code] = mu.home.code; });
+      return m;
+    }, [matchups]);
 
     const toggle = (code) => {
       if (locked) return;
       setSel((prev) => {
-        if (prev.includes(code)) return prev.filter((c) => c !== code);
-        if (prev.length >= 4) { setErr('Solo puedes elegir 4 equipos'); return prev; }
+        if (prev.includes(code)) { setErr(''); return prev.filter((c) => c !== code); }
+        const rival = rivalMap[code];
+        if (rival && prev.includes(rival)) { setErr('No puedes elegir ambos equipos del mismo cruce'); return prev; }
+        if (prev.length >= 4) { setErr('Solo puedes elegir 4 equipos (uno por cruce)'); return prev; }
         setErr('');
         return [...prev, code];
       });
@@ -92,7 +109,7 @@
           </div>
         )}
 
-        {/* Lista equipos */}
+        {/* Lista equipos agrupados por cruce QF */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
           {noData ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted)' }}>
@@ -100,21 +117,39 @@
               <div style={{ fontWeight: 700 }}>Los equipos de cuartos se confirmarán al terminar los octavos de final.</div>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {teams.map((t) => {
-                const picked = sel.includes(t.code);
-                const myPrev = myPick && myPick.includes(t.code);
-                return (
-                  <button key={t.code} onClick={() => toggle(t.code)} disabled={!!locked}
-                    className="mb-press"
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 10px', borderRadius: 'var(--r-lg)', border: picked ? '2px solid #9B6DFF' : '1px solid var(--border)', background: picked ? 'rgba(155,109,255,0.15)' : 'rgba(255,255,255,0.035)', cursor: locked ? 'default' : 'pointer', position: 'relative' }}>
-                    {picked && <div style={{ position: 'absolute', top: 7, right: 7, width: 18, height: 18, borderRadius: '50%', background: '#9B6DFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>✓</div>}
-                    <img src={`https://flagcdn.com/h40/${t.code}.png`} alt={t.name}
-                      style={{ height: 32, width: 'auto', borderRadius: 4, boxShadow: '0 2px 6px rgba(0,0,0,0.5)', filter: (locked && !picked) ? 'grayscale(0.6) opacity(0.6)' : 'none' }} />
-                    <span style={{ fontWeight: 700, fontSize: 'var(--t-xs)', color: picked ? '#C4A0FF' : 'var(--text)', textAlign: 'center', lineHeight: 1.2 }}>{t.name}</span>
-                  </button>
-                );
-              })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {matchups.map((mu, mi) => (
+                <div key={mu.home.code + mu.away.code}>
+                  <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Cruce {mi + 1}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 6, alignItems: 'center' }}>
+                    {(() => {
+                      const TeamBtn = ({ t }) => {
+                        const picked = sel.includes(t.code);
+                        const rival = rivalMap[t.code];
+                        const rivalPicked = rival && sel.includes(rival);
+                        const disabled = locked || rivalPicked;
+                        return (
+                          <button onClick={() => toggle(t.code)} disabled={disabled}
+                            className={disabled ? '' : 'mb-press'}
+                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '12px 8px', borderRadius: 'var(--r-lg)', border: picked ? '2px solid #9B6DFF' : rivalPicked ? '1px solid rgba(255,255,255,0.06)' : '1px solid var(--border)', background: picked ? 'rgba(155,109,255,0.15)' : rivalPicked ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.035)', cursor: disabled ? 'default' : 'pointer', position: 'relative', opacity: rivalPicked ? 0.35 : 1, width: '100%' }}>
+                            {picked && <div style={{ position: 'absolute', top: 6, right: 6, width: 16, height: 16, borderRadius: '50%', background: '#9B6DFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>✓</div>}
+                            <img src={`https://flagcdn.com/h40/${t.code}.png`} alt={t.name}
+                              style={{ height: 30, width: 'auto', borderRadius: 3, boxShadow: '0 2px 5px rgba(0,0,0,0.5)', filter: rivalPicked ? 'grayscale(0.8)' : (locked && !picked) ? 'grayscale(0.6) opacity(0.6)' : 'none' }} />
+                            <span style={{ fontWeight: 700, fontSize: 'var(--t-2xs)', color: picked ? '#C4A0FF' : rivalPicked ? 'var(--muted-2)' : 'var(--text)', textAlign: 'center', lineHeight: 1.2 }}>{t.name}</span>
+                          </button>
+                        );
+                      };
+                      return (
+                        <React.Fragment>
+                          <TeamBtn t={mu.home} />
+                          <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 800, color: 'var(--muted-2)', padding: '0 2px' }}>vs</div>
+                          <TeamBtn t={mu.away} />
+                        </React.Fragment>
+                      );
+                    })()}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
           {err && <div style={{ textAlign: 'center', color: 'var(--danger)', fontSize: 'var(--t-xs)', fontWeight: 700, padding: '10px 0' }}>{err}</div>}
