@@ -895,6 +895,25 @@ async function paySemiBonus(winnerCodes) {
 // determina el/los máximo(s) goleador(es) y paga ×20 el monto apostado a quienes
 // eligieron a alguno de ellos. El pick vive en users/{uid}.scorerBet (mismo patrón
 // que semiPick: un solo doc, sin colección aparte ni reglas nuevas).
+// ESPN entrega el nombre del goleador (odds.scorers[].name) y a veces no
+// coincide letra por letra con el de la plantilla (players.js) que el
+// usuario eligió al apostar - p. ej. ESPN "Messi" vs plantilla "Lionel
+// Messi". Match tolerante (igual una copia en mb-scorer.jsx para el cliente).
+function normPlayerName(s) {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+function playerLastToken(s) {
+  const parts = normPlayerName(s).split(/\s+/).filter(Boolean);
+  return parts[parts.length - 1] || '';
+}
+function playerNamesMatch(a, b) {
+  const na = normPlayerName(a), nb = normPlayerName(b);
+  if (!na || !nb) return false;
+  if (na === nb || na.includes(nb) || nb.includes(na)) return true;
+  const la = playerLastToken(a), lb = playerLastToken(b);
+  return la.length > 2 && la === lb;
+}
+
 async function settleScorerBets() {
   const metaKey = 'scorer_bets_paid';
   const meta = await db.collection('meta').doc('bonuses').get();
@@ -911,20 +930,20 @@ async function settleScorerBets() {
   const tally = {};
   oddsSnap.docs.forEach((d) => {
     (d.data().scorers || []).forEach((s) => {
-      if (!s || !s.name) return;
+      if (!s || !s.name || s.og) return; // los autogoles no cuentan para el goleador
       tally[s.name] = (tally[s.name] || 0) + 1;
     });
   });
   const maxGoals = Object.values(tally).reduce((a, b) => Math.max(a, b), 0);
   if (!maxGoals) { console.log('  Goleador: sin goles registrados, no se liquida.'); return 0; }
-  const topScorers = new Set(Object.keys(tally).filter((n) => tally[n] === maxGoals));
+  const topScorers = Object.keys(tally).filter((n) => tally[n] === maxGoals);
 
   const usersSnap = await db.collection('users').where('scorerBet.status', '==', 'open').get();
   let paid = 0;
   for (const doc of usersSnap.docs) {
     const bet = doc.data().scorerBet;
     if (!bet) continue;
-    const won = topScorers.has(bet.player);
+    const won = topScorers.some((n) => playerNamesMatch(bet.player, n));
     const winAmount = won ? (bet.stake || 0) * MULT : 0;
     await db.runTransaction(async (tx) => {
       const uRef = db.collection('users').doc(doc.id);

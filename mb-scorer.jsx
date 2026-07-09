@@ -43,21 +43,55 @@
     return (P[teamName] || []).filter((p) => p.pos !== 'POR');
   }
 
-  // Lista plana de jugadores elegibles: {name, pos, t, team, teamCode} — sin
-  // agrupar por país primero, la selección se muestra al lado de cada jugador.
-  function allEligiblePlayers(teams) {
+  // El agente guarda los goleadores con el nombre tal cual lo entrega ESPN
+  // (odds/{id}.scorers[].name), que no siempre coincide letra por letra con
+  // el nombre de la plantilla (players.js) — p. ej. ESPN devuelve "Messi" y
+  // acá está "Lionel Messi". Match tolerante: igual, uno contiene al otro, o
+  // mismo último apellido (sin tildes). Se usa igual en agent/index.js.
+  function normName(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+  function lastToken(s) {
+    const parts = normName(s).split(/\s+/).filter(Boolean);
+    return parts[parts.length - 1] || '';
+  }
+  function namesMatch(a, b) {
+    const na = normName(a), nb = normName(b);
+    if (!na || !nb) return false;
+    if (na === nb || na.includes(nb) || nb.includes(na)) return true;
+    const la = lastToken(a), lb = lastToken(b);
+    return la.length > 2 && la === lb;
+  }
+  window.MB_scorerNamesMatch = namesMatch;
+
+  // Goles reales del torneo para un jugador de la plantilla, sumando todos
+  // los partidos ya jugados (odds/{id}.scorers, escrito por el agente).
+  function goalsFor(playerName, odds) {
+    let n = 0;
+    Object.values(odds || {}).forEach((o) => {
+      (o.scorers || []).forEach((s) => { if (s && s.name && !s.og && namesMatch(playerName, s.name)) n++; });
+    });
+    return n;
+  }
+
+  // Lista plana de jugadores elegibles: {name, pos, t, team, teamCode, goals} —
+  // sin agrupar por país primero, la selección se muestra al lado del nombre.
+  // Ordenados por goles reales del torneo (los que van liderando, primero).
+  function allEligiblePlayers(teams, odds) {
     const out = [];
     teams.forEach((t) => {
-      playersOf(t.name).forEach((p) => out.push({ name: p.name, pos: p.pos, t: p.t, team: t.name, teamCode: t.code }));
+      playersOf(t.name).forEach((p) => out.push({ name: p.name, pos: p.pos, t: p.t, team: t.name, teamCode: t.code, goals: goalsFor(p.name, odds) }));
     });
-    // Titulares primero, luego alfabético — más fácil de escanear que por equipo.
-    return out.sort((a, b) => (b.t - a.t) || a.name.localeCompare(b.name));
+    return out.sort((a, b) => (b.goals - a.goals) || (b.t - a.t) || a.name.localeCompare(b.name));
   }
 
   // ── Modal: elegir jugador (lista única, filtrable) + monto ──
   function ScorerModal({ myBet, saldo, onClose, onSave, locked }) {
     const teams = useMemo(getQFTeams, []);
-    const players = useMemo(() => allEligiblePlayers(teams), [teams]);
+    const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+    const odds = (store && store.odds) || {};
+    const players = useMemo(() => allEligiblePlayers(teams, odds), [teams, odds]);
+    const topGoals = players.length ? players[0].goals : 0;
     const [q, setQ] = useState('');
     const [picked, setPicked] = useState(myBet ? { name: myBet.player, teamCode: myBet.teamCode, team: myBet.team } : null);
     const [stake, setStake] = useState(myBet ? myBet.stake : MIN_STAKE);
@@ -111,11 +145,15 @@
                 <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar jugador o selección…"
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: 'var(--text)', fontSize: 'var(--t-sm)', marginBottom: 12, boxSizing: 'border-box' }} />
               )}
-              <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>1. Jugador</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 7 }}>
+                <span style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>1. Jugador</span>
+                <span style={{ fontSize: 8.5, color: 'var(--muted-2)' }}>Ordenados por goles hechos en el torneo</span>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, maxHeight: locked ? 'none' : 340, overflowY: locked ? 'visible' : 'auto' }}>
                 {filtered.length === 0 && <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--t-xs)', padding: '16px 0' }}>Sin resultados para "{q}"</div>}
                 {filtered.map((p) => {
                   const active = picked && picked.name === p.name;
+                  const isLeader = p.goals > 0 && p.goals === topGoals;
                   return (
                     <button key={p.teamCode + p.name} disabled={locked} onClick={() => { if (!locked) { setPicked(p); setErr(''); } }}
                       className={locked ? '' : 'mb-press'}
@@ -123,10 +161,16 @@
                       <img src={`https://flagcdn.com/h40/${p.teamCode}.png`} alt={p.team} style={{ height: 16, width: 'auto', borderRadius: 2, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
                       <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 800, width: 22, flexShrink: 0 }}>{p.pos}</span>
                       <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: 'block', fontSize: 'var(--t-xs)', fontWeight: 700, color: active ? '#FFC08A' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ fontSize: 'var(--t-xs)', fontWeight: 700, color: active ? '#FFC08A' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                          {isLeader && <span title="Líder de goleo" style={{ fontSize: 9 }}>🔥</span>}
+                        </span>
                         <span style={{ display: 'block', fontSize: 8.5, color: 'var(--muted-2)' }}>{p.team}</span>
                       </span>
-                      {p.t && <span style={{ fontSize: 8, color: 'var(--gold-light)', fontWeight: 800, flexShrink: 0 }}>TITULAR</span>}
+                      {p.goals > 0 && (
+                        <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: isLeader ? '#FFC08A' : 'var(--gold-light)', flexShrink: 0, whiteSpace: 'nowrap' }}>⚽ {p.goals}</span>
+                      )}
+                      {p.goals === 0 && p.t && <span style={{ fontSize: 8, color: 'var(--gold-light)', fontWeight: 800, flexShrink: 0 }}>TITULAR</span>}
                     </button>
                   );
                 })}
