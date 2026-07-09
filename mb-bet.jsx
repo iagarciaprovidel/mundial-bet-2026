@@ -52,7 +52,13 @@
       emit();
     }));
     if (fb.subscribeMyBets) unsubs.push(fb.subscribeMyBets((list) => {
-      const map = {}; (list || []).forEach((b) => { map[b.matchId] = b; }); store.bets = map; emit();
+      const map = {}, all = {};
+      (list || []).forEach((b) => {
+        if (!map[b.matchId]) map[b.matchId] = b;
+        if (!all[b.matchId]) all[b.matchId] = [];
+        all[b.matchId].push(b);
+      });
+      store.bets = map; store.allBets = all; emit();
     }));
     if (fb.subscribeMyParlays) unsubs.push(fb.subscribeMyParlays((list) => { store.parlays = list || []; emit(); }));
     if (fb.subscribeMe) unsubs.push(fb.subscribeMe((u) => {
@@ -67,7 +73,7 @@
     const fb = FB();
     // Reconecta en CADA cambio de sesión (login / logout / restauración al cargar).
     // Así las cuotas se cargan cuando Firebase ya restauró la sesión, no antes.
-    if (fb.onAuth) { fb.onAuth(function () { store.bets = {}; store.parlays = []; store.saldo = null; store.watch = []; emit(); resubscribe(); }); }
+    if (fb.onAuth) { fb.onAuth(function () { store.bets = {}; store.allBets = {}; store.parlays = []; store.saldo = null; store.watch = []; emit(); resubscribe(); }); }
     else { resubscribe(); }
   }
   // Si cambia el apodo, refrescamos también.
@@ -190,7 +196,8 @@
     const s = useBetStore();
     const user = window.MB_useAuth ? window.MB_useAuth() : (FB().currentUser && FB().currentUser());
     const odds = s.odds[m.id] || null;
-    const bet = s.bets[m.id] || null;
+    const myBets = (s.allBets && s.allBets[m.id]) || (s.bets[m.id] ? [s.bets[m.id]] : []);
+    const bet = myBets.find(b => b && b.status === 'open') || myBets[0] || null;
     const saldo = s.saldo;
     const closed = new Date(m.kickoff).getTime() + BET_GRACE_MS <= Date.now();
 
@@ -317,34 +324,25 @@
         })
         .then(() => setBusy(false));
     };
-    const cancel = () => {
+    const cancel = (betId) => {
       setErr(''); setOk(''); setBusy(true);
-      FB().cancelBet(m.id).catch(() => {}).then(() => setBusy(false));
+      FB().cancelBet(betId).catch(() => {}).then(() => setBusy(false));
     };
 
-    // Apuesta abierta existente
-    if (bet && !sel) {
-      return (
-        <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 'var(--r-md)', border: '1px solid rgba(74,144,226,0.4)', background: 'rgba(74,144,226,0.10)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <div style={{ fontSize: 'var(--t-2xs)', fontWeight: 700, color: 'var(--text)' }}>
-              Tu apuesta: <span style={{ color: 'var(--info)' }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}{exactLabel(bet)}
-            </div>
-            <span className="num" style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800 }}>↑ {fmt(Math.round(bet.stake * bet.odd))}</span>
-          </div>
-          {!closed && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              <button onClick={() => { setSel(bet.pick); setStake(bet.stake); }} disabled={busy} className="mb-press" style={miniBtn('rgba(74,144,226,0.5)', 'var(--info)')}>Cambiar</button>
-              <button onClick={cancel} disabled={busy} className="mb-press" style={miniBtn('var(--border-2)', 'var(--muted)')}>Cancelar</button>
-            </div>
-          )}
-          {closed && <div style={{ marginTop: 6, fontSize: 9, color: 'var(--muted-2)' }}>Cerrada · esperando resultado</div>}
-        </div>
-      );
-    }
+    const openBets_m = myBets.filter(b => b && b.status === 'open');
 
     if (closed) {
-      return <div style={{ marginTop: 10, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center' }}>🔒 Apuestas cerradas</div>;
+      if (openBets_m.length === 0) return <div style={{ marginTop: 10, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center' }}>🔒 Apuestas cerradas</div>;
+      return (
+        <div style={{ marginTop: 10 }}>
+          {openBets_m.map((b) => (
+            <div key={b.id || b.pick} style={{ padding: '8px 11px', borderRadius: 'var(--r-md)', border: '1px solid rgba(74,144,226,0.4)', background: 'rgba(74,144,226,0.10)', marginBottom: 4, fontSize: 'var(--t-2xs)', fontWeight: 700, color: 'var(--text)' }}>
+              Tu apuesta: <span style={{ color: 'var(--info)' }}>{PICK_LABEL(m, b.pick)}</span> · {fmt(b.stake)} @ {Number(b.odd).toFixed(2)}{exactLabel(b)}
+              <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 3 }}>Cerrada · esperando resultado</div>
+            </div>
+          ))}
+        </div>
+      );
     }
     if (!odds || (!odds.home && !odds.draw && !odds.away)) {
       return <div style={{ marginTop: 10, fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center', fontStyle: 'italic' }}>💱 Cuotas próximamente…</div>;
@@ -357,7 +355,7 @@
     ];
     const selOdd = sel ? Number((picks.find((p) => p.k === sel) || {}).odd || 0) : 0;
     const win = selOdd ? Math.round(stake * selOdd) : 0;
-    const maxSaldo = (typeof saldo === 'number' ? saldo : SALDO_INICIAL) + ((bet && bet.status === 'open') ? (bet.stake || 0) : 0);
+    const maxSaldo = (typeof saldo === 'number' ? saldo : SALDO_INICIAL);
     const exactHNum = exactH !== '' ? parseInt(exactH, 10) : null;
     const exactANum = exactA !== '' ? parseInt(exactA, 10) : null;
     const hasExactInput = exactHNum != null && exactANum != null && !isNaN(exactHNum) && !isNaN(exactANum);
@@ -365,6 +363,20 @@
 
     return (
       <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+        {openBets_m.length > 0 && (
+          <div style={{ marginBottom: 8 }}>
+            {openBets_m.map((b) => (
+              <div key={b.id || b.pick} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 9px', borderRadius: 'var(--r-md)', border: '1px solid rgba(74,144,226,0.4)', background: 'rgba(74,144,226,0.08)', marginBottom: 4 }}>
+                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--info)' }}>{PICK_LABEL(m, b.pick)}</span> · {fmt(b.stake)} @ {Number(b.odd).toFixed(2)}{exactLabel(b)}
+                  <span style={{ color: 'var(--success)', marginLeft: 6 }}>↑ {fmt(Math.round(b.stake * b.odd))}</span>
+                </span>
+                <button onClick={() => cancel(b.id || (b.uid + '_' + m.id))} disabled={busy} className="mb-press" style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>✕</button>
+              </div>
+            ))}
+            <div style={{ fontSize: 8.5, color: 'var(--muted-2)', marginBottom: 6, textAlign: 'center', fontStyle: 'italic' }}>+ Agregar otra apuesta al mismo partido</div>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
           <span style={{ fontSize: 9, color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Apuesta al ganador</span>
           {typeof saldo === 'number' && <span className="num" style={{ fontSize: 9, color: 'var(--muted)' }}>Saldo: <span style={{ color: 'var(--gold-light)' }}>{fmt(saldo)}</span></span>}
@@ -498,7 +510,7 @@
               border: 'none', color: '#1a1206',
               background: (busy || stake < MIN_BET || stake > maxSaldo || exactBad) ? 'var(--surface-2)' : 'linear-gradient(180deg, var(--gold-light), var(--gold))',
               opacity: (busy || stake < MIN_BET || stake > maxSaldo || exactBad) ? 0.55 : 1,
-            }}>{busy ? 'Registrando…' : (bet ? 'Cambiar apuesta' : 'Apostar') + ' · ' + PICK_LABEL(m, sel)}</button>
+            }}>{busy ? 'Registrando…' : 'Apostar · ' + PICK_LABEL(m, sel)}</button>
           </div>
         )}
 
@@ -668,13 +680,14 @@
                 </div>
               ) : null}
               {(() => {
-                const bet = s.bets[m.id];
-                if (!bet || bet.status !== 'open') return null;
-                return (
-                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(220,80,80,0.20)', fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>
+                const allM = (s.allBets && s.allBets[m.id]) || (s.bets[m.id] ? [s.bets[m.id]] : []);
+                const openM = allM.filter(b => b && b.status === 'open');
+                if (!openM.length) return null;
+                return openM.map((bet, i) => (
+                  <div key={bet.id || i} style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(220,80,80,0.20)', fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>
                     Tu apuesta: <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, bet.pick)}</span> · {fmt(bet.stake)} @ {Number(bet.odd).toFixed(2)}
                   </div>
-                );
+                ));
               })()}
             </div>
           ))}
@@ -1208,7 +1221,7 @@
       return () => { if (typeof un === 'function') un(); };
     }, [authUser]);
     const me = meRaw;
-    const bets = store.bets ? Object.values(store.bets) : [];
+    const bets = store.allBets ? Object.values(store.allBets).flat() : (store.bets ? Object.values(store.bets) : []);
     const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
     const wonN = settled.filter(b => b.status === 'won').length;
     const acc = settled.length ? Math.round(wonN * 100 / settled.length) : 0;
