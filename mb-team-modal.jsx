@@ -82,12 +82,40 @@
     const squad = (window.MB.PLAYERS && window.MB.PLAYERS[team.name]) || [];
     const titulares = squad.filter(p => p.t);
     const suplentes = squad.filter(p => !p.t);
-    const r32CodesM = new Set(allFxCombined.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
     const groupFxM = allFxM.filter(f => !f.stage || f.stage === 'Grupos');
     const lastKOM = groupFxM.length ? Math.max.apply(null, groupFxM.map(f => new Date(f.kickoff).getTime())) : Infinity;
+    const r32CodesM = new Set(allFxCombined.filter(f => f.stage === 'r32').flatMap(f => [f.homeCode, f.awayCode]).filter(Boolean));
     const groupsClosedM = r32CodesM.size > 0 && isFinite(lastKOM) && Date.now() >= lastKOM + 2 * 60 * 60 * 1000;
-    const isQualified = groupsClosedM && r32CodesM.has(code);
-    const isEliminated = groupsClosedM && !r32CodesM.has(code);
+    // Rastrear en qué fase KO fue eliminado el equipo
+    const KO_STAGES = ['r32', 'r16', 'qf', 'sf', 'final'];
+    const STAGE_NAME = { r32: 'Ronda de 32', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinal', final: 'Final' };
+    const odds = (store && store.odds) || {};
+    let koStatus = null; // null | { alive: true, inStage } | { alive: false, atStage }
+    if (groupsClosedM) {
+      if (!r32CodesM.has(code)) {
+        koStatus = { alive: false, atStage: 'Grupos' };
+      } else {
+        for (var _si = 0; _si < KO_STAGES.length; _si++) {
+          var _stage = KO_STAGES[_si];
+          var _stageFx = allFxCombined.filter(function(f) { return f.stage === _stage && (f.homeCode === code || f.awayCode === code); });
+          if (_stageFx.length === 0) { koStatus = { alive: true, inStage: KO_STAGES[_si - 1] || 'r32' }; break; }
+          var _m = _stageFx[0];
+          var _od = odds[_m.id];
+          if (!_od || !_od.finished) { koStatus = { alive: true, inStage: _stage }; break; }
+          var _isHome = _m.homeCode === code;
+          var _won;
+          if (_od.penWinner) { _won = (_isHome && _od.penWinner === 'home') || (!_isHome && _od.penWinner === 'away'); }
+          else { _won = _isHome ? _od.gh > _od.ga : _od.ga > _od.gh; }
+          if (!_won) { koStatus = { alive: false, atStage: _stage }; break; }
+          if (_si === KO_STAGES.length - 1) koStatus = { alive: true, inStage: 'champion' };
+        }
+        if (!koStatus) koStatus = { alive: true, inStage: 'r32' };
+      }
+    }
+    const isEliminated = koStatus && !koStatus.alive;
+    const isQualified = koStatus && koStatus.alive;
+    const eliminatedLabel = isEliminated ? (koStatus.atStage === 'Grupos' ? 'Fase de grupos' : (STAGE_NAME[koStatus.atStage] || koStatus.atStage)) : null;
+    const activeLabel = isQualified ? (koStatus.inStage === 'champion' ? 'Campeón' : (STAGE_NAME[koStatus.inStage] || koStatus.inStage)) : null;
     return (
       <div onClick={onClose} style={{
         position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(6,8,15,0.72)',
@@ -114,8 +142,9 @@
               )}
               <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                 <Chip tone="blue">Grupo {team.group}</Chip>
-                {isQualified && <Chip tone="green">✅ Clasificado</Chip>}
-                {isEliminated && <Chip tone="red">❌ Eliminado</Chip>}
+                {isQualified && koStatus.inStage === 'champion' && <Chip tone="gold">🏆 Campeón</Chip>}
+                {isQualified && koStatus.inStage !== 'champion' && <Chip tone="green">✅ Activo · {activeLabel}</Chip>}
+                {isEliminated && <Chip tone="red">❌ Eliminado en {eliminatedLabel}</Chip>}
               </div>
             </div>
             <button onClick={onClose} className="mb-press" style={{
