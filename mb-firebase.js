@@ -471,15 +471,13 @@
       if (!odds || !odds[pick]) return Promise.reject('sin-cuota');
       const odd = Number(odds[pick]);
       const userRef = db.collection('users').doc(u.uid);
-      const betRef = db.collection('bets').doc(u.uid + '_' + match.id);
+      const betRef = db.collection('bets').doc(u.uid + '_' + match.id + '_' + Date.now());
       return db.runTransaction(async function (tx) {
         const us = await tx.get(userRef);
         const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
         const staked0 = (us.exists && typeof us.data().staked === 'number') ? us.data().staked : 0;
-        const prev = await tx.get(betRef);
-        const refund = (prev.exists && prev.data().status === 'open') ? (prev.data().stake || 0) : 0;
-        if (saldo + refund < stake) throw 'saldo-insuficiente';
-        tx.set(userRef, { saldo: saldo + refund - stake, staked: Math.max(0, staked0 - refund + stake) }, { merge: true });
+        if (saldo < stake) throw 'saldo-insuficiente';
+        tx.set(userRef, { saldo: saldo - stake, staked: staked0 + stake }, { merge: true });
         const betData = {
           uid: u.uid, nombre: u.displayName || 'Jugador', matchId: match.id, md: match.md || null, pick: pick, stake: stake, odd: odd,
           home: match.home, away: match.away, status: 'open', creado: FV.serverTimestamp(),
@@ -499,14 +497,14 @@
         actualizado: FV.serverTimestamp(),
       }, { merge: true });
     },
-    // Cancela la apuesta abierta de un partido (antes del kickoff) y devuelve el saldo.
-    async cancelBet(matchId) {
+    // Cancela una apuesta abierta por su ID de documento Firestore.
+    async cancelBet(betId) {
       const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
       const userRef = db.collection('users').doc(u.uid);
-      const betRef = db.collection('bets').doc(u.uid + '_' + matchId);
+      const betRef = db.collection('bets').doc(betId);
       return db.runTransaction(async function (tx) {
         const bs = await tx.get(betRef);
-        if (!bs.exists || bs.data().status !== 'open') return;
+        if (!bs.exists || bs.data().status !== 'open' || bs.data().uid !== u.uid) return;
         const us = await tx.get(userRef);
         const saldo = (us.exists && typeof us.data().saldo === 'number') ? us.data().saldo : SALDO_INICIAL;
         const staked0 = (us.exists && typeof us.data().staked === 'number') ? us.data().staked : 0;
