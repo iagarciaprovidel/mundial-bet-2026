@@ -265,8 +265,7 @@ function Perfil() {
         </div>
         {/* Mi campeón (línea compacta) */}
         {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { compact: true })}
-        {/* Mis semifinalistas (línea compacta) */}
-        {window.MB_SemisPick && React.createElement(window.MB_SemisPick, { compact: true })}
+
       </div>
       {enJuego > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 14, padding: '8px 12px', borderRadius: 'var(--r-md)', background: 'var(--surface-1)', border: '1px solid var(--border)', fontSize: 'var(--t-2xs)' }}>
