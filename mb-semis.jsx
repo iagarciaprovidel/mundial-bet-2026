@@ -175,7 +175,17 @@
     const [loading, setLoading] = useState(true);
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const locked = isPickLocked();
-    const teams = useMemo(getQFTeams, []);
+    // Nada de useMemo con deps vacías: las fixtures de cuartos (dynFixtures) llegan
+    // async después del montaje, y este componente se monta temprano en Inicio
+    // (a diferencia de Apostar, que remonta ya con los datos listos). Un tick que
+    // avanza con el evento mb-dynfx-updated fuerza a recalcular cuando llegan.
+    const [dynTick, setDynTick] = useState(0);
+    useEffect(() => {
+      const on = () => setDynTick((t) => t + 1);
+      window.addEventListener('mb-dynfx-updated', on);
+      return () => window.removeEventListener('mb-dynfx-updated', on);
+    }, []);
+    const teams = useMemo(getQFTeams, [dynTick]);
     const noData = teams.length === 0;
 
     useEffect(() => {
