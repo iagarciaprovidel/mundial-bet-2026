@@ -56,28 +56,31 @@
     );
   }
 
+  const PTS_EXTRA = 500; // puntos para q3/q4 en fase de grupos
+
   function MatchChallenges({ match }) {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const store = window.MB_useBetStore ? window.MB_useBetStore() : {};
-    const [picks, setPicks] = useState({}); // { q1: 'yes'|'no', q2: 'yes'|'no' }
+    const [picks, setPicks] = useState({});
     const [saving, setSaving] = useState(null);
 
-    const isKO = match && match.stage && KO_STAGES.has(match.stage);
-    if (!isKO || !user) return null;
+    if (!user || !match) return null;
 
-    const kickoff = match && new Date(match.kickoff).getTime();
+    const isKO = match.stage && KO_STAGES.has(match.stage);
+    const kickoff = new Date(match.kickoff).getTime();
     const now = Date.now();
-    const started = kickoff && kickoff <= now;
+    const started = kickoff <= now;
     const odds = store.odds && store.odds[match.id];
-    const finished = odds && odds.finished;
+    const finished = !!(odds && odds.finished);
 
     // Resultados del agente
-    const htGoal = odds && odds.htGoal; // true | false | undefined (pendiente)
     const htGoalResolved = odds && typeof odds.htGoal === 'boolean';
-    const penalties = odds && odds.penalties; // true | false
     const penResolved = finished && typeof odds.penalties === 'boolean';
+    const cardsResolved = odds && typeof odds.yellowCardsOver3 === 'boolean';
+    const firstGoalResolved = odds && typeof odds.firstGoalSide === 'string';
 
-    const pts = PTS[match.stage] || 1500;
+    const ptsKO = PTS[match.stage] || 1500;
+    const ptsExtra = isKO ? Math.round(ptsKO * 0.5) : PTS_EXTRA;
 
     // Cargar mis picks desde Firestore
     useEffect(() => {
@@ -88,22 +91,21 @@
     const savePick = async (qkey, value) => {
       if (saving || started) return;
       setSaving(qkey);
-      const newPicks = { ...picks, [qkey]: value };
       try {
         await FB().saveChallengePick(match.id, qkey, value);
-        setPicks(newPicks);
+        setPicks((prev) => ({ ...prev, [qkey]: value }));
       } catch (e) {}
       setSaving(null);
     };
 
-    // Evaluar resultado de q1 (gol en 1T)
-    const q1Result = htGoalResolved
-      ? ((picks.q1 === 'yes') === htGoal ? 'won' : picks.q1 ? 'lost' : null)
-      : null;
-    // Evaluar resultado de q2 (penales)
-    const q2Result = penResolved
-      ? ((picks.q2 === 'yes') === penalties ? 'won' : picks.q2 ? 'lost' : null)
-      : null;
+    // Evaluar resultados
+    const q1Result = htGoalResolved ? ((picks.q1 === 'yes') === odds.htGoal ? 'won' : picks.q1 ? 'lost' : null) : null;
+    const q2Result = penResolved ? ((picks.q2 === 'yes') === odds.penalties ? 'won' : picks.q2 ? 'lost' : null) : null;
+    const q3Result = cardsResolved ? ((picks.q3 === 'yes') === odds.yellowCardsOver3 ? 'won' : picks.q3 ? 'lost' : null) : null;
+    const q4Result = firstGoalResolved ? (picks.q4 === odds.firstGoalSide ? 'won' : picks.q4 ? 'lost' : null) : null;
+
+    const hasAny = isKO || true; // siempre mostramos al menos q3/q4
+    if (!hasAny) return null;
 
     return (
       <div style={{ marginTop: 8 }}>
@@ -112,24 +114,49 @@
           <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Bonus · Desafíos del partido</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {/* Q3: Tarjetas amarillas — todos los partidos */}
           <QuestionChip
-            label="¿Habrá gol en el primer tiempo?"
+            label="🟨 ¿Más de 3 tarjetas amarillas?"
             opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
-            pick={picks.q1}
-            result={q1Result}
-            pts={pts}
-            onPick={(v) => savePick('q1', v)}
+            pick={picks.q3}
+            result={q3Result}
+            pts={ptsExtra}
+            onPick={(v) => savePick('q3', v)}
             locked={started}
           />
+          {/* Q4: Primer gol — todos los partidos */}
           <QuestionChip
-            label="¿Irá a penales?"
-            opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
-            pick={picks.q2}
-            result={q2Result}
-            pts={pts}
-            onPick={(v) => savePick('q2', v)}
+            label="⚽ ¿Quién marca primero?"
+            opts={[{ label: match.home, value: 'home' }, { label: 'Sin goles', value: 'none' }, { label: match.away, value: 'away' }]}
+            pick={picks.q4}
+            result={q4Result}
+            pts={ptsExtra}
+            onPick={(v) => savePick('q4', v)}
             locked={started}
           />
+          {/* Q1/Q2: solo partidos KO */}
+          {isKO && (
+            <QuestionChip
+              label="🕐 ¿Habrá gol en el primer tiempo?"
+              opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
+              pick={picks.q1}
+              result={q1Result}
+              pts={ptsKO}
+              onPick={(v) => savePick('q1', v)}
+              locked={started}
+            />
+          )}
+          {isKO && (
+            <QuestionChip
+              label="⚠️ ¿Irá a penales?"
+              opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
+              pick={picks.q2}
+              result={q2Result}
+              pts={ptsKO}
+              onPick={(v) => savePick('q2', v)}
+              locked={started}
+            />
+          )}
         </div>
       </div>
     );
