@@ -254,6 +254,9 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Pronóstico de semifinalistas */}
       {authUser && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
 
+      {/* Apuesta al goleador del torneo */}
+      {authUser && window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
+
       {/* Aviso para elegir campeón (solo si aún no eligió y el plazo sigue abierto) */}
       {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
 

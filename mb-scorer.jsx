@@ -1,0 +1,222 @@
+/* ============================================================
+   MundialBet Club 2026 — Apuesta al Goleador del Torneo
+   Expone: window.MB_ScorerBet
+   Reglas:
+     · Apuesta con puntos (mín 1.000) a un jugador de los 8 equipos de
+       cuartos de final (mismo cierre que Semifinalistas/Campeón).
+     · Si el jugador termina con más goles que nadie en el torneo (o
+       empatado en la cima), paga ×20 el monto apostado.
+     · Bloquea cuando el primer partido de QF inicia.
+   Colección Firestore: users/{uid}.scorerBet → { player, team, teamCode, stake, status, ts }
+   El agente liquida al terminar la FINAL (settleScorerBets en agent/index.js).
+   ============================================================ */
+(function () {
+  'use strict';
+  const { useState, useEffect, useMemo, useCallback } = React;
+  const FB = () => window.MBFirebase || {};
+  const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
+  const MULT = 20;
+  const MIN_STAKE = 1000;
+
+  // Los mismos 8 equipos de cuartos que usa Semifinalistas (con su código de bandera)
+  function getQFTeams() {
+    const staticFX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const FX = [...staticFX, ...(window.MB_dynFixtures || []).filter(d => !staticFX.some(s => s.id === d.id))];
+    const qf = FX.filter((f) => f.stage === 'qf' && f.homeCode && f.awayCode);
+    const seen = new Set(), teams = [];
+    qf.forEach((f) => {
+      if (!seen.has(f.homeCode)) { seen.add(f.homeCode); teams.push({ name: f.home, code: f.homeCode }); }
+      if (!seen.has(f.awayCode)) { seen.add(f.awayCode); teams.push({ name: f.away, code: f.awayCode }); }
+    });
+    return teams;
+  }
+
+  function isPickLocked() {
+    const staticFX = (window.MB_WC && window.MB_WC.FIXTURES) || (window.MB && window.MB.WC_FIXTURES) || [];
+    const FX = [...staticFX, ...(window.MB_dynFixtures || []).filter(d => !staticFX.some(s => s.id === d.id))];
+    const qf = FX.filter((f) => f.stage === 'qf').sort((a, b) => (a.kickoff < b.kickoff ? -1 : 1));
+    return qf.length > 0 && new Date(qf[0].kickoff).getTime() <= Date.now();
+  }
+
+  function playersOf(teamName) {
+    const P = (window.MB && window.MB.PLAYERS) || {};
+    return (P[teamName] || []).filter((p) => p.pos !== 'POR');
+  }
+
+  // ── Modal: elegir jugador + monto ──────────────────────────
+  function ScorerModal({ myBet, saldo, onClose, onSave, locked }) {
+    const teams = useMemo(getQFTeams, []);
+    const [team, setTeam] = useState(myBet ? { name: myBet.team, code: myBet.teamCode } : null);
+    const [player, setPlayer] = useState(myBet ? myBet.player : null);
+    const [stake, setStake] = useState(myBet ? myBet.stake : MIN_STAKE);
+    const [saving, setSaving] = useState(false);
+    const [err, setErr] = useState('');
+    const noData = teams.length === 0;
+
+    const save = async () => {
+      if (!player || !team) { setErr('Elige un jugador'); return; }
+      if (stake < MIN_STAKE) { setErr(`El mínimo es ${fmt(MIN_STAKE)} pts`); return; }
+      if (stake > saldo) { setErr('No tienes suficiente saldo'); return; }
+      setSaving(true);
+      try {
+        await FB().placeScorerBet(player, team.name, team.code, stake);
+        onSave({ player, team: team.name, teamCode: team.code, stake, status: 'open' });
+      } catch (e) {
+        console.error('[ScorerBet] placeScorerBet error:', e);
+        const code = (e && e.code) || e;
+        setErr('Error al guardar' + (code && typeof code === 'string' && code !== '[object Object]' ? ' (' + code + ')' : '') + '. Intenta de nuevo.');
+      }
+      setSaving(false);
+    };
+
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(13,20,15,0.82)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', display: 'flex', flexDirection: 'column', animation: 'mb-fade-up var(--dur-base) var(--ease-out)' }} onClick={e => e.stopPropagation()}>
+        <div style={{ flexShrink: 0, padding: '52px 16px 14px', background: 'linear-gradient(180deg, #061209 80%, transparent)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border-2)', background: 'var(--surface-1)', color: 'var(--text)', fontSize: 16, cursor: 'pointer', flexShrink: 0 }}>←</button>
+          <div style={{ flex: 1 }}>
+            <div className="display" style={{ fontSize: 'var(--t-lg)', color: locked ? 'var(--muted)' : '#FF9D4D' }}>
+              {locked ? '🔒 Cerrado' : '⚽ Goleador del Torneo'}
+            </div>
+            <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', marginTop: 2 }}>
+              Elige un jugador de los 8 de cuartos · si termina como máximo goleador, ×{MULT} tu apuesta
+            </div>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 100px' }}>
+          {noData ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted)' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>⏳</div>
+              <div style={{ fontWeight: 700 }}>Los equipos de cuartos se confirmarán al terminar los octavos de final.</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>1. Selección</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 16 }}>
+                {teams.map((t) => (
+                  <button key={t.code} disabled={locked} onClick={() => { if (locked) return; setTeam(t); setPlayer(null); setErr(''); }}
+                    className={locked ? '' : 'mb-press'}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '8px 4px', borderRadius: 'var(--r-md)', border: team && team.code === t.code ? '2px solid #FF9D4D' : '1px solid var(--border)', background: team && team.code === t.code ? 'rgba(255,157,77,0.14)' : 'rgba(255,255,255,0.035)', cursor: locked ? 'default' : 'pointer' }}>
+                    <img src={`https://flagcdn.com/h40/${t.code}.png`} alt={t.name} style={{ height: 20, width: 'auto', borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
+                    <span style={{ fontSize: 8.5, fontWeight: 700, color: team && team.code === t.code ? '#FFC08A' : 'var(--muted)', textAlign: 'center', lineHeight: 1.15 }}>{t.name}</span>
+                  </button>
+                ))}
+              </div>
+
+              {team && (
+                <>
+                  <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>2. Jugador</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                    {playersOf(team.name).map((p) => (
+                      <button key={p.name} disabled={locked} onClick={() => { if (!locked) { setPlayer(p.name); setErr(''); } }}
+                        className={locked ? '' : 'mb-press'}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 'var(--r-md)', border: player === p.name ? '2px solid #FF9D4D' : '1px solid var(--border)', background: player === p.name ? 'rgba(255,157,77,0.14)' : 'rgba(255,255,255,0.03)', cursor: locked ? 'default' : 'pointer', textAlign: 'left' }}>
+                        <span style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', fontWeight: 800, width: 24, flexShrink: 0 }}>{p.pos}</span>
+                        <span style={{ flex: 1, fontSize: 'var(--t-xs)', fontWeight: 700, color: player === p.name ? '#FFC08A' : 'var(--text)' }}>{p.name}</span>
+                        {p.t && <span style={{ fontSize: 8, color: 'var(--gold-light)', fontWeight: 800 }}>TITULAR</span>}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {player && !locked && (
+                <>
+                  <div style={{ fontSize: 9, color: 'var(--muted-2)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>3. Monto a apostar</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <input type="number" min={MIN_STAKE} step={1000} value={stake}
+                      onChange={(e) => setStake(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                      style={{ flex: 1, padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: 'var(--text)', fontSize: 'var(--t-sm)', fontWeight: 700 }} />
+                    <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>pts</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                    {[1000, 5000, 10000].map((v) => (
+                      <button key={v} onClick={() => setStake(v)} className="mb-press" style={{ flex: 1, padding: '6px 4px', borderRadius: 'var(--r-pill)', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.03)', color: 'var(--muted)', fontSize: 'var(--t-3xs)', fontWeight: 700, cursor: 'pointer' }}>{fmt(v)}</button>
+                    ))}
+                  </div>
+                  <div style={{ padding: '10px 12px', borderRadius: 'var(--r-md)', background: 'rgba(255,157,77,0.08)', border: '1px solid rgba(255,157,77,0.3)', fontSize: 'var(--t-2xs)', color: '#FFC08A', fontWeight: 700 }}>
+                    Si {player} termina como máximo goleador del torneo, ganas {fmt(stake * MULT)} pts (×{MULT}).
+                  </div>
+                </>
+              )}
+            </>
+          )}
+          {err && <div style={{ textAlign: 'center', color: 'var(--danger)', fontSize: 'var(--t-xs)', fontWeight: 700, padding: '10px 0' }}>{err}</div>}
+        </div>
+
+        {!locked && !noData && player && (
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 16px 28px', background: 'linear-gradient(0deg, rgba(6,18,9,0.98) 60%, transparent)', backdropFilter: 'blur(8px)' }}>
+            <button onClick={save} disabled={saving}
+              style={{ width: '100%', padding: '13px', borderRadius: 'var(--r-pill)', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #FF9D4D, #E0752B)', color: '#fff', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-md)', transition: 'all 0.2s' }}>
+              {saving ? 'Guardando…' : `✓ Apostar ${fmt(stake)} pts`}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Componente público: banner ──────────────────────────
+  function ScorerBet({ banner }) {
+    const [open, setOpen] = useState(false);
+    const [myBet, setMyBet] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const user = window.MB_useAuth ? window.MB_useAuth() : null;
+    const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
+    const saldo = window.MB_avail ? window.MB_avail(store) : 90000;
+    const locked = isPickLocked();
+    const [dynTick, setDynTick] = useState(0);
+    useEffect(() => {
+      const on = () => setDynTick((t) => t + 1);
+      window.addEventListener('mb-dynfx-updated', on);
+      return () => window.removeEventListener('mb-dynfx-updated', on);
+    }, []);
+    const teams = useMemo(getQFTeams, [dynTick]);
+    const noData = teams.length === 0;
+
+    useEffect(() => {
+      if (!user || !FB().getMyScorerBet) { setLoading(false); return; }
+      FB().getMyScorerBet().then((b) => { setMyBet(b); setLoading(false); }).catch(() => setLoading(false));
+    }, [user && user.uid]);
+
+    const handleSave = useCallback((bet) => { setMyBet(bet); setOpen(false); }, []);
+
+    if (!user || loading) return null;
+    if (!banner) return null;
+    if (noData) return null;
+
+    const canEdit = !locked;
+    return (
+      <React.Fragment>
+        {open && <ScorerModal myBet={myBet} saldo={saldo} onClose={() => setOpen(false)} onSave={handleSave} locked={locked} />}
+        <div onClick={canEdit ? () => setOpen(true) : undefined} className={canEdit ? 'mb-press mb-card-hover' : ''}
+          style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderRadius: 'var(--r-lg)', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(255,157,77,0.5)', boxShadow: '0 0 0 1px rgba(255,157,77,0.12), var(--sh-1)', cursor: canEdit ? 'pointer' : 'default', marginBottom: 12, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+          {!myBet && !locked && (
+            <div style={{ position: 'absolute', top: -9, right: 12, background: 'linear-gradient(135deg,#FF9D4D,#E0752B)', color: '#fff', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 'var(--r-pill)', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(255,157,77,0.5)' }}>✨ Nuevo</div>
+          )}
+          <span style={{ fontSize: 24 }}>{locked ? '🔒' : '⚽'}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: locked ? 'var(--muted)' : '#FFC08A' }}>
+              {locked ? 'Apuesta a goleador cerrada' : myBet ? 'Tu apuesta al goleador' : '¿Quién será el goleador del torneo?'}
+            </div>
+            {myBet ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
+                <img src={`https://flagcdn.com/h40/${myBet.teamCode}.png`} alt={myBet.team} style={{ height: 18, width: 'auto', borderRadius: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.5)' }} />
+                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--text)', fontWeight: 700 }}>{myBet.player}</span>
+                <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)' }}>· {fmt(myBet.stake)} pts</span>
+                {myBet.status === 'won' && <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800 }}>✓ Ganada</span>}
+                {myBet.status === 'lost' && <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', fontWeight: 700 }}>Sin premio</span>}
+                {canEdit && myBet.status === 'open' && <span style={{ fontSize: 'var(--t-2xs)', color: '#FF9D4D', fontWeight: 700, marginLeft: 2 }}>· Cambiar</span>}
+              </div>
+            ) : (
+              <div style={{ fontSize: 'var(--t-2xs)', color: 'rgba(255,157,77,0.75)', marginTop: 2 }}>Apuesta puntos a un jugador de cuartos · ×{MULT} si acierta</div>
+            )}
+          </div>
+          {canEdit && !myBet && <span style={{ fontSize: 16, color: '#FF9D4D' }}>→</span>}
+        </div>
+      </React.Fragment>
+    );
+  }
+
+  window.MB_ScorerBet = ScorerBet;
+})();

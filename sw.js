@@ -3,7 +3,7 @@
    intenta traer la versiÃ³n mÃ¡s nueva), con fallback a cachÃ© para que la
    app funcione sin conexiÃ³n una vez visitada. */
 
-const CACHE = 'mundialbet-v278';
+const CACHE = 'mundialbet-v279';
 
 // App shell (rutas relativas al scope /mundial-bet-2026/)
 const SHELL = [
@@ -23,6 +23,7 @@ const SHELL = [
   './components.jsx',
   './mb-champion.jsx',
   './mb-semis.jsx',
+  './mb-scorer.jsx',
   './mb-challenges.jsx',
   './mb-bet.jsx',
   './mb-parlay.jsx',

@@ -494,8 +494,9 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             })()}
           </p>
         </div>
-        {/* Banners de acción: pronóstico semifinalistas + elegir campeón + reclamar premios */}
+        {/* Banners de acción: pronóstico semifinalistas + goleador + elegir campeón + reclamar premios */}
         {authUser && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
+        {authUser && window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
         {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
         {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
         {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
@@ -624,6 +625,7 @@ function FixtureCardWeb({ m, onTeam }) {
         {ref && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>🧑‍⚖️ <img src={`https://flagcdn.com/h20/${ref.code}.png`} alt="" title={ref.country} style={{ height: 9, width: 'auto', borderRadius: 1 }} /> {ref.name}</span>}
       </div>
       {window.MB_BetBox ? <window.MB_BetBox m={m} /> : null}
+      {window.MB_MatchChallenges && <window.MB_MatchChallenges match={m} />}
     </Card>
   );
 }

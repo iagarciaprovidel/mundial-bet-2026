@@ -859,26 +859,86 @@ async function paySemiBonus(winnerCodes) {
   if (meta.exists && meta.data()[metaKey]) { console.log('  Semis: ya pagados anteriormente.'); return 0; }
   const winners = new Set(winnerCodes);
   const PTS = 500;
-  const snap = await db.collection('semi_picks').get();
+  // El cliente guarda el pick en users/{uid}.semiPick.teams (no en una colección
+  // aparte — ver saveSemiPick en mb-firebase.js, cambiado en el v269 para evitar
+  // permission-denied). Antes esta función leía semi_picks/ y nunca pagaba nada.
+  const snap = await db.collection('users').where('semiPick.teams', '!=', null).get();
   let paid = 0;
   for (const doc of snap.docs) {
     const d = doc.data();
-    const teams = Array.isArray(d.teams) ? d.teams : [];
+    const teams = Array.isArray(d.semiPick && d.semiPick.teams) ? d.semiPick.teams : [];
     const correct = teams.filter((c) => winners.has(c)).length;
     if (!correct) continue;
     const bonus = correct * PTS;
     await db.runTransaction(async (tx) => {
-      const uRef = db.collection('users').doc(d.uid);
+      const uRef = db.collection('users').doc(doc.id);
       const us = await tx.get(uRef);
       const ud = us.exists ? us.data() : {};
       const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
       tx.set(uRef, { prevSaldo: saldo, saldo: saldo + bonus }, { merge: true });
     });
-    await notify(d.uid, `🎯 ¡Acertaste ${correct} semifinalista${correct > 1 ? 's' : ''}!`, `+${bonus} puntos. Los 4 clasificados: ${[...winners].join(', ')}`);
+    await notify(doc.id, `🎯 ¡Acertaste ${correct} semifinalista${correct > 1 ? 's' : ''}!`, `+${bonus} puntos. Los 4 clasificados: ${[...winners].join(', ')}`);
     paid++;
   }
   await db.collection('meta').doc('bonuses').set({ [metaKey]: true, semiWinners: Array.from(winners), [`${metaKey}At`]: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
   console.log(`  Semis: pagado a ${paid} usuarios (${PTS} pts × aciertos).`);
+  return paid;
+}
+
+// ── Apuesta al goleador del torneo (staked, ver placeScorerBet en mb-firebase.js) ──
+// Se liquida cuando TODOS los partidos de la FINAL terminan: suma goles de todo
+// el torneo por jugador (odds/{id}.scorers, que ya escribe settleFixture arriba),
+// determina el/los máximo(s) goleador(es) y paga ×20 el monto apostado a quienes
+// eligieron a alguno de ellos. El pick vive en users/{uid}.scorerBet (mismo patrón
+// que semiPick: un solo doc, sin colección aparte ni reglas nuevas).
+async function settleScorerBets() {
+  const metaKey = 'scorer_bets_paid';
+  const meta = await db.collection('meta').doc('bonuses').get();
+  if (meta.exists && meta.data()[metaKey]) return 0;
+
+  const finalFx = OURS.filter((f) => f.stage === 'final');
+  if (!finalFx.length) return 0;
+  const finalDocs = await Promise.all(finalFx.map((f) => db.collection('odds').doc(f.id).get()));
+  const finalDone = finalDocs.every((d) => d.exists && d.data().finished);
+  if (!finalDone) return 0;
+
+  const MULT = 20;
+  const oddsSnap = await db.collection('odds').get();
+  const tally = {};
+  oddsSnap.docs.forEach((d) => {
+    (d.data().scorers || []).forEach((s) => {
+      if (!s || !s.name) return;
+      tally[s.name] = (tally[s.name] || 0) + 1;
+    });
+  });
+  const maxGoals = Object.values(tally).reduce((a, b) => Math.max(a, b), 0);
+  if (!maxGoals) { console.log('  Goleador: sin goles registrados, no se liquida.'); return 0; }
+  const topScorers = new Set(Object.keys(tally).filter((n) => tally[n] === maxGoals));
+
+  const usersSnap = await db.collection('users').where('scorerBet.status', '==', 'open').get();
+  let paid = 0;
+  for (const doc of usersSnap.docs) {
+    const bet = doc.data().scorerBet;
+    if (!bet) continue;
+    const won = topScorers.has(bet.player);
+    const winAmount = won ? (bet.stake || 0) * MULT : 0;
+    await db.runTransaction(async (tx) => {
+      const uRef = db.collection('users').doc(doc.id);
+      const us = await tx.get(uRef);
+      const ud = us.exists ? us.data() : {};
+      const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
+      const staked0 = (typeof ud.staked === 'number') ? ud.staked : 0;
+      tx.set(uRef, {
+        saldo: saldo + winAmount,
+        staked: Math.max(0, staked0 - (bet.stake || 0)),
+        scorerBet: Object.assign({}, bet, { status: won ? 'won' : 'lost', resultGoals: maxGoals }),
+      }, { merge: true });
+    });
+    if (won) await notify(doc.id, `⚽ ¡${bet.player} fue el goleador del torneo!`, `Acertaste con ${maxGoals} goles → +${winAmount} puntos.`);
+    paid++;
+  }
+  await db.collection('meta').doc('bonuses').set({ [metaKey]: true, scorerTop: Array.from(topScorers), scorerGoals: maxGoals, [`${metaKey}At`]: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+  console.log(`  Goleador: liquidado a ${paid} apuesta(s). Top: ${[...topScorers].join(', ')} (${maxGoals} goles).`);
   return paid;
 }
 
@@ -1338,6 +1398,10 @@ async function main() {
           // Semi_picks: pagar cuando terminan los QF
           if (mm.our.stage === 'qf') {
             try { await paySemiBonus(winnerCodes.filter(Boolean)); } catch (e) { console.warn('Semi bonus falló:', (e && e.message) || e); }
+          }
+          // Goleador del torneo: liquidar cuando termina la FINAL
+          if (mm.our.stage === 'final') {
+            try { await settleScorerBets(); } catch (e) { console.warn('Goleador bonus falló:', (e && e.message) || e); }
           }
         }
       }

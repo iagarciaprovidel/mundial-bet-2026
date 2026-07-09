@@ -50,6 +50,7 @@
       subscribePredictions() { return () => {}; },
       saveSemiPick: noFB, getSemiPick() { return Promise.resolve(null); },
       saveChallengePick: noFB, getChallengePicks() { return Promise.resolve(null); },
+      placeScorerBet: noFB, getMyScorerBet() { return Promise.resolve(null); }, cancelScorerBet: noFB,
     };
     if (!configured) console.warn('[MundialBet] Firebase no configurado: edita firebase-config.js');
     return;
@@ -634,6 +635,50 @@
       const u = auth.currentUser; if (!u) return null;
       const doc = await db.collection('users').doc(u.uid).get();
       return doc.exists ? ((doc.data().semiPick && doc.data().semiPick.teams) || null) : null;
+    },
+
+    // ── Apuesta al goleador del torneo (staked, ×20 si acierta) ──
+    // Guardada en users/{uid}.scorerBet (mismo patrón que semiPick: sin colección
+    // aparte). Reemplaza la apuesta anterior si la había (devuelve el stake previo).
+    async placeScorerBet(playerName, teamName, teamCode, stake) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      stake = Math.floor(Number(stake) || 0);
+      if (stake < 1000) return Promise.reject('min-1000');
+      if (!playerName || !teamCode) return Promise.reject('pick-invalido');
+      const userRef = db.collection('users').doc(u.uid);
+      return db.runTransaction(async function (tx) {
+        const us = await tx.get(userRef);
+        const ud = us.exists ? us.data() : {};
+        const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
+        const staked0 = (typeof ud.staked === 'number') ? ud.staked : 0;
+        const prevOpen = ud.scorerBet && ud.scorerBet.status === 'open' ? ud.scorerBet : null;
+        const refund = prevOpen ? (prevOpen.stake || 0) : 0;
+        const available = saldo + refund;
+        if (available < stake) throw 'saldo-insuficiente';
+        tx.set(userRef, {
+          saldo: available - stake, staked: staked0 - refund + stake,
+          scorerBet: { player: playerName, team: teamName, teamCode: teamCode, stake: stake, status: 'open', ts: FV.serverTimestamp() },
+        }, { merge: true });
+      });
+    },
+    async getMyScorerBet() {
+      const u = auth.currentUser; if (!u) return null;
+      const doc = await db.collection('users').doc(u.uid).get();
+      return doc.exists ? (doc.data().scorerBet || null) : null;
+    },
+    async cancelScorerBet() {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const userRef = db.collection('users').doc(u.uid);
+      return db.runTransaction(async function (tx) {
+        const us = await tx.get(userRef);
+        if (!us.exists) return;
+        const ud = us.data();
+        if (!ud.scorerBet || ud.scorerBet.status !== 'open') return;
+        const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
+        const staked0 = (typeof ud.staked === 'number') ? ud.staked : 0;
+        const st = ud.scorerBet.stake || 0;
+        tx.set(userRef, { saldo: saldo + st, staked: Math.max(0, staked0 - st), scorerBet: null }, { merge: true });
+      });
     },
 
     // ── Desafíos por partido (challenge_picks) ──
