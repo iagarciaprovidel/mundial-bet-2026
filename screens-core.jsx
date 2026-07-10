@@ -251,26 +251,20 @@ function Dashboard({ user, onNav, onPredict }) {
         window.MB_SignInNote ? React.createElement(window.MB_SignInNote, { text: 'Inicia sesión para ver tus monedas, posición y apuestas.', card: true }) : null
       )}
 
-      {/* Pronóstico de semifinalistas */}
-      {authUser && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
-
-      {/* Apuesta al goleador del torneo */}
-      {authUser && window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
-
-      {/* Aviso para elegir campeón (solo si aún no eligió y el plazo sigue abierto) */}
-      {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
-
-      {/* Confirmación del premio "campeón por ronda" ya acreditado */}
-      {authUser && window.MB_ChampPhaseBanner && React.createElement(window.MB_ChampPhaseBanner)}
-
-      {/* Banner reclamar premios de fase de grupos */}
-      {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
-
-      {/* Banner reclamar desafíos del partido ganados */}
-      {authUser && window.MB_ClaimChallengesBanner && React.createElement(window.MB_ClaimChallengesBanner)}
-
-      {/* Banner racha del apostador */}
-      {authUser && window.MB_TopTodayBanner && React.createElement(window.MB_TopTodayBanner)}
+      {/* Bloque de avisos/premios: todos juntos con espaciado chico entre sí
+          (en vez del gap grande de la columna) para que se lean como un solo
+          grupo compacto, no como tarjetas sueltas repartidas por la pantalla. */}
+      {authUser && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: -8 }}>
+          {window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
+          {window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
+          {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
+          {window.MB_ChampPhaseBanner && React.createElement(window.MB_ChampPhaseBanner)}
+          {window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
+          {window.MB_ClaimChallengesBanner && React.createElement(window.MB_ClaimChallengesBanner)}
+          {window.MB_TopTodayBanner && React.createElement(window.MB_TopTodayBanner)}
+        </div>
+      )}
 
       {/* Cuenta regresiva al próximo partido */}
       {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}

@@ -669,10 +669,10 @@ function PartidosWeb({ onTeam }) {
         return (
           <>
             {stagesPresentW.length > 1 && (
-              <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 14, padding: 6, borderRadius: 'var(--r-pill)', background: 'rgba(13,20,15,0.92)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
                 {['all', ...stagesPresentW].map(s => (
                   <button key={s} onClick={() => setKoStageW(s)} className="mb-press"
-                    style={{ padding: '5px 14px', borderRadius: 'var(--r-pill)', border: koStageW === s ? '1px solid var(--gold-light)' : '1px solid var(--border)', background: koStageW === s ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.03)', color: koStageW === s ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 800, cursor: 'pointer' }}>
+                    style={{ padding: '5px 14px', borderRadius: 'var(--r-pill)', border: koStageW === s ? '1px solid var(--gold-light)' : '1px solid transparent', background: koStageW === s ? 'rgba(212,175,55,0.22)' : 'transparent', color: koStageW === s ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 800, cursor: 'pointer' }}>
                     {KO_CHIP_LABEL[s] || s}
                   </button>
                 ))}
