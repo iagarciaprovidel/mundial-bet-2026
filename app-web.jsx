@@ -639,6 +639,9 @@ function PartidosWeb({ onTeam }) {
     return [...live, ...bettable, ...played];
   };
   const authUserP = window.MB_useAuth ? window.MB_useAuth() : null;
+  // Filtro por ronda KO — con muchos partidos jugados cuesta llegar a una ronda puntual
+  const [koStageW, setKoStageW] = useStateW('all');
+  const KO_CHIP_LABEL = { all: 'Todas', r32: '16avos', r16: 'Octavos', qf: 'Cuartos', sf: 'Semis', final: 'Final' };
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       {authUserP && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
@@ -653,7 +656,9 @@ function PartidosWeb({ onTeam }) {
       ))}
 
       {hasKO && (() => {
-        const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
+        const stageOrderAll = ['r32', 'r16', 'qf', 'sf', 'final'];
+        const stagesPresentW = stageOrderAll.filter(s => byKO[s].length > 0);
+        const stageOrder = koStageW === 'all' ? stageOrderAll : stageOrderAll.filter(s => s === koStageW);
         const koPlayedByStage = {};
         stageOrder.forEach(s => {
           koPlayedByStage[s] = byKO[s].filter(m => isDoneP(m) && !isLiveP(m)).sort(byKickoffDescP);
@@ -661,6 +666,16 @@ function PartidosWeb({ onTeam }) {
         const allKoPlayed = stageOrder.flatMap(s => koPlayedByStage[s]).sort(byKickoffDescP);
         return (
           <>
+            {stagesPresentW.length > 1 && (
+              <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+                {['all', ...stagesPresentW].map(s => (
+                  <button key={s} onClick={() => setKoStageW(s)} className="mb-press"
+                    style={{ padding: '5px 14px', borderRadius: 'var(--r-pill)', border: koStageW === s ? '1px solid var(--gold-light)' : '1px solid var(--border)', background: koStageW === s ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.03)', color: koStageW === s ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 800, cursor: 'pointer' }}>
+                    {KO_CHIP_LABEL[s] || s}
+                  </button>
+                ))}
+              </div>
+            )}
             {stageOrder.map(stage => {
               const active = byKO[stage].filter(m => isLiveP(m) || (!isDoneP(m)));
               if (!active.length) return null;

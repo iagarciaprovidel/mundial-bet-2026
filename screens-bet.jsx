@@ -367,6 +367,7 @@ function Partidos() {
 
   const [tab, setTab] = useStateB(curTab); // abre por defecto en la jornada actual
   const [filter, setFilter] = useStateB('all'); // 'all' | 'hoy' | 'parlay' | 'mine'
+  const [koStage, setKoStage] = useStateB('all'); // filtro por ronda en Elim.: all | r32 | r16 | qf | sf | final
 
   const BET_GRACE_MS_S = 5 * 60 * 1000;
   const MATCH_MS_S = 150 * 60 * 1000; // 2.5h — duración máxima estimada
@@ -609,9 +610,15 @@ function Partidos() {
                 const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
                 const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', final: 'Final' };
                 const isKoFx = (m) => m.stage && m.stage !== 'Grupos';
-                const koLive     = fx.filter((m) => isKoFx(m) && isLiveS(m)).sort(byKickoffAsc);
-                const koUpcoming = fx.filter((m) => isKoFx(m) && !isLiveS(m) && !isDoneS(m) && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now).sort(byKickoffAsc);
-                const koPlayed   = fx.filter((m) => isKoFx(m) && isDoneS(m)).sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));
+                // Filtro por ronda: con muchos partidos jugados, encontrar los de
+                // una ronda específica requería scrollear toda la lista.
+                const allKo = fx.filter(isKoFx);
+                const stagesPresent = stageOrder.filter((s) => allKo.some((m) => m.stage === s));
+                const inStage = (m) => koStage === 'all' || m.stage === koStage;
+                const chipLabel = { all: 'Todas', r32: '16avos', r16: 'Octavos', qf: 'Cuartos', sf: 'Semis', final: 'Final' };
+                const koLive     = allKo.filter((m) => inStage(m) && isLiveS(m)).sort(byKickoffAsc);
+                const koUpcoming = allKo.filter((m) => inStage(m) && !isLiveS(m) && !isDoneS(m) && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now).sort(byKickoffAsc);
+                const koPlayed   = allKo.filter((m) => inStage(m) && isDoneS(m)).sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));
                 const byStageUp = {}, byStageLive = {};
                 koUpcoming.forEach((m) => { (byStageUp[m.stage] = byStageUp[m.stage] || []).push(m); });
                 koLive.forEach((m) => { (byStageLive[m.stage] = byStageLive[m.stage] || []).push(m); });
@@ -619,6 +626,17 @@ function Partidos() {
                 [...koLive, ...koUpcoming].forEach((m) => { (byStageAll[m.stage] = byStageAll[m.stage] || []).push(m); });
                 return (
                   <>
+                    {/* Chips de filtro por ronda */}
+                    {stagesPresent.length > 1 && (
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 12, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 2 }}>
+                        {['all', ...stagesPresent].map((s) => (
+                          <button key={s} onClick={() => setKoStage(s)} className="mb-press"
+                            style={{ flexShrink: 0, padding: '5px 12px', borderRadius: 'var(--r-pill)', border: koStage === s ? '1px solid var(--gold-light)' : '1px solid var(--border)', background: koStage === s ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.03)', color: koStage === s ? 'var(--gold-light)' : 'var(--muted)', fontSize: 'var(--t-2xs)', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            {chipLabel[s] || s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {/* En vivo primero */}
                     {koLive.length > 0 && <SectionHead title="🔴 En vivo" />}
                     {koLive.map((m) => <MobileFixtureCard key={m.id} m={m} />)}
@@ -629,8 +647,8 @@ function Partidos() {
                         {byStageUp[s].map((m) => <MobileFixtureCard key={m.id} m={m} />)}
                       </React.Fragment>
                     ))}
-                    {/* Rondas aún sin equipos definidos */}
-                    {ko.filter((k) => {
+                    {/* Rondas aún sin equipos definidos (solo con el filtro en Todas) */}
+                    {koStage === 'all' && ko.filter((k) => {
                       const key = k.stage === 'Dieciseisavos (R32)' ? 'r32' : k.stage === 'Octavos de final' ? 'r16' : k.stage === 'Cuartos de final' ? 'qf' : k.stage === 'Semifinales' ? 'sf' : k.stage === 'FINAL' ? 'final' : null;
                       return !key || !byStageAll[key];
                     }).map((k, i) => (

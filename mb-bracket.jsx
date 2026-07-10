@@ -93,6 +93,10 @@
   }
 
   // ── Tarjeta: fase actual ──────────────────────────────────
+  // Selecciones que el usuario eligió como semifinalistas (punto dorado en el
+  // bracket). La setea BracketScreen en cada render, antes de pintar las cards.
+  let SEMI_SET = new Set();
+
   function CurCard({ m, x, y, champCode, od }) {
     if (!m) {
       return (
@@ -139,7 +143,7 @@
             color: gold ? 'var(--gold-light)' : won ? 'var(--success)' : name ? 'var(--text)' : 'var(--muted-2)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
-            {name || 'TBD'}{gold ? ' ⭐' : ''}
+            {name || 'TBD'}{gold ? ' ⭐' : ''}{!gold && code && SEMI_SET.has(code) ? <span style={{ color: 'var(--gold-light)' }} title="Tu semifinalista"> ●</span> : null}
           </span>
           {(live || finished) && score != null && (
             <span style={{
@@ -276,6 +280,7 @@
     const meRec     = authUser ? (bsUsers.find(u => u.uid === authUser.uid) || null) : null;
     const champCode = meRec ? meRec.championCode : null;
     const champName = meRec ? meRec.champion    : null;
+    SEMI_SET = new Set((meRec && meRec.semiPick && meRec.semiPick.teams) || []);
     const odds      = (store && store.odds) || {};
 
     const dynFx    = (store && store.dynFixtures) || [];
@@ -602,6 +607,9 @@
     };
 
     // Tarjeta de partido web
+    // Semifinalistas elegidos por el usuario (punto dorado) — la setea BracketScreenWeb
+    let SEMI_SET_W = new Set();
+
     function WCard({ m, x, y, champCode, od }) {
       if (!m) {
         return (
@@ -647,7 +655,7 @@
               color: gold ? 'var(--gold-light)' : won ? 'var(--success)' : name ? 'var(--text)' : 'var(--muted-2)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              {name || 'TBD'}{gold ? ' ⭐' : ''}
+              {name || 'TBD'}{gold ? ' ⭐' : ''}{!gold && code && SEMI_SET_W.has(code) ? <span style={{ color: 'var(--gold-light)' }} title="Tu semifinalista"> ●</span> : null}
             </span>
             {/* Marcador */}
             {(live || finished) && score != null && (
@@ -723,7 +731,7 @@
               ? <img src={`https://flagcdn.com/h20/${t.code}.png`} alt="" style={{ height: 11, width: 'auto', flexShrink: 0 }} />
               : <span style={{ width: 14, height: 11, background: 'rgba(255,255,255,0.06)', borderRadius: 1, display: 'inline-block', flexShrink: 0 }} />}
             <span style={{ flex: 1, fontSize: 9, fontWeight: gold ? 800 : t.won ? 700 : 500, color: gold ? 'var(--gold-light)' : t.won ? 'var(--success)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {t.name || '?'}{gold ? ' ⭐' : ''}
+              {t.name || '?'}{gold ? ' ⭐' : ''}{!gold && t.code && SEMI_SET_W.has(t.code) ? <span style={{ color: 'var(--gold-light)' }} title="Tu semifinalista"> ●</span> : null}
             </span>
             {finished && t.won && <span style={{ fontSize: 7, color: 'var(--success)', fontWeight: 800 }}>✓</span>}
           </div>
@@ -842,6 +850,7 @@
       const meRec     = authUser ? (bwUsers.find(u => u.uid === authUser.uid) || null) : null;
       const champCode = meRec ? meRec.championCode : null;
       const champName = meRec ? meRec.champion    : null;
+      SEMI_SET_W = new Set((meRec && meRec.semiPick && meRec.semiPick.teams) || []);
       const odds      = (store && store.odds) || {};
 
       const dynFxW   = (store && store.dynFixtures) || [];

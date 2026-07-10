@@ -684,8 +684,20 @@
   // ── Partidos EN VIVO ahora (para el Inicio, debajo de la cuenta regresiva) ──
   function LiveNow() {
     const s = useBetStore();
+    // Tick por minuto para que "hace X min" avance aunque no llegue snapshot
+    const [, setTick] = useState(0);
+    useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 60000); return () => clearInterval(t); }, []);
     const live = window.MB_liveMatches ? window.MB_liveMatches(s.odds) : [];
     if (!live.length) return null;
+    // El agente actualiza el marcador cada ~5 min (cron) y deja liveAt: sin
+    // esto el score parece "congelado" y los usuarios creen que está malo.
+    const agoTxt = (o) => {
+      const raw = o && o.liveAt;
+      const t = raw && (raw.toDate ? raw.toDate().getTime() : new Date(raw).getTime());
+      if (!t || isNaN(t)) return null;
+      const min = Math.round((Date.now() - t) / 60000);
+      return min <= 0 ? 'Actualizado recién' : 'Actualizado hace ' + min + ' min';
+    };
     const go = () => { if (window.__mbNav) window.__mbNav('partidos'); };
     const openTeam = (e, name, code) => { if (e) e.stopPropagation(); if (code && window.MB_openTeamByCode) { window.MB_openTeamByCode(code); return; } if (window.__mbOpenTeamByName) window.__mbOpenTeamByName(name); };
     const minTxt = (o) => o.minute == null ? 'EN VIVO' : (typeof o.minute === 'number' ? o.minute + "'" : String(o.minute));
@@ -743,6 +755,11 @@
                 });
               })()}
               <LiveMatchChallenges matchId={m.id} />
+              {agoTxt(o) && (
+                <div style={{ marginTop: 7, fontSize: 8.5, color: 'var(--muted-2)', fontWeight: 600, textAlign: 'center' }}>
+                  🔄 {agoTxt(o)} · el marcador se refresca cada ~5 min
+                </div>
+              )}
             </div>
           ))}
         </div>
