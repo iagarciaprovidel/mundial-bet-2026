@@ -663,6 +663,17 @@ async function settleChallengePicks(our, oddsData) {
 // y liquida. Barata: solo lee picks abiertos + un odds doc por partido.
 async function sweepOpenChallengePicks() {
   try {
+    // Diagnóstico: estado real de la colección (barato: pocos docs)
+    const all = await db.collection('challenge_picks').get();
+    const cnt = { open: 0, won: 0, lost: 0, otros: 0, porReclamar: 0 };
+    all.docs.forEach((d) => {
+      const p = d.data();
+      if (p.status === 'open') cnt.open++;
+      else if (p.status === 'won') { cnt.won++; if (!p.claimed) cnt.porReclamar++; }
+      else if (p.status === 'lost') cnt.lost++;
+      else cnt.otros++;
+    });
+    console.log(`Desafíos: ${all.size} pick(s) → open:${cnt.open} won:${cnt.won} (sin reclamar:${cnt.porReclamar}) lost:${cnt.lost} otros:${cnt.otros}`);
     const snap = await db.collection('challenge_picks').where('status', '==', 'open').get();
     if (snap.empty) return;
     const matchIds = Array.from(new Set(snap.docs.map((d) => d.data().matchId).filter(Boolean)));
