@@ -32,6 +32,20 @@
   }
   window.MB_BracketErrorBoundary = BracketErrorBoundary;
 
+  // Lado del cuadro (izquierda/derecha) desde cuartos en adelante, confirmado
+  // con fuentes externas (FIFA/prensa deportiva): Francia (venció a
+  // Marruecos) y España (venció a Bélgica) juegan la Semifinal 1 el 14-jul;
+  // el ganador de Noruega/Inglaterra vs el ganador de Argentina/Suiza juega
+  // la Semifinal 2 el 15-jul. El cuadro no tiene esto codificado en ningún
+  // lado: no hay fixtures estáticos de r32 (todo llega por descubrimiento
+  // dinámico, en el orden en que el agente lo va encontrando, no en el orden
+  // real del cuadro FIFA) — así que sin esto, Francia y España podían quedar
+  // en lados opuestos aunque en la realidad se enfrenten en la misma
+  // semifinal. Por código de país (no por ID de partido) para que aplique
+  // igual en cuartos, semifinal y la final.
+  const QF_SF_LEFT_CODES = new Set(['fr', 'es']);
+  const QF_SF_RIGHT_CODES = new Set(['gb-eng', 'no', 'ar', 'ch']);
+
   // ── Dimensiones base ──────────────────────────────────────
   const CC   = 84;  // ancho tarjeta fase actual
   const NC   = 68;  // ancho tarjeta fase siguiente
@@ -369,6 +383,15 @@
       });
       sortedCur.forEach(m => { if (!usedCur.has(m.id)) orderedCur.push(m); });
       if (orderedCur.length === sortedCur.length) sortedCur = orderedCur;
+    } else if (['qf', 'sf', 'final'].includes(activePhase)) {
+      // Sin fixture real de la siguiente fase todavía: ordena por lado
+      // conocido del cuadro (ver QF_SF_LEFT_CODES/QF_SF_RIGHT_CODES arriba)
+      // en vez del orden de descubrimiento — si no, Francia y España podían
+      // quedar en mitades opuestas del cuadro aunque en la realidad jueguen
+      // la misma semifinal.
+      const sideOf = (m) => QF_SF_LEFT_CODES.has(m.homeCode) || QF_SF_LEFT_CODES.has(m.awayCode) ? 0
+        : QF_SF_RIGHT_CODES.has(m.homeCode) || QF_SF_RIGHT_CODES.has(m.awayCode) ? 1 : 2;
+      sortedCur = sortedCur.slice().sort((a, b) => sideOf(a) - sideOf(b));
     }
 
     const half = Math.ceil(sortedCur.length / 2);
@@ -930,8 +953,17 @@
       const lCodes = new Set(r32rawL.flatMap(m => [m.homeCode, m.awayCode].filter(Boolean)));
       const rCodes = new Set(r32rawR.flatMap(m => [m.homeCode, m.awayCode].filter(Boolean)));
 
-      // Un fixture pertenece a la mitad izquierda si alguno de sus equipos vino de esa mitad
-      const isLeft = (m) => lCodes.has(m.homeCode) || lCodes.has(m.awayCode);
+      // Un fixture pertenece a la mitad izquierda si alguno de sus equipos vino de esa mitad.
+      // Desde cuartos en adelante manda QF_SF_LEFT_CODES/QF_SF_RIGHT_CODES (ver comentario
+      // junto a su definición) — la clasificación por lCodes/rCodes no es confiable ahí
+      // porque no hay fixtures estáticos de r32.
+      const isLeft = (m) => {
+        if (m.stage === 'qf' || m.stage === 'sf' || m.stage === 'final') {
+          if (QF_SF_LEFT_CODES.has(m.homeCode) || QF_SF_LEFT_CODES.has(m.awayCode)) return true;
+          if (QF_SF_RIGHT_CODES.has(m.homeCode) || QF_SF_RIGHT_CODES.has(m.awayCode)) return false;
+        }
+        return lCodes.has(m.homeCode) || lCodes.has(m.awayCode);
+      };
 
       // Clasificar R16, QF y SF por mitad del cuadro
       const L16all = r16.filter(isLeft);

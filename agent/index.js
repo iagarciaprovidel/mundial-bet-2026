@@ -113,6 +113,27 @@ async function fdMatches() {
   return Array.isArray(json.matches) ? json.matches : [];
 }
 
+// Cache de un solo pedido a football-data.org por corrida del agente (el
+// proceso vive unos segundos y termina, así que no hace falta invalidarlo).
+let _fdRunCache = null;
+async function fdMatchesOnce() {
+  if (_fdRunCache === null) { try { _fdRunCache = await fdMatches(); } catch (e) { _fdRunCache = []; } }
+  return _fdRunCache;
+}
+
+// Ronda según football-data.org (formato v4: LAST_16/QUARTER_FINALS/etc.) →
+// nuestras claves internas. Segunda fuente para no confiar ciegamente en
+// ESPN al auto-registrar un fixture nuevo — esto es lo que hubiera evitado
+// el fixture fantasma "Francia vs España" que ESPN publicó sin ronda.
+const FD_STAGE_MAP = {
+  LAST_32: 'r32', ROUND_OF_32: 'r32', ROUND_32: 'r32',
+  LAST_16: 'r16', ROUND_OF_16: 'r16', ROUND_16: 'r16',
+  QUARTER_FINALS: 'qf', QUARTERFINALS: 'qf', QF: 'qf',
+  SEMI_FINALS: 'sf', SEMIFINALS: 'sf', SF: 'sf',
+  FINAL: 'final',
+};
+function stageFromFd(fdStage) { return FD_STAGE_MAP[String(fdStage || '').toUpperCase().trim()] || null; }
+
 // ── Marcadores desde ESPN (gratis, sin clave; SÍ trae goles en vivo y finales) ──
 // football-data.org gratis NO entrega goles del Mundial; ESPN sí. Devuelve los
 // partidos con el MISMO formato que football-data para reusar el bucle de abajo.
@@ -1350,12 +1371,35 @@ async function main() {
         try {
           const existDoc = await db.collection('fixtures').doc(dynId).get();
           if (!existDoc.exists) {
-            const stage = stageFromEspn(m.espnRound, m.espnSeasonType);
+            let stage = stageFromEspn(m.espnRound, m.espnSeasonType);
+            // Cruce con una SEGUNDA fuente (football-data.org) antes de
+            // confiar en la ronda que dice ESPN — así un fixture nuevo nunca
+            // se registra basado en una sola fuente sin contraste. Si fd
+            // conoce el mismo partido (mismos dos países) con una ronda
+            // reconocible, esa manda (corrige a ESPN si discrepan, o completa
+            // el dato si ESPN no lo supo determinar).
+            try {
+              const fdAll = await fdMatchesOnce();
+              const fdMatch = fdAll.find((fm) => {
+                const fhi = isoOf(fm.homeTeam && fm.homeTeam.name), fai = isoOf(fm.awayTeam && fm.awayTeam.name);
+                if (!fhi || !fai) return false;
+                const s = new Set([fhi, fai]);
+                return s.has(hi) && s.has(ai);
+              });
+              if (fdMatch) {
+                const fdStage = stageFromFd(fdMatch.stage);
+                if (fdStage && fdStage !== stage) {
+                  console.log(`  Cruce football-data.org: ESPN decía ronda="${stage || 'desconocida'}", fd dice "${fdMatch.stage}"→${fdStage} para ${m.homeTeam.name} vs ${m.awayTeam.name}. Se usa fd.`);
+                  stage = fdStage;
+                }
+              }
+            } catch (e) { /* fd no disponible: seguimos con lo que haya determinado ESPN (o nada) */ }
             if (!stage) {
-              // Ronda no reconocible: probablemente un partido especulativo/
-              // proyectado que ESPN publica antes de tiempo (ver comentario en
-              // stageFromEspn). Mejor no registrarlo que registrarlo mal.
-              console.log(`  Fixture ESPN con ronda no reconocida, ignorado: ${m.homeTeam.name} vs ${m.awayTeam.name} (espnRound="${m.espnRound}" espnSeasonType="${m.espnSeasonType}")`);
+              // Ronda no reconocible en ninguna de las dos fuentes: probablemente
+              // un partido especulativo/proyectado que ESPN publica antes de
+              // tiempo (ver comentario en stageFromEspn). Mejor no registrarlo
+              // que registrarlo mal.
+              console.log(`  Fixture con ronda no reconocida (ESPN ni football-data.org), ignorado: ${m.homeTeam.name} vs ${m.awayTeam.name} (espnRound="${m.espnRound}" espnSeasonType="${m.espnSeasonType}")`);
             } else {
             const dynFx = { id: dynId, home: m.homeTeam.name, away: m.awayTeam.name, homeCode: hi, awayCode: ai, kickoff: m.kickoff, stage: stage, espnId: m.espnId || null };
             await db.collection('fixtures').doc(dynId).set(dynFx);
