@@ -352,12 +352,17 @@ async function updateBetConsensus() {
 
 // ── Envía una notificación push a un usuario (si tiene tokens) ──
 const ICON_URL = 'https://mundialbet-club.web.app/icon-192.png';
+// El badge (ícono chico de Android que agrupa notificaciones) necesita una
+// silueta blanca sobre transparente — icon-192.png es una foto a color 100%
+// opaca, así que Android no podía sacar ninguna silueta y mostraba un
+// cuadro vacío. icon-badge.png es un trofeo blanco simple hecho para esto.
+const BADGE_URL = 'https://mundialbet-club.web.app/icon-badge.png';
 async function notify(uid, title, body) {
   try {
     const us = await db.collection('users').doc(uid).get();
     const tokens = (us.exists && us.data().fcmTokens) || [];
     if (!tokens.length) { console.log(`  notify ${String(uid).slice(0, 6)}…: SIN tokens (no activó notificaciones)`); return; }
-    const res = await admin.messaging().sendEachForMulticast({ tokens: tokens, notification: { title: title, body: body }, webpush: { notification: { icon: ICON_URL, badge: ICON_URL } } });
+    const res = await admin.messaging().sendEachForMulticast({ tokens: tokens, notification: { title: title, body: body }, webpush: { notification: { icon: ICON_URL, badge: BADGE_URL } } });
     console.log(`  notify ${String(uid).slice(0, 6)}…: ${res.successCount}/${tokens.length} enviada(s) — "${title}"`);
     const bad = [];
     res.responses.forEach((r, i) => { if (!r.success && r.error && /not-registered|invalid-argument|invalid-registration/i.test(r.error.code || r.error.message || '')) bad.push(tokens[i]); });

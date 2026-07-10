@@ -3,7 +3,7 @@
    intenta traer la versiÃ³n mÃ¡s nueva), con fallback a cachÃ© para que la
    app funcione sin conexiÃ³n una vez visitada. */
 
-const CACHE = 'mundialbet-v305';
+const CACHE = 'mundialbet-v306';
 
 // App shell (rutas relativas al scope /mundial-bet-2026/)
 const SHELL = [
@@ -47,6 +47,7 @@ const SHELL = [
   './icon-144.png',
   './icon-192.png',
   './icon-512.png',
+  './icon-badge.png',
 ];
 
 self.addEventListener('install', (event) => {

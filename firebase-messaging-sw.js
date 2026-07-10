@@ -15,7 +15,13 @@ try {
     self.registration.showNotification(n.title || 'MundialBet Club', {
       body: n.body || '',
       icon: 'icon-192.png',
-      badge: 'icon-192.png',
+      // El "badge" (ícono chico que agrupa notificaciones en Android) DEBE ser
+      // una silueta blanca sobre transparente — Android usa solo el canal
+      // alfa para dibujarlo. icon-192.png es una foto a color 100% opaca, así
+      // que Android no podía sacar ninguna silueta y mostraba un cuadro en
+      // blanco vacío. icon-badge.png es un trofeo blanco simple con
+      // transparencia real, hecho para este propósito.
+      badge: 'icon-badge.png',
       data: (payload && payload.data) || {},
     });
   });

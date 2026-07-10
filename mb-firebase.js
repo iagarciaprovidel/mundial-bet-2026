@@ -410,7 +410,7 @@
           firebase.messaging().onMessage(function (payload) {
             const n = (payload && payload.notification) || {};
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-              try { reg.showNotification(n.title || 'MundialBet Club', { body: n.body || '', icon: 'icon-192.png', badge: 'icon-192.png' }); } catch (e) {}
+              try { reg.showNotification(n.title || 'MundialBet Club', { body: n.body || '', icon: 'icon-192.png', badge: 'icon-badge.png' }); } catch (e) {}
             }
           });
         }
