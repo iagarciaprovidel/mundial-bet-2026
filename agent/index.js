@@ -1593,6 +1593,25 @@ async function main() {
   let parlaysSettled = 0;
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
+  // Diagnóstico puntual: confirma si los premios por fase ya pagados
+  // realmente acreditaron saldo (o si corrieron en modo simulado) y el
+  // estado del cierre de fase de grupos.
+  {
+    const metaB = await db.collection('meta').doc('bonuses').get();
+    const mb = metaB.exists ? metaB.data() : {};
+    console.log(`  DIAG meta/bonuses: groupsClosed=${!!mb.groupsClosed} champ_r32=${!!mb.champ_r32} champ_r16=${!!mb.champ_r16} champ_qf=${!!mb.champ_qf} BONUS_DRY_RUN=${BONUS_DRY_RUN}`);
+    const usersSnapB = await db.collection('users').get();
+    let withR32 = 0, withR16 = 0, withGroups = 0, total = 0;
+    usersSnapB.docs.forEach((d) => {
+      total++;
+      const r = (d.data().rewards) || {};
+      if (r.champ_r32) withR32++;
+      if (r.champ_r16) withR16++;
+      if (r.groupsClosed) withGroups++;
+    });
+    console.log(`  DIAG usuarios: total=${total} con rewards.champ_r32=${withR32} con rewards.champ_r16=${withR16} con rewards.groupsClosed=${withGroups}`);
+  }
+
   // Rescate de desafíos que quedaron abiertos en partidos ya terminados
   // (fuera de la ventana de ESPN). Corre en cada ciclo: solo lee picks 'open'.
   await sweepOpenChallengePicks();
