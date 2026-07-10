@@ -1005,7 +1005,7 @@
       if (pick || closed) return null;
       return (
         <React.Fragment>
-          <button onClick={() => setOpen(true)} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '13px 15px', borderRadius: 'var(--r-lg)', border: '1px solid var(--gold)', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(201,155,31,0.07))', textAlign: 'left', boxShadow: 'var(--glow-gold)', fontFamily: 'var(--font-body)' }}>
+          <button onClick={() => setOpen(true)} className="mb-press" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', borderRadius: 'var(--r-lg)', border: '1px solid var(--gold)', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(201,155,31,0.07)), rgba(13,20,15,0.92)', textAlign: 'left', boxShadow: 'var(--glow-gold)', fontFamily: 'var(--font-body)' }}>
             <span style={{ fontSize: 26, flexShrink: 0 }}>🏆</span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>¡Aún no eliges tu campeón!</span>
@@ -1350,7 +1350,7 @@
     };
     if (!autoInfo && !claims.length) return null;
     return (
-      <div style={{ padding: '12px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08))', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
+      <div style={{ padding: '10px 12px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08)), rgba(13,20,15,0.92)', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
         {autoInfo && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: claims.length ? 9 : 0 }}>
             <span style={{ fontSize: 22 }}>🏆</span>
@@ -1420,17 +1420,17 @@
       fb.claimGroupBonuses().then(() => setDone(true)).catch((e) => { if (e === 'ya-reclamado' || e === 'sin-premios') setDone(true); setClaiming(false); });
     };
     if (done) return (
-      <div style={{ padding: '12px 14px', borderRadius: 'var(--r-lg)', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)', textAlign: 'center', fontSize: 'var(--t-sm)', color: 'var(--success)', fontWeight: 800 }}>
+      <div style={{ padding: '10px 12px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(34,197,94,0.04)), rgba(13,20,15,0.92)', border: '1px solid rgba(34,197,94,0.4)', textAlign: 'center', fontSize: 'var(--t-sm)', color: 'var(--success)', fontWeight: 800 }}>
         ✅ ¡Premios reclamados! +{fmt(bd2.total)} pts sumados a tu saldo.
       </div>
     );
     return (
-      <div style={{ padding: '13px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08))', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
+      <div style={{ padding: '10px 12px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08)), rgba(13,20,15,0.92)', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <span style={{ fontSize: 22 }}>🎁</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>Tienes <span className="num" style={{ color: 'var(--gold-light)' }}>+{fmt(bd2.total)} pts</span> por reclamar</div>
-            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>Premios de la fase de grupos · ya terminaron todos los partidos</div>
+            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>Premios de fase de grupos ya terminada</div>
           </div>
         </div>
         <button onClick={doClaim} disabled={claiming} className="mb-press" style={{ width: '100%', padding: '11px 0', borderRadius: 'var(--r-md)', border: 'none', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', cursor: claiming ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 'var(--t-sm)', opacity: claiming ? 0.7 : 1 }}>
@@ -1466,12 +1466,12 @@
     };
     const total = wins.reduce((t, w) => t + (w.payout || 0), 0);
     return (
-      <div style={{ padding: '13px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08))', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
+      <div style={{ padding: '10px 12px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08)), rgba(13,20,15,0.92)', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
           <span style={{ fontSize: 22 }}>🎯</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>Desafíos ganados: <span className="num" style={{ color: 'var(--gold-light)' }}>+{fmt(total)} pts</span> por reclamar</div>
-            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{wins.length === 1 ? '1 desafío acertado' : wins.length + ' desafíos acertados'} · toca Reclamar para sumarlos a tu saldo</div>
+            <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>Desafíos ganados: <span className="num" style={{ color: 'var(--gold-light)' }}>+{fmt(total)} pts</span></div>
+            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{wins.length === 1 ? '1 desafío acertado' : wins.length + ' desafíos acertados'} · toca Reclamar</div>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

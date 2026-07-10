@@ -7,6 +7,31 @@
 (function () {
   'use strict';
 
+  // Límite de errores: si el cuadro eliminatorio revienta por un dato
+  // inesperado (fixture con forma distinta, ronda sin equipos aún, etc.),
+  // React desmonta TODO el árbol hasta el boundary más cercano — sin uno, la
+  // pantalla completa donde vive (Selecciones) se queda en blanco y en
+  // silencio, sin ningún indicio de qué pasó. Con este boundary, solo
+  // desaparece el cuadro (el resto de Selecciones sigue funcionando) y queda
+  // un aviso visible en vez de un vacío inexplicable.
+  class BracketErrorBoundary extends React.Component {
+    constructor(props) { super(props); this.state = { error: null }; }
+    static getDerivedStateFromError(error) { return { error: error }; }
+    componentDidCatch(error, info) { console.error('[Bracket] crash:', error, info); }
+    render() {
+      if (this.state.error) {
+        return (
+          <div style={{ padding: '14px', textAlign: 'center', fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>
+            ⚠️ No se pudo cargar el cuadro eliminatorio ahora mismo.
+            <div style={{ fontSize: 9, color: 'var(--muted-2)', marginTop: 4 }}>Prueba cerrando y abriendo la app de nuevo.</div>
+          </div>
+        );
+      }
+      return this.props.children;
+    }
+  }
+  window.MB_BracketErrorBoundary = BracketErrorBoundary;
+
   // ── Dimensiones base ──────────────────────────────────────
   const CC   = 84;  // ancho tarjeta fase actual
   const NC   = 68;  // ancho tarjeta fase siguiente
@@ -562,7 +587,7 @@
       ? `Con ${nextTier[0]} seguidas ganas un bono de +${fmtB(nextTier[1])} pts`
       : '¡Racha máxima! Ya desbloqueaste todos los bonos de racha';
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg,rgba(0,200,90,.15),rgba(0,100,50,.1))', border: '1px solid rgba(0,200,90,.4)', marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg,rgba(0,200,90,.18),rgba(0,100,50,.10)), rgba(13,20,15,0.92)', border: '1px solid rgba(0,200,90,.4)', marginBottom: 8 }}>
         <span style={{ fontSize: 22, flexShrink: 0 }}>🔥</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--success)' }}>{msgs[streak % msgs.length]}</div>
@@ -1153,10 +1178,15 @@
       );
     }
 
-    window.MB_BracketScreenWeb = BracketScreenWeb;
+    // Envuelto en BracketErrorBoundary (definido en el scope exterior, ver
+    // abajo del todo) antes de exponerlo — así un crash acá tampoco se lleva
+    // el resto de Selecciones por delante.
+    const BracketScreenWebInner = BracketScreenWeb;
+    window.MB_BracketScreenWeb = function () { return <window.MB_BracketErrorBoundary><BracketScreenWebInner /></window.MB_BracketErrorBoundary>; };
   })();
 
-  window.MB_BracketScreen  = BracketScreen;
+  const BracketScreenInner = BracketScreen;
+  window.MB_BracketScreen  = function () { return <window.MB_BracketErrorBoundary><BracketScreenInner /></window.MB_BracketErrorBoundary>; };
   window.MB_SaldoSparkline = SaldoSparkline;
   window.MB_TopTodayBanner = TopTodayBanner;
 })();
