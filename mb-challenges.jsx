@@ -38,7 +38,12 @@
     const isLost = status === 'lost';
     const resolved = isWon || isLost;
     const canClaim = isWon && doc && !doc.claimed;
-    const myStake = doc ? (doc.stake || pts) : pts * mult;
+    const closedNoAnswer0 = locked && !pick;
+    const canEdit = !locked && !resolved;
+    // Mientras se puede editar, el costo lo manda SIEMPRE el multiplicador
+    // seleccionado (×1…×50) — antes mostraba el stake guardado y parecía que
+    // los botones ×N "no hacían nada". Congelado (locked/resuelto): stake real.
+    const myStake = canEdit ? pts * mult : (doc ? (doc.stake || pts) : pts * mult);
     // Si ya había una respuesta guardada (de una sesión anterior), arranca el
     // selector en el multiplicador que usó — si no, se resetea a x1 cada vez
     // que este chip vuelve a montarse aunque el usuario ya hubiera elegido x25.
@@ -46,13 +51,7 @@
       if (doc && doc.stake) setMult(Math.max(1, Math.round(doc.stake / pts)));
     }, [doc && doc.id]);
     // "locked" = ya no se puede responder (partido empezó y nunca respondiste).
-    // Sin esto, un botón bloqueado se ve IGUAL a uno habilitado y parece que
-    // "no hace nada" al tocarlo — con opacidad + texto queda claro que cerró.
-    const closedNoAnswer = locked && !pick;
-    // El selector de monto y los botones quedan editables mientras la pregunta
-    // siga abierta (podés cambiar de opción o de monto hasta que arranque el
-    // partido) — solo se congelan cuando el agente ya liquidó (won/lost).
-    const canEdit = !locked && !resolved;
+    const closedNoAnswer = closedNoAnswer0;
     return (
       <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--r-md)', padding: '10px 12px', border: '1px solid var(--border)', opacity: closedNoAnswer ? 0.55 : 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -62,7 +61,7 @@
         {canEdit && (
           <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
             {STAKE_MULTS.map((m) => (
-              <button key={m} onClick={() => setMult(m)} className="mb-press"
+              <button key={m} onClick={() => { setMult(m); if (pick) onPick(pick, pts * m); }} className="mb-press"
                 style={{ flex: 1, padding: '4px 2px', borderRadius: 'var(--r-pill)', border: mult === m ? '1px solid var(--gold-light)' : '1px solid var(--border)', background: mult === m ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.03)', color: mult === m ? 'var(--gold-light)' : 'var(--muted)', fontSize: 8.5, fontWeight: 800, cursor: 'pointer' }}>
                 ×{m}
               </button>

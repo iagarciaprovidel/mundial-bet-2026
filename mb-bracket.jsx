@@ -538,17 +538,35 @@
     const bets     = store ? Object.values(store.bets || {}) : [];
     const ms       = (t) => (t && typeof t.toMillis === 'function') ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
     if (!authUser || bets.length === 0) return null;
-    const sorted = bets.filter(b => b.status === 'won' || b.status === 'lost').sort((a, b) => ms(a.creado) - ms(b.creado));
-    let streak = 0;
-    for (let i = sorted.length - 1; i >= 0; i--) { if (sorted[i].status === 'won') streak++; else break; }
+    // Usa la racha OFICIAL (users.currentStreak, la calcula el agente y es la
+    // misma del ranking y de los bonos) — el cálculo local por fecha de
+    // creación de la apuesta daba otro número y confundía. Fallback local
+    // solo si el agente aún no la escribió.
+    const meRecB = (store && store.users || []).find(u => u.uid === authUser.uid) || null;
+    let streak;
+    if (meRecB && typeof meRecB.currentStreak === 'number') {
+      streak = meRecB.currentStreak;
+    } else {
+      const sorted = bets.filter(b => b.status === 'won' || b.status === 'lost').sort((a, b) => ms(a.creado) - ms(b.creado));
+      streak = 0;
+      for (let i = sorted.length - 1; i >= 0; i--) { if (sorted[i].status === 'won') streak++; else break; }
+    }
     if (streak < 2) return null;
     const msgs = [`¡Llevas ${streak} aciertos seguidos! 🔥 Sigue así`, `${streak} en racha — estás en modo campeón 🏆`, `¡${streak} correctas seguidas! 📈 No pares`];
+    // Próximo bono de racha real (3/5/7 aciertos) para que el sub-texto diga
+    // algo concreto en vez de "cada acierto suma".
+    const tiers = (window.MB_REBAL && window.MB_REBAL.STREAK_TIERS) || [[3, 2000], [5, 5000], [7, 10000]];
+    const nextTier = tiers.find(t => streak < t[0]);
+    const fmtB = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
+    const subTxt = nextTier
+      ? `Con ${nextTier[0]} seguidas ganas un bono de +${fmtB(nextTier[1])} pts`
+      : '¡Racha máxima! Ya desbloqueaste todos los bonos de racha';
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg,rgba(0,200,90,.15),rgba(0,100,50,.1))', border: '1px solid rgba(0,200,90,.4)', marginBottom: 8 }}>
         <span style={{ fontSize: 22, flexShrink: 0 }}>🔥</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--success)' }}>{msgs[streak % msgs.length]}</div>
-          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginTop: 1 }}>Cada acierto suma a tu bono de racha</div>
+          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginTop: 1 }}>{subTxt}</div>
         </div>
       </div>
     );

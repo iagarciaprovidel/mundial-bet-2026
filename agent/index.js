@@ -653,6 +653,60 @@ async function settleChallengePicks(our, oddsData) {
   } catch (e) { console.warn('  settleChallengePicks:', e && e.message); }
 }
 
+// ── Barrida de rescate de desafíos huérfanos ────────────────
+// settleChallengePicks solo corre para partidos dentro de la ventana de ESPN
+// (anteayer→mañana). Un pick cuyo partido terminó antes de eso —o antes de que
+// existiera el código que calcula htGoal/ftGoal/etc.— quedaba 'open' PARA
+// SIEMPRE: el usuario nunca veía si acertó ni podía reclamar. Esta barrida
+// toma todos los picks abiertos, y si su partido ya terminó, reconstruye los
+// campos que falten desde los datos guardados en odds (scorers/cards/gh/ga)
+// y liquida. Barata: solo lee picks abiertos + un odds doc por partido.
+async function sweepOpenChallengePicks() {
+  try {
+    const snap = await db.collection('challenge_picks').where('status', '==', 'open').get();
+    if (snap.empty) return;
+    const matchIds = Array.from(new Set(snap.docs.map((d) => d.data().matchId).filter(Boolean)));
+    for (const mid of matchIds) {
+      const our = OURS.find((f) => f.id === mid);
+      if (!our) continue;
+      const odoc = await db.collection('odds').doc(mid).get();
+      if (!odoc.exists) continue;
+      const od = odoc.data();
+      if (!od.finished) continue; // aún en juego o sin resultado: nada que hacer
+      const gh = typeof od.gh === 'number' ? od.gh : null;
+      const ga = typeof od.ga === 'number' ? od.ga : null;
+      const scorers = Array.isArray(od.scorers) ? od.scorers : null;
+      const cards = Array.isArray(od.cards) ? od.cards : null;
+      const patch = {};
+      const isKOMatch = our.stage && our.stage !== 'Grupos';
+      const minBase = (s) => parseInt(String(s.minute || '').split(':')[0].split('+')[0], 10);
+      if (isKOMatch && typeof od.penalties === 'undefined') patch.penalties = !!(od.extraTime && od.penWinner);
+      if (isKOMatch && typeof od.htGoal === 'undefined' && gh != null && ga != null) {
+        if (gh + ga === 0) patch.htGoal = false;
+        else if (scorers && scorers.length) patch.htGoal = scorers.some((s) => { const b = minBase(s); return !isNaN(b) && b <= 45; });
+      }
+      if (isKOMatch && typeof od.ftGoal === 'undefined' && gh != null && ga != null) {
+        if (gh + ga === 0) patch.ftGoal = false;
+        else if (scorers && scorers.length) patch.ftGoal = scorers.some((s) => { const b = minBase(s); return !isNaN(b) && b > 45; });
+      }
+      if (typeof od.yellowCardsOver3 === 'undefined' && cards) {
+        const yc = cards.filter((c) => !c.red).length;
+        patch.yellowCardsOver3 = yc > 3; patch.yellowCardsTotal = yc;
+      }
+      if (typeof od.firstGoalSide === 'undefined' && gh != null && ga != null) {
+        if (gh + ga === 0) patch.firstGoalSide = 'none';
+        else if (scorers && scorers.length) patch.firstGoalSide = scorers[0].code === our.homeCode ? 'home' : 'away';
+      }
+      if (Object.keys(patch).length) {
+        await db.collection('odds').doc(mid).set(patch, { merge: true });
+        Object.assign(od, patch);
+      }
+      console.log(`  Barrida desafíos: liquidando picks huérfanos de ${mid} (${our.home} vs ${our.away})`);
+      await settleChallengePicks(our, od);
+    }
+  } catch (e) { console.warn('sweepOpenChallengePicks:', e && e.message); }
+}
+
 // ── Notifica a usuarios sin pronóstico del campeón ──────────
 async function sendNotifyNoChampion() {
   const snap = await db.collection('users').get();
@@ -1488,6 +1542,10 @@ async function main() {
 
   let parlaysSettled = 0;
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
+
+  // Rescate de desafíos que quedaron abiertos en partidos ya terminados
+  // (fuera de la ventana de ESPN). Corre en cada ciclo: solo lee picks 'open'.
+  await sweepOpenChallengePicks();
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
 }
