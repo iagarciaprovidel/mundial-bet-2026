@@ -1314,38 +1314,69 @@
   }
   window.MB_ChampLadder = ChampLadder;
 
-  // Banner de Inicio: confirma el premio "campeón por ronda" (CHAMP_LADDER).
-  // Este bono se acredita SOLO (el agente lo suma directo al saldo, sin botón
-  // de reclamo) y hasta ahora la única confirmación visible vivía escondida
-  // dentro de ChampLadder en Perfil — nadie lo veía y parecía que "no llegaba".
-  // Este banner muestra en Inicio el último escalón ya ganado + el que sigue.
+  // Mapa ronda del agente (r32/r16/qf/sf/final) → índice en CHAMP_LADDER.
+  // Estar en la ronda X implica haber ganado la ronda anterior, por eso el
+  // índice apunta a la etiqueta de la ronda SIGUIENTE ("ganaste r32" = "avanzó
+  // a Octavos"). r32/r16 se pagaron automáticos antes de este cambio; desde qf
+  // en adelante el premio queda "por reclamar" (champClaim_{stage}).
+  const CHAMP_STAGE_IDX = { r32: 1, r16: 2, qf: 3, sf: 4, final: 5 };
+
+  // Banner de Inicio: premio "campeón por ronda" (CHAMP_LADDER).
+  // r32/r16: se pagaron solos (histórico) — solo confirmación, sin botón.
+  // qf/sf/final: quedan "por reclamar" en champClaim_{stage} — con botón,
+  // mismo patrón que los desafíos del partido y el goleador del torneo.
   function ChampPhaseBanner() {
     const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
     const s = useBetStore();
     const meRec = authUser ? (s.users || []).find((u) => u.uid === authUser.uid) : null;
+    const [claiming, setClaiming] = useState(null);
     if (!authUser || !meRec || !meRec.championCode) return null;
     const champCode = meRec.championCode;
     const fx = [...((window.MB && window.MB.WC_FIXTURES) || []), ...((s && s.dynFixtures) || [])];
     const codesOf = (stage) => new Set(fx.filter((f) => f.stage === stage).flatMap((f) => [f.homeCode, f.awayCode]).filter(Boolean));
-    // Mismo orden que CHAMP_LADDER (índices 1..5): estar en la ronda X implica
-    // haber ganado la ronda anterior, así que es el bono que ya se pagó.
-    const stageOrder = [['r16', 1], ['qf', 2], ['sf', 3], ['final', 4]];
+    // Confirmación de lo ya pagado automático (r32/r16, histórico).
     let earnedIdx = null;
-    stageOrder.forEach(([stage, idx]) => { if (codesOf(stage).has(champCode)) earnedIdx = idx; });
-    if (earnedIdx == null) return null; // aún no ganó ningún escalón de la eliminatoria
-    const [label, pts] = CHAMP_LADDER[earnedIdx];
-    const nextTier = CHAMP_LADDER[earnedIdx + 1] || null;
+    [['r16', 1], ['qf', 2]].forEach(([stage, idx]) => { if (codesOf(stage).has(champCode)) earnedIdx = idx; });
+    const autoInfo = earnedIdx != null ? CHAMP_LADDER[earnedIdx] : null;
+    // Premios por reclamar: qf/sf/final.
+    const claims = ['qf', 'sf', 'final']
+      .map((stage) => ({ stage: stage, doc: meRec['champClaim_' + stage] }))
+      .filter((c) => c.doc && !c.doc.claimed);
+    const doClaim = async (stage) => {
+      if (claiming || !FB().claimChampBonus) return;
+      setClaiming(stage);
+      try { await FB().claimChampBonus(stage); } catch (e) {}
+      setClaiming(null);
+    };
+    if (!autoInfo && !claims.length) return null;
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08))', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
-        <span style={{ fontSize: 22 }}>🏆</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>
-            {meRec.champion || 'Tu selección'} avanzó a {label}: <span className="num" style={{ color: 'var(--gold-light)' }}>+{fmt(pts)} pts</span>
+      <div style={{ padding: '12px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08))', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
+        {autoInfo && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: claims.length ? 9 : 0 }}>
+            <span style={{ fontSize: 22 }}>🏆</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>
+                {meRec.champion || 'Tu selección'} avanzó a {autoInfo[0]}: <span className="num" style={{ color: 'var(--gold-light)' }}>+{fmt(autoInfo[1])} pts</span>
+              </div>
+              <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginTop: 1 }}>Ya suman a tu saldo</div>
+            </div>
           </div>
-          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginTop: 1 }}>
-            {nextTier ? 'Ya suman a tu saldo · si gana ' + nextTier[0] + ' ganas +' + fmt(nextTier[1]) + ' más' : 'Ya suman a tu saldo · ¡el máximo de la escalera!'}
-          </div>
-        </div>
+        )}
+        {claims.map((c) => {
+          const [label, pts] = CHAMP_LADDER[CHAMP_STAGE_IDX[c.stage]];
+          return (
+            <div key={c.stage} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', marginTop: 6, borderRadius: 'var(--r-md)', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>🏆</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 'var(--t-2xs)', fontWeight: 700, color: 'var(--text)' }}>{meRec.champion || 'Tu selección'} avanzó a {label}</div>
+                <div className="num" style={{ fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', fontWeight: 800 }}>+{fmt(pts)} pts por reclamar</div>
+              </div>
+              <button onClick={() => doClaim(c.stage)} disabled={!!claiming} className="mb-press" style={{ flexShrink: 0, padding: '7px 13px', borderRadius: 'var(--r-pill)', border: 'none', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', cursor: claiming ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 'var(--t-2xs)', opacity: claiming === c.stage ? 0.6 : 1 }}>
+                {claiming === c.stage ? '…' : 'Reclamar'}
+              </button>
+            </div>
+          );
+        })}
       </div>
     );
   }

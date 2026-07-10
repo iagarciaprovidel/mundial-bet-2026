@@ -74,13 +74,26 @@ service cloud.firestore {
             && request.resource.data.scorerBet.status == resource.data.scorerBet.status
             && request.resource.data.scorerBet.payout == resource.data.scorerBet.payout);
     }
+    // champClaim_{stage} (r32/r16/qf/sf/final): el agente deja {pts, claimed:false}
+    // al pagar el premio "campeón por ronda"; el cliente SOLO puede voltear
+    // claimed a true sin tocar pts, igual que scorerBetOk.
+    function champClaimOk(field) {
+      return !(field in request.resource.data.diff(resource.data).affectedKeys())
+        || (resource.data.get(field, null) != null
+            && resource.data[field].claimed == false
+            && request.resource.data[field].claimed == true
+            && request.resource.data[field].pts == resource.data[field].pts);
+    }
     match /users/{uid} {
       allow read:   if signedIn();
       allow create: if signedIn() && request.auth.uid == uid;
-      // el dueño edita su perfil (sin poder fabricar racha ni ganar el goleador
-      // directo); un admin de un equipo puede asignar a alguien a ESE equipo (aprobar)
+      // el dueño edita su perfil (sin poder fabricar racha, goleador o premio
+      // de campeón directo); un admin de un equipo puede asignar a alguien a ESE equipo (aprobar)
       allow update: if signedIn() && (
-                      (request.auth.uid == uid && streakFieldsUnchanged() && scorerBetOk())
+                      (request.auth.uid == uid && streakFieldsUnchanged() && scorerBetOk()
+                        && champClaimOk('champClaim_r32') && champClaimOk('champClaim_r16')
+                        && champClaimOk('champClaim_qf') && champClaimOk('champClaim_sf')
+                        && champClaimOk('champClaim_final'))
                       || (request.resource.data.groupId != null && isTeamAdmin(request.resource.data.groupId)));
       allow delete: if signedIn() && request.auth.uid == uid;
     }

@@ -50,7 +50,7 @@
       subscribePredictions() { return () => {}; },
       saveSemiPick: noFB, getSemiPick() { return Promise.resolve(null); },
       saveChallengePick: noFB, getChallengePicks() { return Promise.resolve(null); }, claimChallengeWin: noFB, getMyUnclaimedChallengeWins() { return Promise.resolve([]); },
-      placeScorerBet: noFB, getMyScorerBet() { return Promise.resolve(null); }, cancelScorerBet: noFB, claimScorerWin: noFB,
+      placeScorerBet: noFB, getMyScorerBet() { return Promise.resolve(null); }, cancelScorerBet: noFB, claimScorerWin: noFB, claimChampBonus: noFB,
     };
     if (!configured) console.warn('[MundialBet] Firebase no configurado: edita firebase-config.js');
     return;
@@ -793,6 +793,27 @@
         tx.set(userRef, {
           saldo: saldo + (bet.payout || 0),
           scorerBet: Object.assign({}, bet, { claimed: true }),
+        }, { merge: true });
+      });
+    },
+    // Premio "campeón por ronda" (users/{uid}.champClaim_{stage}, lo deja el
+    // agente en payChampionRoundBonus). Mismo patrón claim-based que
+    // claimChallengeWin/claimScorerWin: el agente NO acredita saldo directo,
+    // el jugador reclama con un botón.
+    async claimChampBonus(stage) {
+      const u = auth.currentUser; if (!u) return Promise.reject('no-auth');
+      const field = 'champClaim_' + stage;
+      const userRef = db.collection('users').doc(u.uid);
+      return db.runTransaction(async function (tx) {
+        const us = await tx.get(userRef);
+        if (!us.exists) return;
+        const ud = us.data();
+        const cl = ud[field];
+        if (!cl || cl.claimed) return;
+        const saldo = (typeof ud.saldo === 'number') ? ud.saldo : SALDO_INICIAL;
+        tx.set(userRef, {
+          saldo: saldo + (cl.pts || 0),
+          [field]: Object.assign({}, cl, { claimed: true }),
         }, { merge: true });
       });
     },

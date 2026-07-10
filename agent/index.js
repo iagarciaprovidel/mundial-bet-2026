@@ -905,10 +905,17 @@ async function payGroupStageBonuses() {
 //    que avanzaron (ganaron su partido de esa ronda).
 //    Idempotente vía meta/bonuses.champ_{stage} y users/{uid}.rewards.champ_{stage}.
 //    DRY_RUN simula sin escribir. ──
+// IMPORTANTE: este bono ya NO se acredita solo. Deja el premio "por reclamar"
+// en users/{uid}.champClaim_{stage} = { pts, claimed:false } — el jugador lo
+// suma a su saldo con un botón en la app (claimChampBonus en mb-firebase.js),
+// mismo patrón que los desafíos del partido. (Las rondas r32/r16 ya se habían
+// pagado automáticamente antes de este cambio — quedan como estaban, ese
+// dinero ya es real y no se revierte; desde qf en adelante se reclama.)
 async function payChampionRoundBonus(stage, winnerCodes) {
   const bonus = BONUS.champRounds[stage];
   if (!bonus || !winnerCodes || !winnerCodes.length) return 0;
   const metaKey = `champ_${stage}`;
+  const claimField = `champClaim_${stage}`;
   if (!BONUS_DRY_RUN) {
     const meta = await db.collection('meta').doc('bonuses').get();
     if (meta.exists && meta.data()[metaKey]) return 0;
@@ -921,26 +928,20 @@ async function payChampionRoundBonus(stage, winnerCodes) {
     if (!u.championCode || !winners.has(u.championCode)) continue;
     if (u.rewards && u.rewards[metaKey]) continue;
     if (BONUS_DRY_RUN) {
-      console.log(`  [DRY] Campeón ${stage} ${u.nombre || ud.id} (${u.championCode}): +${bonus}`);
+      console.log(`  [DRY] Campeón ${stage} ${u.nombre || ud.id} (${u.championCode}): +${bonus} (por reclamar)`);
     } else {
-      await db.runTransaction(async (tx) => {
-        const ref = db.collection('users').doc(ud.id);
-        const cur = await tx.get(ref); const data = cur.exists ? cur.data() : {};
-        if (data.rewards && data.rewards[metaKey]) return;
-        const saldo = (typeof data.saldo === 'number') ? data.saldo : SALDO_INICIAL;
-        tx.set(ref, {
-          prevSaldo: saldo, saldo: saldo + bonus,
-          rewards: Object.assign({}, data.rewards, { [metaKey]: true }),
-        }, { merge: true });
-      });
-      await notify(ud.id, '🏆 ¡Tu selección avanza!', `Tu campeón siguió adelante → +${bonus} puntos. ¡Sigue jugando!`);
+      await db.collection('users').doc(ud.id).set({
+        [claimField]: { pts: bonus, claimed: false, ts: admin.firestore.FieldValue.serverTimestamp() },
+        rewards: Object.assign({}, u.rewards, { [metaKey]: true }),
+      }, { merge: true });
+      await notify(ud.id, '🏆 ¡Tu selección avanza!', `Tu campeón siguió adelante → +${bonus} puntos por reclamar en la app.`);
     }
     paid++;
   }
   if (!BONUS_DRY_RUN && paid > 0) {
     await db.collection('meta').doc('bonuses').set({ [metaKey]: true, [`${metaKey}At`]: admin.firestore.FieldValue.serverTimestamp(), [`${metaKey}Winners`]: Array.from(winners) }, { merge: true });
   }
-  console.log(`  Campeón ${stage}: ${BONUS_DRY_RUN ? 'SIMULADO' : 'PAGADO'} a ${paid} jugador(es), +${bonus} c/u. Ganadores: ${[...winners].join(',')}`);
+  console.log(`  Campeón ${stage}: ${BONUS_DRY_RUN ? 'SIMULADO' : 'POR RECLAMAR'} a ${paid} jugador(es), +${bonus} c/u. Ganadores: ${[...winners].join(',')}`);
   return paid;
 }
 
