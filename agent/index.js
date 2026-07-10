@@ -674,6 +674,9 @@ async function sweepOpenChallengePicks() {
       else cnt.otros++;
     });
     console.log(`Desafíos: ${all.size} pick(s) → open:${cnt.open} won:${cnt.won} (sin reclamar:${cnt.porReclamar}) lost:${cnt.lost} otros:${cnt.otros}`);
+    const openIds = {};
+    all.docs.forEach((d) => { const p = d.data(); if (p.status === 'open') openIds[p.matchId] = (openIds[p.matchId] || 0) + 1; });
+    if (Object.keys(openIds).length) console.log('  Abiertos por partido: ' + Object.keys(openIds).map((k) => `${k}(${openIds[k]})`).join(' '));
     const snap = await db.collection('challenge_picks').where('status', '==', 'open').get();
     if (snap.empty) return;
     const matchIds = Array.from(new Set(snap.docs.map((d) => d.data().matchId).filter(Boolean)));
