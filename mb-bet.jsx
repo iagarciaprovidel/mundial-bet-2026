@@ -1314,6 +1314,43 @@
   }
   window.MB_ChampLadder = ChampLadder;
 
+  // Banner de Inicio: confirma el premio "campeón por ronda" (CHAMP_LADDER).
+  // Este bono se acredita SOLO (el agente lo suma directo al saldo, sin botón
+  // de reclamo) y hasta ahora la única confirmación visible vivía escondida
+  // dentro de ChampLadder en Perfil — nadie lo veía y parecía que "no llegaba".
+  // Este banner muestra en Inicio el último escalón ya ganado + el que sigue.
+  function ChampPhaseBanner() {
+    const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+    const s = useBetStore();
+    const meRec = authUser ? (s.users || []).find((u) => u.uid === authUser.uid) : null;
+    if (!authUser || !meRec || !meRec.championCode) return null;
+    const champCode = meRec.championCode;
+    const fx = [...((window.MB && window.MB.WC_FIXTURES) || []), ...((s && s.dynFixtures) || [])];
+    const codesOf = (stage) => new Set(fx.filter((f) => f.stage === stage).flatMap((f) => [f.homeCode, f.awayCode]).filter(Boolean));
+    // Mismo orden que CHAMP_LADDER (índices 1..5): estar en la ronda X implica
+    // haber ganado la ronda anterior, así que es el bono que ya se pagó.
+    const stageOrder = [['r16', 1], ['qf', 2], ['sf', 3], ['final', 4]];
+    let earnedIdx = null;
+    stageOrder.forEach(([stage, idx]) => { if (codesOf(stage).has(champCode)) earnedIdx = idx; });
+    if (earnedIdx == null) return null; // aún no ganó ningún escalón de la eliminatoria
+    const [label, pts] = CHAMP_LADDER[earnedIdx];
+    const nextTier = CHAMP_LADDER[earnedIdx + 1] || null;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08))', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
+        <span style={{ fontSize: 22 }}>🏆</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>
+            {meRec.champion || 'Tu selección'} avanzó a {label}: <span className="num" style={{ color: 'var(--gold-light)' }}>+{fmt(pts)} pts</span>
+          </div>
+          <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', marginTop: 1 }}>
+            {nextTier ? 'Ya suman a tu saldo · si gana ' + nextTier[0] + ' ganas +' + fmt(nextTier[1]) + ' más' : 'Ya suman a tu saldo · ¡el máximo de la escalera!'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  window.MB_ChampPhaseBanner = ChampPhaseBanner;
+
   // Banner de inicio: "Elige tu campeón" + "Reclamar premios"
   // Aparece en la pantalla Inicio si el usuario tiene pendientes alguna de las dos acciones.
   function ClaimBonusBanner() {
