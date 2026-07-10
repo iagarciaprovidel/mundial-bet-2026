@@ -944,6 +944,41 @@ async function payChampionRoundBonus(stage, winnerCodes) {
   return paid;
 }
 
+// ── Rescate del premio "campeón por ronda" para rondas ya cerradas ─────────
+// payChampionRoundBonus() solo se llama desde el bucle live de ESPN, así que
+// una ronda que terminó fuera de la ventana de ESPN (o antes de que el agente
+// alcanzara a verla completa) se queda sin pagar para siempre. Esta barrida
+// no depende de ESPN: recorre cada ronda knockout, mira los odds guardados en
+// Firestore, y si TODOS sus partidos ya están 'finished' y el bono de esa
+// ronda no se pagó (meta/bonuses.champ_{stage}), lo paga ahora.
+async function sweepChampionRoundBonuses() {
+  try {
+    const stages = ['r32', 'r16', 'qf', 'sf', 'final'];
+    const meta = await db.collection('meta').doc('bonuses').get();
+    const metaData = meta.exists ? meta.data() : {};
+    for (const stage of stages) {
+      if (metaData[`champ_${stage}`]) continue; // ya pagado
+      const stageFixtures = OURS.filter((f) => f.stage === stage);
+      if (!stageFixtures.length) continue;
+      const stageDocs = await Promise.all(stageFixtures.map((f) => db.collection('odds').doc(f.id).get()));
+      const allFinished = stageDocs.every((d) => d.exists && d.data().finished && d.data().result);
+      if (!allFinished) continue;
+      const winnerCodes = stageFixtures.map((f, i) => {
+        const res = stageDocs[i].data().result;
+        return res === 'home' ? f.homeCode : f.awayCode;
+      }).filter(Boolean);
+      console.log(`  Barrida campeón: ronda ${stage} completa y sin pagar → liquidando`);
+      const paid = await payChampionRoundBonus(stage, winnerCodes);
+      if (stage === 'qf' && paid >= 0) {
+        try { await paySemiBonus(winnerCodes); } catch (e) { console.warn('Semi bonus (barrida):', e && e.message); }
+      }
+      if (stage === 'final' && paid >= 0) {
+        try { await settleScorerBets(); } catch (e) { console.warn('Goleador bonus (barrida):', e && e.message); }
+      }
+    }
+  } catch (e) { console.warn('sweepChampionRoundBonuses:', e && e.message); }
+}
+
 // ── Premio semifinalistas (+500 pts por cada uno que llegó a semis) ──
 // Se llama cuando TODOS los QF terminaron (winnerCodes = 4 clasificados a semis).
 async function paySemiBonus(winnerCodes) {
@@ -1560,6 +1595,14 @@ async function main() {
   // Rescate de desafíos que quedaron abiertos en partidos ya terminados
   // (fuera de la ventana de ESPN). Corre en cada ciclo: solo lee picks 'open'.
   await sweepOpenChallengePicks();
+
+  // Rescate de premios "campeón por ronda" (r32/r16/qf/sf/final): el pago solo
+  // se dispara desde el bucle de ESPN, que solo ve partidos en la ventana
+  // anteayer→mañana. Si una ronda completa (todas sus cuotas 'finished') salió
+  // de esa ventana antes de que el agente llegara a revisarla, el bono queda
+  // sin pagar PARA SIEMPRE. Esta barrida revisa cada ronda directamente contra
+  // los fixtures/odds guardados, sin depender de que ESPN la devuelva hoy.
+  await sweepChampionRoundBonuses();
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
 }
