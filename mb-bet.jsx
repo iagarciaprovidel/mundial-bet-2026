@@ -718,12 +718,58 @@
                   </div>
                 ));
               })()}
+              {(() => {
+                // Combinadas abiertas que incluyen este partido como pata.
+                const legs = (s.parlays || []).filter((p) => p.status === 'open' && (p.legs || []).some((l) => l.matchId === m.id));
+                if (!legs.length) return null;
+                return legs.map((p) => {
+                  const leg = p.legs.find((l) => l.matchId === m.id);
+                  return (
+                    <div key={p.id} style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(220,80,80,0.20)', fontSize: 'var(--t-2xs)', color: 'var(--muted)', textAlign: 'center' }}>
+                      Combinada ({p.legs.length} partidos): <span style={{ color: 'var(--info)', fontWeight: 700 }}>{PICK_LABEL(m, leg.pick)}</span> · {fmt(p.stake)} @ {Number(p.combinedOdd).toFixed(2)}
+                    </div>
+                  );
+                });
+              })()}
+              <LiveMatchChallenges matchId={m.id} />
             </div>
           ))}
         </div>
       </div>
     );
   }
+
+  // Resumen compacto de los desafíos del partido que YA respondiste, para
+  // mostrarlos junto a la apuesta 1X2 en "En vivo" (antes solo se veían
+  // dentro de la card de Apostar, así que parecía que "faltaban" apuestas).
+  const CH_QLABEL = { q1: 'Gol 1T', q2: 'Penales', q3: '+3 amarillas', q4: 'Primer gol', q5: 'Gol 2T' };
+  function LiveMatchChallenges({ matchId }) {
+    const [picks, setPicks] = useState(null);
+    useEffect(() => {
+      if (!FB().getChallengePicks) return;
+      let alive = true;
+      FB().getChallengePicks(matchId).then((p) => { if (alive) setPicks(p); }).catch(() => {});
+      return () => { alive = false; };
+    }, [matchId]);
+    const entries = picks ? Object.keys(picks).filter((k) => picks[k] && picks[k].pick) : [];
+    if (!entries.length) return null;
+    return (
+      <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(220,80,80,0.20)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {entries.map((k) => {
+          const d = picks[k];
+          const won = d.status === 'won', lost = d.status === 'lost';
+          return (
+            <div key={k} style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)', textAlign: 'center' }}>
+              🎯 {CH_QLABEL[k] || k}: <span style={{ color: won ? 'var(--success)' : lost ? 'var(--danger)' : 'var(--info)', fontWeight: 700 }}>{d.pick}</span> · {fmt(d.stake)} pts
+              {won && (d.claimed ? ' ✓ reclamado' : ' · ¡reclamar!')}
+              {lost && ' ✗'}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   window.MB_LiveNow = LiveNow;
 
   // ── Frase mundialera para el saludo del Inicio ──────────────────────────────

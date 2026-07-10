@@ -728,7 +728,7 @@
         if (available < stake) throw 'saldo-insuficiente';
         tx.set(userRef, { saldo: available - stake, staked: staked0 - refund + stake }, { merge: true });
         tx.set(pickRef, {
-          uid: u.uid, matchId: matchId, qkey: qkey, pick: pick, stake: stake, status: 'open', claimed: false, ts: FV.serverTimestamp(),
+          uid: u.uid, nombre: u.displayName || 'Jugador', matchId: matchId, qkey: qkey, pick: pick, stake: stake, status: 'open', claimed: false, ts: FV.serverTimestamp(),
         });
       });
     },

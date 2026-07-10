@@ -330,7 +330,12 @@ function ActivityTicker() {
             borderRadius: 'var(--r-pill)', background: 'var(--surface-2)', border: '1px solid var(--border-2)',
             fontSize: 'var(--t-3xs)', color: 'var(--muted)', whiteSpace: 'nowrap',
           }}>
-            <span style={{ fontWeight: 700, color: 'var(--text)' }}>{it.nombre}</span> apostó <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{Db.fmt(it.stake)}</span> a <span style={{ fontWeight: 700 }}>{teamFor(it)}</span>
+            <span style={{ fontWeight: 700, color: 'var(--text)' }}>{it.nombre}</span> apostó <span className="num" style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{Db.fmt(it.stake)}</span>
+            {it.bonus ? (
+              <> a <span style={{ fontWeight: 700 }}>🎯 {it.pick}</span>{it.home && <> ({it.home} vs {it.away})</>}</>
+            ) : (
+              <> a <span style={{ fontWeight: 700 }}>{teamFor(it)}</span></>
+            )}
             <span style={{ color: 'var(--muted-2)' }}>· {ago(it.ts)}</span>
           </div>
         ))}

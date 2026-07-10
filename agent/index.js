@@ -325,9 +325,27 @@ async function updateBetConsensus() {
     await db.collection('odds').doc(matchId).set({ consensus: byMatch[matchId] }, { merge: true });
     writes++;
   }
-  // Últimas 8 apuestas (cualquier estado en el lote leído) para el ticker de actividad.
-  const recent = withTs.sort((a, b) => b.creado.toMillis() - a.creado.toMillis()).slice(0, 8)
-    .map((b) => ({ nombre: b.nombre || 'Jugador', pick: b.pick, home: b.home, away: b.away, stake: b.stake, ts: b.creado.toMillis() }));
+  // Desafíos del partido abiertos: se suman al MISMO ticker de actividad (antes
+  // solo se leía `bets`, así que las apuestas bonus nunca aparecían en la
+  // franja de "Apostar" aunque sí costaran puntos reales desde el v281).
+  const chSnap = await db.collection('challenge_picks').where('status', '==', 'open').get();
+  const CH_QLABEL = { q1: 'gol 1T', q2: 'penales', q3: '+3 amarillas', q4: 'primer gol', q5: 'gol 2T' };
+  const fxById = {};
+  OURS.forEach((f) => { fxById[f.id] = f; });
+  const chWithTs = [];
+  chSnap.docs.forEach((d) => {
+    const c = d.data();
+    if (!c.ts || typeof c.ts.toMillis !== 'function') return;
+    const fx = fxById[c.matchId];
+    chWithTs.push({
+      nombre: c.nombre || 'Jugador', pick: CH_QLABEL[c.qkey] || c.qkey,
+      home: fx ? fx.home : '', away: fx ? fx.away : '', stake: c.stake, ts: c.ts.toMillis(), bonus: true,
+    });
+  });
+
+  // Últimas 8 apuestas (partido + desafíos, cualquier estado en el lote leído) para el ticker.
+  const matchActivity = withTs.map((b) => ({ nombre: b.nombre || 'Jugador', pick: b.pick, home: b.home, away: b.away, stake: b.stake, ts: b.creado.toMillis() }));
+  const recent = matchActivity.concat(chWithTs).sort((a, b) => b.ts - a.ts).slice(0, 8);
   if (recent.length) await db.collection('meta').doc('activity').set({ recent: recent }, { merge: true });
   return writes;
 }
