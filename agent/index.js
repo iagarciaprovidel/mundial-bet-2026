@@ -957,11 +957,12 @@ async function sweepChampionRoundBonuses() {
     const meta = await db.collection('meta').doc('bonuses').get();
     const metaData = meta.exists ? meta.data() : {};
     for (const stage of stages) {
-      if (metaData[`champ_${stage}`]) continue; // ya pagado
       const stageFixtures = OURS.filter((f) => f.stage === stage);
-      if (!stageFixtures.length) continue;
+      if (metaData[`champ_${stage}`]) { console.log(`  Barrida campeón ${stage}: ya pagado.`); continue; }
+      if (!stageFixtures.length) { console.log(`  Barrida campeón ${stage}: sin fixtures cargados.`); continue; }
       const stageDocs = await Promise.all(stageFixtures.map((f) => db.collection('odds').doc(f.id).get()));
       const allFinished = stageDocs.every((d) => d.exists && d.data().finished && d.data().result);
+      console.log(`  Barrida campeón ${stage}: ${stageFixtures.length} partido(s), finished=${stageDocs.filter((d) => d.exists && d.data().finished).length}, allFinished=${allFinished}`);
       if (!allFinished) continue;
       const winnerCodes = stageFixtures.map((f, i) => {
         const res = stageDocs[i].data().result;
