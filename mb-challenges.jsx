@@ -2,7 +2,8 @@
    MundialBet Club 2026 — Desafíos por partido (Bonus Questions)
    Expone: window.MB_MatchChallenges
    Reglas:
-     · Solo partidos KO (r32, r16, qf, sf, final).
+     · Solo desde OCTAVOS de final (r16, qf, sf, final) — los bonus arrancaron
+       en octavos; no se muestran en fase de grupos ni dieciseisavos (r32).
      · Pregunta 1 pre-partido: "¿Gol en el primer tiempo?" (Sí/No)
        Resuelve: el agente escribe odds/{matchId}.htGoal = true|false al detectar
        el resultado de primer tiempo (ht_gh + ht_ga > 0).
@@ -20,7 +21,9 @@
 
   const PTS = { r32: 1500, r16: 1500, qf: 2500, sf: 2500, final: 4000 };
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
-  const KO_STAGES = new Set(['r32', 'r16', 'qf', 'sf', 'final']);
+  // Los desafíos existen recién desde octavos de final (r16): en grupos y r32
+  // no hubo bonus, así que no deben mostrarse en esos partidos.
+  const BONUS_STAGES = new Set(['r16', 'qf', 'sf', 'final']);
 
   const STAKE_MULTS = [1, 5, 10, 25, 50];
 
@@ -91,14 +94,12 @@
         )}
         {isWon && doc && doc.claimed && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 700, marginTop: 6, textAlign: 'center' }}>✓ +{fmt(doc.payout)} puntos reclamados</div>}
         {isLost && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>Perdiste los {fmt(myStake)} pts apostados</div>}
-        {!resolved && pick && !closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>Apostaste {fmt(myStake)} pts · podés cambiar hasta que arranque</div>}
+        {!resolved && pick && !closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>Apostaste {fmt(myStake)} pts · puedes cambiar hasta que arranque</div>}
         {closedNoAnswer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted-2)', marginTop: 6, textAlign: 'center' }}>🔒 Cerrado — el partido ya empezó</div>}
         {disabledReason && !locked && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--danger)', marginTop: 6, textAlign: 'center' }}>{disabledReason}</div>}
       </div>
     );
   }
-
-  const PTS_EXTRA = 500; // puntos para q3/q4 en fase de grupos
 
   function MatchChallenges({ match }) {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
@@ -116,14 +117,16 @@
     }, [user && user.uid, match && match.id]);
 
     if (!user || !match) return null;
+    // Los bonus/desafíos arrancaron recién en octavos de final: no se muestran
+    // en fase de grupos ni en dieciseisavos (r32) — ni siquiera en partidos ya jugados.
+    if (!match.stage || !BONUS_STAGES.has(match.stage)) return null;
 
-    const isKO = match.stage && KO_STAGES.has(match.stage);
     const kickoff = new Date(match.kickoff).getTime();
     const now = Date.now();
     const started = kickoff <= now;
 
     const ptsKO = PTS[match.stage] || 1500;
-    const ptsExtra = isKO ? Math.round(ptsKO * 0.5) : PTS_EXTRA;
+    const ptsExtra = Math.round(ptsKO * 0.5);
     const saldo = window.MB_avail ? window.MB_avail(store) : 90000;
 
     const savePick = async (qkey, value, cost) => {
@@ -187,9 +190,7 @@
             locked={started}
             disabledReason={err && err.qkey === 'q4' ? err.msg : null}
           />
-          {/* Q1/Q5/Q2: solo partidos KO */}
-          {isKO && (
-            <QuestionChip
+          <QuestionChip
               label="🕐 ¿Habrá gol en el primer tiempo?"
               opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
               doc={picks.q1}
@@ -200,9 +201,7 @@
               locked={started}
               disabledReason={err && err.qkey === 'q1' ? err.msg : null}
             />
-          )}
-          {isKO && (
-            <QuestionChip
+          <QuestionChip
               label="🕑 ¿Habrá gol en el segundo tiempo?"
               opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
               doc={picks.q5}
@@ -213,9 +212,7 @@
               locked={started}
               disabledReason={err && err.qkey === 'q5' ? err.msg : null}
             />
-          )}
-          {isKO && (
-            <QuestionChip
+          <QuestionChip
               label="⚠️ ¿Irá a penales?"
               opts={[{ label: 'Sí', value: 'yes' }, { label: 'No', value: 'no' }]}
               doc={picks.q2}
@@ -226,7 +223,6 @@
               locked={started}
               disabledReason={err && err.qkey === 'q2' ? err.msg : null}
             />
-          )}
         </div>
       </div>
     );

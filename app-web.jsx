@@ -558,39 +558,6 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
 // ════════════════════════════════════════════════════════════
 //  PARTIDOS
 // ════════════════════════════════════════════════════════════
-function MatchCardWeb({ m, onPredict }) {
-  return (
-    <Card glow="var(--sh-2)" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Chip tone={m.next ? 'green' : 'blue'}>{m.next ? 'Abierto' : 'Próximo'}</Chip>
-        <span style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)' }}>{m.group}</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
-        <div style={{ textAlign: 'center', flex: 1 }}>
-          <div style={{ fontSize: 38 }}>{m.flagH}</div>
-          <div style={{ fontWeight: 700, marginTop: 4, fontSize: 'var(--t-sm)' }}>{m.home}</div>
-        </div>
-        <div style={{ textAlign: 'center', minWidth: 70 }}>
-          {m.next
-            ? (<><div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)' }}>cierra en</div><CountdownTimer minutes={m.kickoffInMin} compact /></>)
-            : (<div style={{ fontSize: 'var(--t-2xs)', color: 'var(--muted)', fontWeight: 700 }}>{m.when}</div>)}
-        </div>
-        <div style={{ textAlign: 'center', flex: 1 }}>
-          <div style={{ fontSize: 38 }}>{m.flagA}</div>
-          <div style={{ fontWeight: 700, marginTop: 4, fontSize: 'var(--t-sm)' }}>{m.away}</div>
-        </div>
-      </div>
-      <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted-2)', textAlign: 'center' }}>📍 {m.stadium}</div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <BetButton label={m.home} odd={m.odds.home} />
-        <BetButton label="Empate" odd={m.odds.draw} />
-        <BetButton label={m.away} odd={m.odds.away} />
-      </div>
-      <GoldButton onClick={() => onPredict(m)}>Hacer pronóstico →</GoldButton>
-    </Card>
-  );
-}
-
 function FixtureCardWeb({ m, onTeam }) {
   const d = new Date(m.kickoff);
   const fecha = d.toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: 'short' });
