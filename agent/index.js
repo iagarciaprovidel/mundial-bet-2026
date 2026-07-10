@@ -1599,20 +1599,22 @@ async function main() {
   let parlaysSettled = 0;
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
-  // Diagnóstico puntual: estado real de las rondas r16/qf/sf en Firestore.
-  // Usuario reporta que el cuadro eliminatorio abre en Octavos en vez de
-  // Cuartos, y dudas sobre quién avanza a semifinales.
-  {
-    for (const stage of ['r16', 'qf', 'sf']) {
-      const fxStage = OURS.filter((f) => f.stage === stage);
-      console.log(`  DIAG stage=${stage}: ${fxStage.length} fixture(s)`);
-      for (const f of fxStage) {
-        const od = await db.collection('odds').doc(f.id).get();
-        const o = od.exists ? od.data() : {};
-        console.log(`    ${f.id} ${f.home} vs ${f.away} kickoff=${f.kickoff} finished=${!!o.finished} result=${o.result || '?'} gh=${o.gh} ga=${o.ga}`);
-      }
+  // Migración: elimina el fixture fantasma "dyn_es_fr" (Francia vs España,
+  // 14-jul) mal guardado como stage='r16'. Nunca fue un partido de octavos
+  // real (los octavos reales de Francia/España fueron vs Paraguay/Portugal,
+  // ambos ya jugados) — parece un intento viejo de precargar la final que
+  // quedó con el stage equivocado. Esto rompía la detección de "ronda
+  // actual" del cuadro eliminatorio: al tener un partido 'r16' sin terminar
+  // (kickoff en el futuro), el cuadro se quedaba pegado en Octavos en vez de
+  // avanzar a Cuartos.
+  try {
+    const ghost = await db.collection('fixtures').doc('dyn_es_fr').get();
+    if (ghost.exists) {
+      await db.collection('fixtures').doc('dyn_es_fr').delete();
+      await db.collection('odds').doc('dyn_es_fr').delete().catch(() => {});
+      console.log('  Migración: eliminado fixture fantasma dyn_es_fr (r16 mal etiquetado).');
     }
-  }
+  } catch (e) { console.warn('  migración dyn_es_fr:', e && e.message); }
 
   // Rescate de desafíos que quedaron abiertos en partidos ya terminados
   // (fuera de la ventana de ESPN). Corre en cada ciclo: solo lee picks 'open'.
