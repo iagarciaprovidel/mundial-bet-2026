@@ -1600,6 +1600,11 @@ async function main() {
     const betsBE = await db.collection('bets').where('matchId', '==', 'dyn_be_es').get();
     console.log(`  DIAG bets dyn_be_es: ${betsBE.size} doc(s)`);
     betsBE.docs.forEach((d) => { const b = d.data(); console.log(`    id=${d.id} uid=${b.uid} nombre=${b.nombre||'?'} pick=${b.pick} stake=${b.stake} status=${b.status} creado=${b.creado ? (b.creado.toDate ? b.creado.toDate().toISOString() : b.creado) : '?'}`); });
+    const beFx = OURS.find((f) => f.id === 'dyn_be_es');
+    console.log(`  DIAG fixture dyn_be_es: kickoff=${beFx ? beFx.kickoff : 'NO ENCONTRADO EN OURS'} stage=${beFx ? beFx.stage : '?'}`);
+    const oddsBE = await db.collection('odds').doc('dyn_be_es').get();
+    if (oddsBE.exists) { const o = oddsBE.data(); console.log(`  DIAG odds dyn_be_es: finished=${!!o.finished} live=${!!o.live} home=${o.home} draw=${o.draw} away=${o.away}`); }
+    console.log(`  DIAG now=${new Date().toISOString()}`);
   }
 
   // Diagnóstico puntual: confirma si los premios por fase ya pagados
