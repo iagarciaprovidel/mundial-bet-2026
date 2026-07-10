@@ -1616,6 +1616,15 @@ async function main() {
     }
   } catch (e) { console.warn('  migración dyn_es_fr:', e && e.message); }
 
+  // Verificación post-migración: confirma que r16 quedó en 8 y que qf sigue
+  // con datos correctos (diagnóstico temporal para el reporte del cuadro
+  // eliminatorio pegado en Octavos).
+  {
+    const r16Now = OURS.filter((f) => f.stage === 'r16');
+    const qfNow = OURS.filter((f) => f.stage === 'qf');
+    console.log(`  DIAG post-migración: r16=${r16Now.length} fixture(s) [${r16Now.map((f) => f.id).join(',')}] · qf=${qfNow.length} fixture(s)`);
+  }
+
   // Rescate de desafíos que quedaron abiertos en partidos ya terminados
   // (fuera de la ventana de ESPN). Corre en cada ciclo: solo lee picks 'open'.
   await sweepOpenChallengePicks();
