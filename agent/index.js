@@ -264,6 +264,16 @@ async function espnMatches() {
 }
 
 // Detecta el stage eliminatorio desde el texto que devuelve ESPN
+// Devuelve null si el texto de ESPN no calza con ninguna ronda conocida —
+// ANTES devolvía 'r16' por defecto, y eso creó un fixture fantasma real:
+// ESPN a veces publica un partido futuro (TIMED) con nombres de selección ya
+// resueltos especulativamente (p. ej. una final proyectada antes de que se
+// jueguen las semis) cuyo espnRound/espnSeasonType no matchea ningún patrón
+// de arriba. Con el default 'r16' ese partido se auto-registraba como si
+// fuera un octavo de final real, y como ESPN lo sigue devolviendo cada
+// corrida, se recreaba solo cada 5 min aunque se borrara a mano. Ahora, si
+// no se puede determinar la ronda con certeza, el llamador simplemente NO
+// registra el fixture (mejor no tener el dato que tenerlo mal).
 function stageFromEspn(roundText, seasonType) {
   const t = String(roundText || seasonType || '').toLowerCase().trim();
   if (/round of 16|octavo|\br16\b/i.test(t)) return 'r16';
@@ -271,7 +281,7 @@ function stageFromEspn(roundText, seasonType) {
   if (/^semi/i.test(t)) return 'sf';
   if (/^final$|\bfinal\b/i.test(t) && !/semi/i.test(t)) return 'final';
   if (/round of 32|dieciseis|\br32\b/i.test(t)) return 'r32';
-  return 'r16';
+  return null;
 }
 
 let db = null;
@@ -1341,6 +1351,12 @@ async function main() {
           const existDoc = await db.collection('fixtures').doc(dynId).get();
           if (!existDoc.exists) {
             const stage = stageFromEspn(m.espnRound, m.espnSeasonType);
+            if (!stage) {
+              // Ronda no reconocible: probablemente un partido especulativo/
+              // proyectado que ESPN publica antes de tiempo (ver comentario en
+              // stageFromEspn). Mejor no registrarlo que registrarlo mal.
+              console.log(`  Fixture ESPN con ronda no reconocida, ignorado: ${m.homeTeam.name} vs ${m.awayTeam.name} (espnRound="${m.espnRound}" espnSeasonType="${m.espnSeasonType}")`);
+            } else {
             const dynFx = { id: dynId, home: m.homeTeam.name, away: m.awayTeam.name, homeCode: hi, awayCode: ai, kickoff: m.kickoff, stage: stage, espnId: m.espnId || null };
             await db.collection('fixtures').doc(dynId).set(dynFx);
             const od = modelOdds(hi, ai);
@@ -1350,6 +1366,7 @@ async function main() {
             if (m.awayTeam.name && isoOf(m.awayTeam.name) !== ai) ALIAS_TO_ISO[norm(m.awayTeam.name)] = ai;
             mm = matchOur(m.homeTeam.name, m.awayTeam.name);
             console.log(`  Auto-registrado fixture dinámico: ${m.homeTeam.name} vs ${m.awayTeam.name} → ${dynId}`);
+            }
           } else {
             // Ya existe: asegura que está en OURS para esta corrida
             const f = existDoc.data();
@@ -1615,15 +1632,6 @@ async function main() {
       console.log('  Migración: eliminado fixture fantasma dyn_es_fr (r16 mal etiquetado).');
     }
   } catch (e) { console.warn('  migración dyn_es_fr:', e && e.message); }
-
-  // Verificación post-migración: confirma que r16 quedó en 8 y que qf sigue
-  // con datos correctos (diagnóstico temporal para el reporte del cuadro
-  // eliminatorio pegado en Octavos).
-  {
-    const r16Now = OURS.filter((f) => f.stage === 'r16');
-    const qfNow = OURS.filter((f) => f.stage === 'qf');
-    console.log(`  DIAG post-migración: r16=${r16Now.length} fixture(s) [${r16Now.map((f) => f.id).join(',')}] · qf=${qfNow.length} fixture(s)`);
-  }
 
   // Rescate de desafíos que quedaron abiertos en partidos ya terminados
   // (fuera de la ventana de ESPN). Corre en cada ciclo: solo lee picks 'open'.
