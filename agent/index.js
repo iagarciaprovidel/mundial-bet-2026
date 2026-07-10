@@ -1599,6 +1599,21 @@ async function main() {
   let parlaysSettled = 0;
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
+  // Diagnóstico puntual: estado real de las rondas r16/qf/sf en Firestore.
+  // Usuario reporta que el cuadro eliminatorio abre en Octavos en vez de
+  // Cuartos, y dudas sobre quién avanza a semifinales.
+  {
+    for (const stage of ['r16', 'qf', 'sf']) {
+      const fxStage = OURS.filter((f) => f.stage === stage);
+      console.log(`  DIAG stage=${stage}: ${fxStage.length} fixture(s)`);
+      for (const f of fxStage) {
+        const od = await db.collection('odds').doc(f.id).get();
+        const o = od.exists ? od.data() : {};
+        console.log(`    ${f.id} ${f.home} vs ${f.away} kickoff=${f.kickoff} finished=${!!o.finished} result=${o.result || '?'} gh=${o.gh} ga=${o.ga}`);
+      }
+    }
+  }
+
   // Rescate de desafíos que quedaron abiertos en partidos ya terminados
   // (fuera de la ventana de ESPN). Corre en cada ciclo: solo lee picks 'open'.
   await sweepOpenChallengePicks();
