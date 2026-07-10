@@ -49,7 +49,7 @@
       getMyPrediction() { return Promise.resolve(null); },
       subscribePredictions() { return () => {}; },
       saveSemiPick: noFB, getSemiPick() { return Promise.resolve(null); },
-      saveChallengePick: noFB, getChallengePicks() { return Promise.resolve(null); }, claimChallengeWin: noFB,
+      saveChallengePick: noFB, getChallengePicks() { return Promise.resolve(null); }, claimChallengeWin: noFB, getMyUnclaimedChallengeWins() { return Promise.resolve([]); },
       placeScorerBet: noFB, getMyScorerBet() { return Promise.resolve(null); }, cancelScorerBet: noFB, claimScorerWin: noFB,
     };
     if (!configured) console.warn('[MundialBet] Firebase no configurado: edita firebase-config.js');
@@ -747,6 +747,15 @@
       let any = false;
       docs.forEach((d, i) => { if (d.exists) { out[keys[i]] = Object.assign({ id: d.id }, d.data()); any = true; } });
       return any ? out : null;
+    },
+    // Desafíos ganados y aún no reclamados del usuario, para el banner
+    // "Premios por reclamar" en Inicio (sin esto había que encontrar el
+    // partido jugado en Apostar para ver el botón Reclamar).
+    async getMyUnclaimedChallengeWins() {
+      const u = auth.currentUser; if (!u) return [];
+      const snap = await db.collection('challenge_picks')
+        .where('uid', '==', u.uid).where('status', '==', 'won').where('claimed', '==', false).get();
+      return snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
     },
     // El agente liquida (status:'won'/'lost' + payout) pero NO acredita el saldo
     // todavía — el usuario reclama el premio con este botón, igual que

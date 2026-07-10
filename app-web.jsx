@@ -499,6 +499,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
         {authUser && window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
         {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
         {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
+        {authUser && window.MB_ClaimChallengesBanner && React.createElement(window.MB_ClaimChallengesBanner)}
         {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
         {window.MB_LiveNow && React.createElement(window.MB_LiveNow)}
         {(() => {

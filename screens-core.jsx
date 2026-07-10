@@ -263,6 +263,9 @@ function Dashboard({ user, onNav, onPredict }) {
       {/* Banner reclamar premios de fase de grupos */}
       {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
 
+      {/* Banner reclamar desafíos del partido ganados */}
+      {authUser && window.MB_ClaimChallengesBanner && React.createElement(window.MB_ClaimChallengesBanner)}
+
       {/* Banner racha del apostador */}
       {authUser && window.MB_TopTodayBanner && React.createElement(window.MB_TopTodayBanner)}
 

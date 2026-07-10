@@ -1373,6 +1373,57 @@
   }
   window.MB_ClaimBonusBanner = ClaimBonusBanner;
 
+  // Banner "Premios por reclamar" (Inicio): desafíos del partido ganados y no
+  // reclamados. Antes el botón Reclamar solo existía dentro de la card del
+  // partido jugado en Apostar — nadie lo encontraba.
+  function ClaimChallengesBanner() {
+    const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+    const s = useBetStore();
+    const [wins, setWins] = useState([]);
+    const [claiming, setClaiming] = useState(null);
+    useEffect(() => {
+      if (!authUser || !FB().getMyUnclaimedChallengeWins) { setWins([]); return undefined; }
+      let alive = true;
+      FB().getMyUnclaimedChallengeWins().then((w) => { if (alive) setWins(w || []); }).catch(() => {});
+      return () => { alive = false; };
+    }, [authUser && authUser.uid]);
+    if (!authUser || !wins.length) return null;
+    const fxAll = [...((window.MB && window.MB.WC_FIXTURES) || []), ...((s && s.dynFixtures) || [])];
+    const nameFor = (mid) => { const m = fxAll.find((f) => f.id === mid); return m ? m.home + ' vs ' + m.away : ''; };
+    const doClaim = async (w) => {
+      if (claiming || !FB().claimChallengeWin) return;
+      setClaiming(w.id);
+      try { await FB().claimChallengeWin(w.id); setWins((prev) => prev.filter((x) => x.id !== w.id)); } catch (e) {}
+      setClaiming(null);
+    };
+    const total = wins.reduce((t, w) => t + (w.payout || 0), 0);
+    return (
+      <div style={{ padding: '13px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(199,155,31,0.08))', border: '1px solid rgba(212,175,55,0.55)', boxShadow: 'var(--sh-1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
+          <span style={{ fontSize: 22 }}>🎯</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 'var(--t-sm)', color: 'var(--text)' }}>Desafíos ganados: <span className="num" style={{ color: 'var(--gold-light)' }}>+{fmt(total)} pts</span> por reclamar</div>
+            <div style={{ fontSize: 'var(--t-3xs)', color: 'var(--muted)' }}>{wins.length === 1 ? '1 desafío acertado' : wins.length + ' desafíos acertados'} · toca Reclamar para sumarlos a tu saldo</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {wins.map((w) => (
+            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', borderRadius: 'var(--r-md)', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 'var(--t-2xs)', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{CH_QLABEL[w.qkey] || 'Desafío'}{nameFor(w.matchId) ? ' · ' + nameFor(w.matchId) : ''}</div>
+                <div className="num" style={{ fontSize: 'var(--t-3xs)', color: 'var(--success)', fontWeight: 800 }}>+{fmt(w.payout || 0)} pts</div>
+              </div>
+              <button onClick={() => doClaim(w)} disabled={!!claiming} className="mb-press" style={{ flexShrink: 0, padding: '7px 13px', borderRadius: 'var(--r-pill)', border: 'none', background: 'linear-gradient(135deg,#E6C04A,#C99B1F)', color: '#1A1206', cursor: claiming ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 'var(--t-2xs)', opacity: claiming === w.id ? 0.6 : 1 }}>
+                {claiming === w.id ? '…' : 'Reclamar'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  window.MB_ClaimChallengesBanner = ClaimChallengesBanner;
+
   // Banderita del campeón elegido por un jugador (para mostrar junto a su nombre).
   window.MB_champFlag = function (code, name, h) {
     if (!code) return null;
