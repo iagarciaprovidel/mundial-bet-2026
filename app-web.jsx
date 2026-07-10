@@ -494,13 +494,19 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             })()}
           </p>
         </div>
-        {/* Banners de acción: pronóstico semifinalistas + goleador + elegir campeón + reclamar premios */}
-        {authUser && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
-        {authUser && window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
-        {authUser && window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
-        {authUser && window.MB_ChampPhaseBanner && React.createElement(window.MB_ChampPhaseBanner)}
-        {authUser && window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
-        {authUser && window.MB_ClaimChallengesBanner && React.createElement(window.MB_ClaimChallengesBanner)}
+        {/* Banners de acción: pronóstico semifinalistas + goleador + elegir campeón +
+            reclamar premios, todos juntos (cada uno trae su propio margen chico, sin
+            el gap grande de la columna) para leerse como un solo bloque compacto */}
+        {authUser && (
+          <div style={{ marginTop: -8 }}>
+            {window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
+            {window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
+            {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}
+            {window.MB_ChampPhaseBanner && React.createElement(window.MB_ChampPhaseBanner)}
+            {window.MB_ClaimBonusBanner && React.createElement(window.MB_ClaimBonusBanner)}
+            {window.MB_ClaimChallengesBanner && React.createElement(window.MB_ClaimChallengesBanner)}
+          </div>
+        )}
         {window.MB_NextMatchCountdown && React.createElement(window.MB_NextMatchCountdown)}
         {window.MB_LiveNow && React.createElement(window.MB_LiveNow)}
         {(() => {

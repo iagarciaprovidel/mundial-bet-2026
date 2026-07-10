@@ -587,7 +587,7 @@
       ? `Con ${nextTier[0]} seguidas ganas un bono de +${fmtB(nextTier[1])} pts`
       : '¡Racha máxima! Ya desbloqueaste todos los bonos de racha';
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg,rgba(0,200,90,.18),rgba(0,100,50,.10)), rgba(13,20,15,0.92)', border: '1px solid rgba(0,200,90,.4)', marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg,rgba(0,200,90,.18),rgba(0,100,50,.10)), rgba(13,20,15,0.92)', border: '1px solid rgba(0,200,90,.4)', marginBottom: 5 }}>
         <span style={{ fontSize: 22, flexShrink: 0 }}>🔥</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--success)' }}>{msgs[streak % msgs.length]}</div>

@@ -231,7 +231,7 @@
         <React.Fragment>
           {open && <SemisModal myPick={myPick} onClose={() => setOpen(false)} onSave={handleSave} locked={locked} />}
           <div onClick={canEdit ? () => setOpen(true) : undefined} className={canEdit ? 'mb-press mb-card-hover' : ''}
-            style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderRadius: 'var(--r-lg)', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(155,109,255,0.5)', boxShadow: '0 0 0 1px rgba(155,109,255,0.12), var(--sh-1)', cursor: canEdit ? 'pointer' : 'default', marginBottom: 8, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+            style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderRadius: 'var(--r-lg)', background: 'rgba(13,20,15,0.92)', border: '1px solid rgba(155,109,255,0.5)', boxShadow: '0 0 0 1px rgba(155,109,255,0.12), var(--sh-1)', cursor: canEdit ? 'pointer' : 'default', marginBottom: 5, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
             {/* Badge NUEVO */}
             {!myPick && !locked && (
               <div style={{ position: 'absolute', top: -7, right: 10, background: 'linear-gradient(135deg,#9B6DFF,#7A4FE0)', color: '#fff', fontSize: 7.5, fontWeight: 900, letterSpacing: '0.1em', padding: '1.5px 7px', borderRadius: 'var(--r-pill)', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(155,109,255,0.5)' }}>✨ Nuevo</div>
