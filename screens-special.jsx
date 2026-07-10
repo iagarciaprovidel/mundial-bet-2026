@@ -158,14 +158,9 @@ function Admin({ onCloseTournament }) {
 function TournamentClose({ onExit }) {
   const [declared, setDeclared] = useStateS(false);
   const [fire, setFire] = useStateS(0);
-  const [users, setUsers] = useStateS([]);
+  const users = window.MB_useUsers ? window.MB_useUsers() : [];
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
   useEffectS(() => { setFire(Date.now()); }, []);
-  useEffectS(() => {
-    if (!window.MBFirebase || !window.MBFirebase.subscribeUsers) return;
-    const un = window.MBFirebase.subscribeUsers(setUsers);
-    return () => { if (typeof un === 'function') un(); };
-  }, []);
 
   const SAL = 90000;
   const fmtN = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');

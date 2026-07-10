@@ -889,12 +889,7 @@ function PodiumWeb({ top3 }) {
 function RankingWeb() {
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
-  const [users, setUsers] = useStateW([]);
-  useEffectW(() => {
-    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setUsers([]); return undefined; }
-    const un = window.MBFirebase.subscribeUsers(setUsers);
-    return () => { if (typeof un === 'function') un(); };
-  }, [authUser]);
+  const users = (store && store.users) || [];
   const meRec = authUser ? (users.find(u => u.uid === authUser.uid) || null) : null;
   const bets = store ? Object.values(store.bets || {}) : [];
   const settled = bets.filter(b => b.status === 'won' || b.status === 'lost');
@@ -964,12 +959,7 @@ function Sparkline({ data, w = 300, h = 70 }) {
 function PerfilWeb() {
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
-  const [users, setUsers] = useStateW([]);
-  useEffectW(() => {
-    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setUsers([]); return undefined; }
-    const un = window.MBFirebase.subscribeUsers(setUsers);
-    return () => { if (typeof un === 'function') un(); };
-  }, [authUser]);
+  const users = (store && store.users) || [];
 
   // Sin sesión: estado limpio (sin datos demo), homologado con el resto.
   if (!authUser) {

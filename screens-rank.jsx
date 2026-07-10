@@ -144,12 +144,7 @@ function AchievementBadge({ a }) {
 function Perfil() {
   const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
-  const [users, setUsers] = useStateR([]);
-  useEffectR(() => {
-    if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setUsers([]); return undefined; }
-    const un = window.MBFirebase.subscribeUsers(setUsers);
-    return () => { if (typeof un === 'function') un(); };
-  }, [authUser]);
+  const users = (store && store.users) || [];
 
   if (!authUser) {
     return (

@@ -272,12 +272,7 @@
     const [tab, setTab] = React.useState(null);
     const authUser  = window.MB_useAuth ? window.MB_useAuth() : null;
     const store     = window.MB_useBetStore ? window.MB_useBetStore() : null;
-    const [bsUsers, setBsUsers] = React.useState([]);
-    React.useEffect(() => {
-      if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setBsUsers([]); return undefined; }
-      const un = window.MBFirebase.subscribeUsers(setBsUsers);
-      return () => { if (typeof un === 'function') un(); };
-    }, [authUser]);
+    const bsUsers   = (store && store.users) || [];
     const meRec     = authUser ? (bsUsers.find(u => u.uid === authUser.uid) || null) : null;
     const champCode = meRec ? meRec.championCode : null;
     const champName = meRec ? meRec.champion    : null;
@@ -843,12 +838,7 @@
     function BracketScreenWeb() {
       const authUser  = window.MB_useAuth ? window.MB_useAuth() : null;
       const store     = window.MB_useBetStore ? window.MB_useBetStore() : null;
-      const [bwUsers, setBwUsers] = React.useState([]);
-      React.useEffect(() => {
-        if (!authUser || !window.MBFirebase || !window.MBFirebase.subscribeUsers) { setBwUsers([]); return undefined; }
-        const un = window.MBFirebase.subscribeUsers(setBwUsers);
-        return () => { if (typeof un === 'function') un(); };
-      }, [authUser]);
+      const bwUsers   = (store && store.users) || [];
       const meRec     = authUser ? (bwUsers.find(u => u.uid === authUser.uid) || null) : null;
       const champCode = meRec ? meRec.championCode : null;
       const champName = meRec ? meRec.champion    : null;

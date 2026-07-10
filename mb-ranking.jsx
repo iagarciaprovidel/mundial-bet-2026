@@ -57,16 +57,12 @@
   function RankingReal({ compact, limit }) {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
-    const [users, setUsers] = useState(undefined);
-    useEffect(() => {
-      if (!user) { setUsers([]); return; }
-      const unsub = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
-      return () => { if (typeof unsub === 'function') unsub(); };
-    }, [user]);
+    const users = (store && store.users) || [];
+    const usersReady = store && store.usersReady;
 
     const note = (txt) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '22px 16px' }}>{txt}</div>;
     if (!user) return signIn('Inicia sesión para ver a los jugadores registrados.', false);
-    if (users === undefined) return note('Cargando…');
+    if (!usersReady) return note('Cargando…');
     if (!users.length) return note('Aún no hay jugadores registrados. ¡Sé el primero!');
 
     // Mi monto apostado y mi nº de apuestas, al instante desde el store.
@@ -110,12 +106,11 @@
   function LigaReal() {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [groups, setGroups] = useState([]);
-    const [users, setUsers] = useState([]);
+    const users = window.MB_useUsers ? window.MB_useUsers() : [];
     useEffect(() => {
       if (!user) return undefined;
       const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
-      const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
-      return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
+      return () => { if (typeof u1 === 'function') u1(); };
     }, [user]);
 
     if (!user) return signIn('Inicia sesión para ver la liga.', true);
@@ -200,12 +195,11 @@
   function ActivityReal({ limit }) {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [groups, setGroups] = useState([]);
-    const [users, setUsers] = useState([]);
+    const users = window.MB_useUsers ? window.MB_useUsers() : [];
     useEffect(() => {
       if (!user) return undefined;
       const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
-      const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
-      return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
+      return () => { if (typeof u1 === 'function') u1(); };
     }, [user]);
 
     const note = (txt) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '18px 12px' }}>{txt}</div>;
@@ -235,12 +229,11 @@
   function TeamsReal({ limit }) {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [groups, setGroups] = useState([]);
-    const [users, setUsers] = useState([]);
+    const users = window.MB_useUsers ? window.MB_useUsers() : [];
     useEffect(() => {
       if (!user) return undefined;
       const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
-      const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
-      return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
+      return () => { if (typeof u1 === 'function') u1(); };
     }, [user]);
     if (!user) return signIn('Inicia sesión para ver el ranking de equipos.', false);
     const note = (t) => <div style={{ color: 'var(--muted)', fontSize: 'var(--t-sm)', textAlign: 'center', padding: '14px 8px' }}>{t}</div>;

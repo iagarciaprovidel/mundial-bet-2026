@@ -178,7 +178,7 @@
   function ChampionPick({ compact, banner }) {
     const [open, setOpen] = useState(false);
     const [myChamp, setMyChamp] = useState(null); // { name, code }
-    const [users, setUsers] = useState([]);
+    const users = window.MB_useUsers ? window.MB_useUsers() : [];
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const locked = isPickLocked();
 
@@ -189,13 +189,6 @@
         if (u && u.championCode) setMyChamp({ name: u.champion, code: u.championCode });
         else setMyChamp(null);
       });
-      return () => { if (typeof un === 'function') un(); };
-    }, [user && user.uid]);
-
-    // Distribución desde todos los usuarios
-    useEffect(() => {
-      if (!user || !FB().subscribeUsers) return;
-      const un = FB().subscribeUsers(setUsers);
       return () => { if (typeof un === 'function') un(); };
     }, [user && user.uid]);
 

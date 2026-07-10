@@ -30,7 +30,7 @@
   const STREAK_MULT = (s) => s >= 7 ? 2.0 : s >= 5 ? 1.75 : s >= 4 ? 1.5 : s >= 3 ? 1.35 : s >= 2 ? 1.2 : s >= 1 ? 1.1 : 1.0;
   window.MB_streakMult = STREAK_MULT;
 
-  const store = { odds: {}, bets: {}, parlays: [], dynFixtures: [], saldo: null, streak: 0, watch: [], notif: false, ready: false, listeners: new Set() };
+  const store = { odds: {}, bets: {}, parlays: [], dynFixtures: [], saldo: null, streak: 0, watch: [], notif: false, ready: false, users: [], usersReady: false, listeners: new Set() };
   function emit() { store.listeners.forEach((fn) => { try { fn(); } catch (e) {} }); }
   let started = false, unsubs = [];
   // (Re)crea las suscripciones a cuotas/apuestas/saldo. Las cuotas requieren
@@ -65,6 +65,13 @@
       store.bets = map; store.allBets = all; emit();
     }));
     if (fb.subscribeMyParlays) unsubs.push(fb.subscribeMyParlays((list) => { store.parlays = list || []; emit(); }));
+    // Suscripción ÚNICA y COMPARTIDA a `users` (ranking, bracket, campeón,
+    // grupos...) - antes cada pantalla montaba su propio subscribeUsers()
+    // (13 listeners independientes sobre la misma colección completa sin
+    // compartir nada entre sí, multiplicando lecturas de Firestore cada vez
+    // que cualquier usuario cambiaba de saldo). window.MB_useUsers() la lee
+    // de acá en vez de abrir una nueva.
+    if (fb.subscribeUsers) unsubs.push(fb.subscribeUsers((list) => { store.users = list || []; store.usersReady = true; emit(); }));
     if (fb.subscribeMe) unsubs.push(fb.subscribeMe((u) => {
       store.saldo = (u && typeof u.saldo === 'number') ? u.saldo : (u ? SALDO_INICIAL : null);
       store.streak = (u && typeof u.currentStreak === 'number') ? u.currentStreak : 0;
@@ -94,6 +101,10 @@
     return store;
   }
   window.MB_useBetStore = useBetStore;
+  // Todos los jugadores (para ranking/bracket/campeón/grupos), desde la ÚNICA
+  // suscripción compartida de arriba - reemplaza los subscribeUsers() propios
+  // que cada pantalla montaba por su cuenta.
+  window.MB_useUsers = function () { return useBetStore().users || []; };
 
   // Tabla de posiciones por grupo, calculada desde los partidos TERMINADOS (odds).
   // Devuelve { A: [filas...], B: [...] } con j/g/e/p/gf/gc/dg/pts y posición ordenada.

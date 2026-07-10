@@ -1191,6 +1191,12 @@ async function main() {
     try { await payGroupStageBonuses(); } catch (e) { console.warn('Cierre de grupos falló:', (e && e.message) || e); }
     // Premio del campeón por avance: se delega a payChampionRoundBonus(stage, winnerCodes)
     // que se llama desde el bucle de partidos terminados (ver abajo, en el bloque ESPN).
+    // recomputeAllStreaks: es solo reconciliación "self-healing" (currentStreak/
+    // bestStreak ya se actualizan al vuelo en settle() para quien acaba de
+    // liquidar) - no necesita correr cada 5 min. Antes corría SIN este gate,
+    // escaneando TODAS las apuestas ganadas/perdidas 288 veces al día - el
+    // mayor consumo evitable de lecturas de Firestore de todo el agente.
+    try { await recomputeAllStreaks(); } catch (e) { console.warn('recomputeAllStreaks:', (e && e.message) || e); }
   }
 
   const alertN = await matchAlerts();
@@ -1479,8 +1485,6 @@ async function main() {
     const drawFixed = await resettleDrawBets();
     if (drawFixed) console.log(`resettleDrawBets: ${drawFixed} apuesta(s) corregida(s).`);
   } catch (e) { console.warn('resettleDrawBets:', (e && e.message) || e); }
-
-  try { await recomputeAllStreaks(); } catch (e) { console.warn('recomputeAllStreaks:', (e && e.message) || e); }
 
   let parlaysSettled = 0;
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }

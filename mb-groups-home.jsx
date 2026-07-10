@@ -38,13 +38,12 @@
   // ── Ficha de un equipo: solo sus integrantes, con fecha de ingreso y ganancias ──
   function TeamMembersModal({ teamId, onClose }) {
     const [groups, setGroups] = useState([]);
-    const [users, setUsers] = useState([]);
+    const users = window.MB_useUsers ? window.MB_useUsers() : [];
     const [gid, setGid] = useState(teamId || null);
     const [copied, setCopied] = useState(false);
     useEffect(() => {
       const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
-      const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
-      return () => { if (typeof u1 === 'function') u1(); if (typeof u2 === 'function') u2(); };
+      return () => { if (typeof u1 === 'function') u1(); };
     }, []);
     useEffect(() => {
       if (!teamId && FB().getMyProfile) FB().getMyProfile().then(p => setGid((p && p.groupId) || null)).catch(() => {});
@@ -125,18 +124,13 @@
   function GroupsHome() {
     const user = window.MB_useAuth ? window.MB_useAuth() : null;
     const [groups, setGroups] = useState([]);
-    const [users, setUsers] = useState([]);
+    const users = window.MB_useUsers ? window.MB_useUsers() : [];
     const [profile, setProfile] = useState(null);
 
     useEffect(() => {
       const u1 = FB().subscribeGroups ? FB().subscribeGroups(setGroups) : null;
       return () => { if (typeof u1 === 'function') u1(); };
     }, []);
-    useEffect(() => {
-      if (!user) return undefined;
-      const u2 = FB().subscribeUsers ? FB().subscribeUsers(setUsers) : null;
-      return () => { if (typeof u2 === 'function') u2(); };
-    }, [user]);
     useEffect(() => {
       let alive = true;
       if (user && FB().getMyProfile) FB().getMyProfile().then(p => { if (alive) setProfile(p || null); }).catch(() => {});
