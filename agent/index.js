@@ -1594,6 +1594,14 @@ async function main() {
   let parlaysSettled = 0;
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
+  // Diagnóstico puntual: bets abiertas en el partido dyn_be_es (Bélgica-España)
+  // — un usuario reporta que no ve su apuesta recién hecha ni puede anularla.
+  {
+    const betsBE = await db.collection('bets').where('matchId', '==', 'dyn_be_es').get();
+    console.log(`  DIAG bets dyn_be_es: ${betsBE.size} doc(s)`);
+    betsBE.docs.forEach((d) => { const b = d.data(); console.log(`    id=${d.id} uid=${b.uid} nombre=${b.nombre||'?'} pick=${b.pick} stake=${b.stake} status=${b.status} creado=${b.creado ? (b.creado.toDate ? b.creado.toDate().toISOString() : b.creado) : '?'}`); });
+  }
+
   // Diagnóstico puntual: confirma si los premios por fase ya pagados
   // realmente acreditaron saldo (o si corrieron en modo simulado) y el
   // estado del cierre de fase de grupos.
