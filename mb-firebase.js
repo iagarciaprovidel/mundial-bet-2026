@@ -322,15 +322,20 @@
       const u = auth.currentUser;
       if (!u) return Promise.reject('no-auth');
       const ref = db.collection('users').doc(u.uid);
-      const betsQuery = db.collection('bets').where('uid', '==', u.uid);
+      // La consulta de `bets` va AFUERA de la transacción: transaction.get()
+      // solo soporta DocumentReference, no queries (se cuelga/falla si le pasás
+      // un Query, que es justo lo que hacía esto antes y por eso el reclamo
+      // nunca funcionaba). El pequeño margen de que las apuestas cambien entre
+      // la consulta y la transacción no importa acá: la fase de grupos ya cerró.
+      const betsSnap = await db.collection('bets').where('uid', '==', u.uid).get();
+      const allBets = betsSnap.docs.map((d) => d.data());
+      const settled = allBets.filter((b) => b.status === 'won' || b.status === 'lost');
+      const wonN = settled.filter((b) => b.status === 'won').length;
+      const acc = settled.length ? Math.round((wonN * 100) / settled.length) : 0;
       return db.runTransaction(async (tx) => {
-        const [snap, betsSnap] = await Promise.all([tx.get(ref), tx.get(betsQuery)]);
+        const snap = await tx.get(ref);
         const data = snap.exists ? snap.data() : {};
         if (data.rewards && data.rewards.groupsClosed) throw 'ya-reclamado';
-        const allBets = betsSnap.docs.map((d) => d.data());
-        const settled = allBets.filter((b) => b.status === 'won' || b.status === 'lost');
-        const wonN = settled.filter((b) => b.status === 'won').length;
-        const acc = settled.length ? Math.round((wonN * 100) / settled.length) : 0;
         const bestStreak = typeof data.bestStreak === 'number' ? data.bestStreak : 0;
         const calc = window.MB_bonusBreakdown || function () { return { total: 0 }; };
         const bd = calc({ bets: allBets.length, settled: settled.length, accuracy: acc, bestStreak: bestStreak });
