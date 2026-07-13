@@ -1275,6 +1275,35 @@ async function main() {
     }
   } catch (e) { console.warn('seed QF:', e && e.message); }
 
+  // Seed SF Francia-España (confirmado con fuentes externas: 14-jul, 15:00 ET,
+  // Dallas — ver commit del fix del "fixture fantasma"). ESPN nunca reporta
+  // espnRound/espnSeasonType para este partido específico (siempre llegan
+  // null), así que el auto-registro normal (stageFromEspn + cruce con
+  // football-data.org) nunca puede confirmarlo solo y lo descarta — quedaba
+  // eternamente sin registrar aunque sea un partido real y ya confirmado (a
+  // diferencia de cuando lo vimos por primera vez, antes de que Francia y
+  // España ganaran sus cuartos, que ahí sí era una proyección especulativa).
+  // La otra semifinal (Inglaterra/Noruega vs Argentina/Suiza) sí llega con
+  // ronda reconocible desde ESPN, así que no necesita este seed manual.
+  try {
+    const SF_ID = 'dyn_es_fr';
+    const SF_SEED = { id: SF_ID, homeCode: 'fr', awayCode: 'es', home: 'Francia', away: 'España', kickoff: '2026-07-14T19:00:00Z', stage: 'sf' };
+    const ref = db.collection('fixtures').doc(SF_ID);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      console.log(`Seed SF: ${SF_ID} (${SF_SEED.home} vs ${SF_SEED.away})`);
+      await ref.set(SF_SEED);
+      await db.collection('odds').doc(SF_ID).set({ _home: SF_SEED.home, _away: SF_SEED.away, _homeCode: SF_SEED.homeCode, _awayCode: SF_SEED.awayCode, _kickoff: SF_SEED.kickoff, _stage: 'sf' }, { merge: true });
+    } else {
+      const d = snap.data();
+      if (d.stage !== 'sf' || d.kickoff !== SF_SEED.kickoff) {
+        console.log(`Corrigiendo SF fixture: ${SF_ID} stage=${d.stage}→sf kickoff=${d.kickoff}→${SF_SEED.kickoff}`);
+        await ref.update({ kickoff: SF_SEED.kickoff, stage: 'sf', home: SF_SEED.home, away: SF_SEED.away, homeCode: SF_SEED.homeCode, awayCode: SF_SEED.awayCode });
+        await db.collection('odds').doc(SF_ID).set({ _kickoff: SF_SEED.kickoff, _stage: 'sf', _home: SF_SEED.home, _away: SF_SEED.away, _homeCode: SF_SEED.homeCode, _awayCode: SF_SEED.awayCode }, { merge: true });
+      }
+    }
+  } catch (e) { console.warn('seed SF:', e && e.message); }
+
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
     const dynSnap = await db.collection('fixtures').get();
