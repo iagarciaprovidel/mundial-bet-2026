@@ -43,8 +43,12 @@
   // en lados opuestos aunque en la realidad se enfrenten en la misma
   // semifinal. Por código de país (no por ID de partido) para que aplique
   // igual en cuartos, semifinal y la final.
-  const QF_SF_LEFT_CODES = new Set(['fr', 'es']);
-  const QF_SF_RIGHT_CODES = new Set(['gb-eng', 'no', 'ar', 'ch']);
+  // Los 4 códigos de cada lado son los DOS equipos de cada cuarto de final de
+  // ese lado (ganador Y perdedor) — así el octavos de un equipo eliminado en
+  // cuartos (p. ej. Marruecos, Bélgica) también queda clasificado del lado
+  // correcto, no solo el de quien sigue vivo.
+  const QF_SF_LEFT_CODES = new Set(['fr', 'ma', 'be', 'es']);   // Francia-Marruecos · Bélgica-España
+  const QF_SF_RIGHT_CODES = new Set(['gb-eng', 'no', 'ar', 'ch']); // Inglaterra-Noruega · Argentina-Suiza
 
   // ── Dimensiones base ──────────────────────────────────────
   const CC   = 84;  // ancho tarjeta fase actual
@@ -383,11 +387,12 @@
       });
       sortedCur.forEach(m => { if (!usedCur.has(m.id)) orderedCur.push(m); });
       if (orderedCur.length === sortedCur.length) sortedCur = orderedCur;
-    } else if (['qf', 'sf', 'final'].includes(activePhase)) {
+    } else if (['r16', 'qf', 'sf', 'final'].includes(activePhase)) {
       // Sin fixture real de la siguiente fase todavía: ordena por lado
       // conocido del cuadro (ver QF_SF_LEFT_CODES/QF_SF_RIGHT_CODES arriba)
-      // en vez del orden de descubrimiento — si no, Francia y España podían
-      // quedar en mitades opuestas del cuadro aunque en la realidad jueguen
+      // en vez del orden de descubrimiento — si no, un equipo podía aparecer
+      // de un lado en Octavos y del otro en Cuartos (imposible en un cuadro
+      // real), o Francia y España quedar en mitades opuestas aunque jueguen
       // la misma semifinal.
       const sideOf = (m) => QF_SF_LEFT_CODES.has(m.homeCode) || QF_SF_LEFT_CODES.has(m.awayCode) ? 0
         : QF_SF_RIGHT_CODES.has(m.homeCode) || QF_SF_RIGHT_CODES.has(m.awayCode) ? 1 : 2;
@@ -954,14 +959,16 @@
       const rCodes = new Set(r32rawR.flatMap(m => [m.homeCode, m.awayCode].filter(Boolean)));
 
       // Un fixture pertenece a la mitad izquierda si alguno de sus equipos vino de esa mitad.
-      // Desde cuartos en adelante manda QF_SF_LEFT_CODES/QF_SF_RIGHT_CODES (ver comentario
-      // junto a su definición) — la clasificación por lCodes/rCodes no es confiable ahí
-      // porque no hay fixtures estáticos de r32.
+      // QF_SF_LEFT_CODES/QF_SF_RIGHT_CODES (ver comentario junto a su definición) mandan en
+      // CUALQUIER ronda donde aparezca alguno de esos 8 equipos — no solo desde cuartos: un
+      // equipo tiene que quedarse del mismo lado del cuadro en TODAS las rondas (su octavos
+      // incluido), si no, su propio camino salta de lado entre rondas (p. ej. Noruega
+      // apareciendo en octavos a la izquierda pero en cuartos a la derecha), que es imposible
+      // en un cuadro real. lCodes/rCodes (no confiable, no hay fixtures estáticos de r32) solo
+      // se usa como respaldo para partidos que no involucran a ninguno de estos 8 equipos.
       const isLeft = (m) => {
-        if (m.stage === 'qf' || m.stage === 'sf' || m.stage === 'final') {
-          if (QF_SF_LEFT_CODES.has(m.homeCode) || QF_SF_LEFT_CODES.has(m.awayCode)) return true;
-          if (QF_SF_RIGHT_CODES.has(m.homeCode) || QF_SF_RIGHT_CODES.has(m.awayCode)) return false;
-        }
+        if (QF_SF_LEFT_CODES.has(m.homeCode) || QF_SF_LEFT_CODES.has(m.awayCode)) return true;
+        if (QF_SF_RIGHT_CODES.has(m.homeCode) || QF_SF_RIGHT_CODES.has(m.awayCode)) return false;
         return lCodes.has(m.homeCode) || lCodes.has(m.awayCode);
       };
 
