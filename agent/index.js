@@ -1689,22 +1689,13 @@ async function main() {
   let parlaysSettled = 0;
   try { parlaysSettled = await settleParlays(); if (parlaysSettled) console.log(`Combinadas liquidadas: ${parlaysSettled}.`); } catch (e) { console.warn('settleParlays:', (e && e.message) || e); }
 
-  // Migración: elimina el fixture fantasma "dyn_es_fr" (Francia vs España,
-  // 14-jul) mal guardado como stage='r16'. Nunca fue un partido de octavos
-  // real (los octavos reales de Francia/España fueron vs Paraguay/Portugal,
-  // ambos ya jugados) — parece un intento viejo de precargar la final que
-  // quedó con el stage equivocado. Esto rompía la detección de "ronda
-  // actual" del cuadro eliminatorio: al tener un partido 'r16' sin terminar
-  // (kickoff en el futuro), el cuadro se quedaba pegado en Octavos en vez de
-  // avanzar a Cuartos.
-  try {
-    const ghost = await db.collection('fixtures').doc('dyn_es_fr').get();
-    if (ghost.exists) {
-      await db.collection('fixtures').doc('dyn_es_fr').delete();
-      await db.collection('odds').doc('dyn_es_fr').delete().catch(() => {});
-      console.log('  Migración: eliminado fixture fantasma dyn_es_fr (r16 mal etiquetado).');
-    }
-  } catch (e) { console.warn('  migración dyn_es_fr:', e && e.message); }
+  // NOTA: hasta v313 acá había una migración que BORRABA dyn_es_fr creyendo
+  // que era un fixture fantasma (Francia vs España, mal etiquetado 'r16').
+  // Resultó ser la semifinal REAL (14-jul, confirmado con fuentes externas)
+  // — ESPN nunca le pone ronda a este partido específico, así que se veía
+  // igual a una proyección especulativa. Esa migración corría DESPUÉS del
+  // seed SF de más arriba y lo borraba en cada ciclo, deshaciendo la
+  // siembra constantemente. Eliminada por completo (ver v313/v314).
 
   // Diagnóstico puntual: confirma que la semifinal Francia-España tiene
   // cuotas listas para apostar hoy (usuario reporta que quiere apostar).
