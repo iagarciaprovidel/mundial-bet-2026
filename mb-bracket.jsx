@@ -54,22 +54,29 @@
   // veía (dispositivo/navegador sin fuente de emoji a color), así que en
   // vez de depender de eso, se dibuja directo y se ve igual en cualquier
   // lado.
-  function TrophyIcon({ size }) {
+  function TrophyIcon({ size, gradId, glow }) {
     const s = size || 44;
+    const gid = gradId || 'mbTrophyGrad';
+    // El glow (drop-shadow) va en el propio <svg>, NO en un <div> que lo
+    // envuelve — un div con filter:drop-shadow puede recortar/ocultar SVGs
+    // hijos en algunos WebView de Android (bug conocido de compositing).
+    // El id del gradiente es único por instancia (gradId) porque un <svg>
+    // duplicado con el mismo id de <linearGradient> puede quedar sin
+    // relleno en Safari/algunos WebView si hay dos copias en la página.
     return (
-      <svg width={s} height={s} viewBox="0 0 100 100" style={{ display: 'block', flexShrink: 0 }}>
+      <svg width={s} height={s} viewBox="0 0 100 100" style={{ display: 'block', flexShrink: 0, overflow: 'visible', filter: glow || 'none' }}>
         <defs>
-          <linearGradient id="mbTrophyGrad" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#F5D76E" />
             <stop offset="100%" stopColor="#C99B1F" />
           </linearGradient>
         </defs>
-        <path d="M30 15 H70 V40 Q70 60 50 65 Q30 60 30 40 Z" fill="url(#mbTrophyGrad)" />
-        <path d="M30 20 Q15 20 15 35 Q15 48 30 48" fill="none" stroke="url(#mbTrophyGrad)" strokeWidth="6" strokeLinecap="round" />
-        <path d="M70 20 Q85 20 85 35 Q85 48 70 48" fill="none" stroke="url(#mbTrophyGrad)" strokeWidth="6" strokeLinecap="round" />
-        <rect x="46" y="63" width="8" height="14" fill="url(#mbTrophyGrad)" />
-        <path d="M32 77 H68 L60 90 H40 Z" fill="url(#mbTrophyGrad)" />
-        <rect x="33" y="90" width="34" height="6" rx="2" fill="url(#mbTrophyGrad)" />
+        <path d="M30 15 H70 V40 Q70 60 50 65 Q30 60 30 40 Z" fill={`url(#${gid})`} />
+        <path d="M30 20 Q15 20 15 35 Q15 48 30 48" fill="none" stroke={`url(#${gid})`} strokeWidth="6" strokeLinecap="round" />
+        <path d="M70 20 Q85 20 85 35 Q85 48 70 48" fill="none" stroke={`url(#${gid})`} strokeWidth="6" strokeLinecap="round" />
+        <rect x="46" y="63" width="8" height="14" fill={`url(#${gid})`} />
+        <path d="M32 77 H68 L60 90 H40 Z" fill={`url(#${gid})`} />
+        <rect x="33" y="90" width="34" height="6" rx="2" fill={`url(#${gid})`} />
       </svg>
     );
   }
@@ -310,10 +317,9 @@
         borderRight: '1px solid rgba(212,175,55,0.18)',
       }}>
         {/* Copa con glow */}
-        <div style={{
-          filter: 'drop-shadow(0 0 14px rgba(212,175,55,0.8)) drop-shadow(0 0 28px rgba(212,175,55,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
-          marginBottom: 8,
-        }}><TrophyIcon size={44} /></div>
+        <div style={{ marginBottom: 8 }}>
+          <TrophyIcon size={44} gradId="mbTrophyGradM" glow="drop-shadow(0 0 14px rgba(212,175,55,0.8)) drop-shadow(0 0 28px rgba(212,175,55,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.6))" />
+        </div>
 
         {/* FINAL label */}
         <div style={{
@@ -1193,7 +1199,9 @@
                 background: 'linear-gradient(180deg, rgba(212,175,55,0.02) 0%, rgba(212,175,55,0.12) 50%, rgba(212,175,55,0.02) 100%)',
                 borderLeft: '1px solid rgba(212,175,55,0.2)', borderRight: '1px solid rgba(212,175,55,0.2)',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'center', filter: 'drop-shadow(0 0 18px rgba(212,175,55,0.9)) drop-shadow(0 0 36px rgba(212,175,55,0.5)) drop-shadow(0 2px 6px rgba(0,0,0,0.7))', marginBottom: 10 }}><TrophyIcon size={52} /></div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                  <TrophyIcon size={52} gradId="mbTrophyGradW" glow="drop-shadow(0 0 18px rgba(212,175,55,0.9)) drop-shadow(0 0 36px rgba(212,175,55,0.5)) drop-shadow(0 2px 6px rgba(0,0,0,0.7))" />
+                </div>
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase', background: 'linear-gradient(135deg,#F5D76E,#C99B1F)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 4 }}>FINAL</div>
                 <div style={{ width: 32, height: 1, background: 'linear-gradient(90deg,transparent,rgba(212,175,55,0.6),transparent)', marginBottom: 6 }} />
                 {FIN ? (
