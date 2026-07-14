@@ -1304,14 +1304,26 @@ async function main() {
     }
   } catch (e) { console.warn('seed SF:', e && e.message); }
 
-  // Diagnóstico: nombres reales guardados en la otra semifinal (Inglaterra/
-  // Noruega vs Argentina/Suiza) — usuario reporta que el cuadro "se ve muy
-  // mal", sospecha de nombre sin traducir (esa SF se auto-registra sola vía
-  // ESPN, a diferencia de la de Francia/España que está sembrada a mano).
+  // Corrige nombres en inglés que quedaron sin traducir en fixtures
+  // auto-registrados directo desde ESPN (a diferencia de los sembrados a
+  // mano como QF_SEED/SF_SEED, que ya usan nombres en español). Encontrado:
+  // dyn_ar_gb-eng (semifinal Inglaterra vs Argentina) tenía home="England".
+  const NAME_ES = { England: 'Inglaterra', Spain: 'España', France: 'Francia', Morocco: 'Marruecos', Belgium: 'Bélgica', Norway: 'Noruega', Switzerland: 'Suiza', Argentina: 'Argentina' };
   try {
-    const otherSf = await db.collection('fixtures').where('stage', '==', 'sf').get();
-    otherSf.docs.forEach((d) => { const f = d.data(); console.log(`  DIAG SF fixture: ${d.id} home="${f.home}" away="${f.away}" homeCode=${f.homeCode} awayCode=${f.awayCode}`); });
-  } catch (e) { console.warn('  diag SF names:', e && e.message); }
+    const sfFixtures = await db.collection('fixtures').where('stage', '==', 'sf').get();
+    for (const d of sfFixtures.docs) {
+      const f = d.data();
+      const homeEs = NAME_ES[f.home], awayEs = NAME_ES[f.away];
+      const patch = {};
+      if (homeEs && homeEs !== f.home) patch.home = homeEs;
+      if (awayEs && awayEs !== f.away) patch.away = awayEs;
+      if (Object.keys(patch).length) {
+        console.log(`  Corrigiendo nombres: ${d.id} ${JSON.stringify(patch)}`);
+        await db.collection('fixtures').doc(d.id).update(patch);
+        await db.collection('odds').doc(d.id).set({ _home: homeEs || f.home, _away: awayEs || f.away }, { merge: true });
+      }
+    }
+  } catch (e) { console.warn('  fix nombres SF:', e && e.message); }
 
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
