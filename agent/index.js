@@ -1304,6 +1304,15 @@ async function main() {
     }
   } catch (e) { console.warn('seed SF:', e && e.message); }
 
+  // Diagnóstico: nombres reales guardados en la otra semifinal (Inglaterra/
+  // Noruega vs Argentina/Suiza) — usuario reporta que el cuadro "se ve muy
+  // mal", sospecha de nombre sin traducir (esa SF se auto-registra sola vía
+  // ESPN, a diferencia de la de Francia/España que está sembrada a mano).
+  try {
+    const otherSf = await db.collection('fixtures').where('stage', '==', 'sf').get();
+    otherSf.docs.forEach((d) => { const f = d.data(); console.log(`  DIAG SF fixture: ${d.id} home="${f.home}" away="${f.away}" homeCode=${f.homeCode} awayCode=${f.awayCode}`); });
+  } catch (e) { console.warn('  diag SF names:', e && e.message); }
+
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
     const dynSnap = await db.collection('fixtures').get();
