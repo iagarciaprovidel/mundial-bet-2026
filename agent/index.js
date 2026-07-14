@@ -1706,6 +1706,16 @@ async function main() {
     }
   } catch (e) { console.warn('  migración dyn_es_fr:', e && e.message); }
 
+  // Diagnóstico puntual: confirma que la semifinal Francia-España tiene
+  // cuotas listas para apostar hoy (usuario reporta que quiere apostar).
+  {
+    const od = await db.collection('odds').doc('dyn_es_fr').get();
+    const o = od.exists ? od.data() : null;
+    console.log(`  DIAG dyn_es_fr odds: existe=${!!o} home=${o && o.home} draw=${o && o.draw} away=${o && o.away} fuente=${o && o.fuente} _stage=${o && o._stage}`);
+    const inOurs = OURS.find((f) => f.id === 'dyn_es_fr');
+    console.log(`  DIAG dyn_es_fr en OURS: ${inOurs ? JSON.stringify(inOurs) : 'NO'}`);
+  }
+
   // Rescate de desafíos que quedaron abiertos en partidos ya terminados
   // (fuera de la ventana de ESPN). Corre en cada ciclo: solo lee picks 'open'.
   await sweepOpenChallengePicks();
