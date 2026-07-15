@@ -307,7 +307,11 @@
   }
 
   // ── Columna trofeo (centro) ───────────────────────────────
-  function TrophyColumn({ h }) {
+  function TrophyColumn({ h, sfMatches, odds }) {
+    // Quién va a la final, aunque el fixture real de la final todavía no
+    // exista — antes acá solo se veía fecha/estadio, sin indicar a quién ya
+    // se sabe que le tocó jugarla.
+    const winners = (sfMatches || []).map((m) => getWinner(m, odds[m.id] || {}, true)).filter(Boolean);
     return (
       <div style={{
         position: 'absolute', left: TROPH, top: 0, width: TC, height: h,
@@ -316,9 +320,12 @@
         borderLeft: '1px solid rgba(212,175,55,0.18)',
         borderRight: '1px solid rgba(212,175,55,0.18)',
       }}>
-        {/* Copa con glow */}
+        {/* Copa con glow — resplandor chico a propósito: la columna que la
+            envuelve vive dentro de un contenedor con scroll horizontal
+            (overflowX), y eso recorta cualquier brillo que se pinte más
+            ancho que la columna. Un resplandor grande se veía "cortado". */}
         <div style={{ marginBottom: 8 }}>
-          <TrophyIcon size={44} gradId="mbTrophyGradM" glow="drop-shadow(0 0 14px rgba(212,175,55,0.8)) drop-shadow(0 0 28px rgba(212,175,55,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.6))" />
+          <TrophyIcon size={44} gradId="mbTrophyGradM" glow="drop-shadow(0 0 5px rgba(212,175,55,0.8)) drop-shadow(0 0 9px rgba(212,175,55,0.4)) drop-shadow(0 1px 3px rgba(0,0,0,0.6))" />
         </div>
 
         {/* FINAL label */}
@@ -332,6 +339,17 @@
 
         {/* Línea dorada */}
         <div style={{ width: 28, height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.6), transparent)', marginBottom: 5 }} />
+
+        {winners.length > 0 && (
+          <div style={{ fontSize: 8, textAlign: 'center', lineHeight: 1.5, marginBottom: 5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {winners.map((w, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                <img src={`https://flagcdn.com/h20/${w.code}.png`} alt="" style={{ height: 9, width: 'auto', borderRadius: 1 }} />
+                <span style={{ color: w.prov ? 'rgba(212,175,55,0.7)' : 'var(--gold-light)', fontWeight: 700 }}>{w.name}</span>
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Fecha y sede */}
         <div style={{ fontSize: 7, color: 'rgba(212,175,55,0.55)', textAlign: 'center', lineHeight: 1.5, fontWeight: 600 }}>
@@ -528,7 +546,7 @@
             ))}
 
             {/* ── Trofeo central: QF en adelante ── */}
-            {(activePhase === 'qf' || activePhase === 'sf' || activePhase === 'final') && <TrophyColumn h={TOTAL_H} />}
+            {(activePhase === 'qf' || activePhase === 'sf' || activePhase === 'final') && <TrophyColumn h={TOTAL_H} sfMatches={byStage.sf} odds={odds} />}
 
             {/* ── Mitad derecha: fase siguiente ── */}
             {rightNxtSlots && rightNxtSlots.map((slot, i) => (
@@ -1199,11 +1217,33 @@
                 background: 'linear-gradient(180deg, rgba(212,175,55,0.02) 0%, rgba(212,175,55,0.12) 50%, rgba(212,175,55,0.02) 100%)',
                 borderLeft: '1px solid rgba(212,175,55,0.2)', borderRight: '1px solid rgba(212,175,55,0.2)',
               }}>
+                {/* Resplandor chico a propósito: la columna vive dentro de un
+                    contenedor con scroll horizontal que recorta cualquier
+                    brillo más ancho que la columna misma. */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-                  <TrophyIcon size={52} gradId="mbTrophyGradW" glow="drop-shadow(0 0 18px rgba(212,175,55,0.9)) drop-shadow(0 0 36px rgba(212,175,55,0.5)) drop-shadow(0 2px 6px rgba(0,0,0,0.7))" />
+                  <TrophyIcon size={52} gradId="mbTrophyGradW" glow="drop-shadow(0 0 6px rgba(212,175,55,0.9)) drop-shadow(0 0 11px rgba(212,175,55,0.5)) drop-shadow(0 1px 4px rgba(0,0,0,0.7))" />
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase', background: 'linear-gradient(135deg,#F5D76E,#C99B1F)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 4 }}>FINAL</div>
                 <div style={{ width: 32, height: 1, background: 'linear-gradient(90deg,transparent,rgba(212,175,55,0.6),transparent)', marginBottom: 6 }} />
+                {/* Quién va a la final, aunque el fixture real de la final
+                    todavía no exista — antes acá solo se veía fecha/estadio,
+                    sin indicar a quién ya se sabe que le tocó jugarla. */}
+                {(() => {
+                  const wL = getWinner(LSF, LSF ? (odds[LSF.id] || {}) : {}, true);
+                  const wR = getWinner(RSF, RSF ? (odds[RSF.id] || {}) : {}, true);
+                  if (!wL && !wR) return null;
+                  const side = (w) => w ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <img src={`https://flagcdn.com/h20/${w.code}.png`} alt="" style={{ height: 10, width: 'auto', borderRadius: 1 }} />
+                      <span style={{ color: w.prov ? 'rgba(212,175,55,0.7)' : 'var(--gold-light)', fontWeight: 700 }}>{w.name}</span>
+                    </span>
+                  ) : <span style={{ color: 'rgba(255,255,255,0.3)' }}>¿?</span>;
+                  return (
+                    <div style={{ fontSize: 9, textAlign: 'center', lineHeight: 1.7, marginBottom: 6 }}>
+                      {side(wL)}<br />vs<br />{side(wR)}
+                    </div>
+                  );
+                })()}
                 {FIN ? (
                   <div style={{ fontSize: 8, color: 'rgba(212,175,55,0.6)', textAlign: 'center', lineHeight: 1.6 }}>
                     {fmtDate(FIN.kickoff)}<br />{FIN.stadium}
