@@ -1325,6 +1325,14 @@ async function main() {
     }
   } catch (e) { console.warn('  fix nombres SF:', e && e.message); }
 
+  // Diagnóstico: usuario reporta "España" repetido 3 veces en el cuadro de
+  // semifinales — sospecha de un fixture duplicado en la colección.
+  try {
+    const allSf = await db.collection('fixtures').where('stage', '==', 'sf').get();
+    console.log(`  DIAG fixtures stage=sf: ${allSf.size} doc(s)`);
+    allSf.docs.forEach((d) => { const f = d.data(); console.log(`    ${d.id}: home=${f.home} away=${f.away} homeCode=${f.homeCode} awayCode=${f.awayCode} kickoff=${f.kickoff}`); });
+  } catch (e) { console.warn('  diag sf duplicado:', e && e.message); }
+
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
     const dynSnap = await db.collection('fixtures').get();

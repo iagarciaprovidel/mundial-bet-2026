@@ -314,11 +314,12 @@
     const winners = (sfMatches || []).map((m) => getWinner(m, odds[m.id] || {}, true)).filter(Boolean);
     return (
       <div style={{
-        position: 'absolute', left: TROPH, top: 0, width: TC, height: h,
+        position: 'absolute', left: TROPH, top: 0, width: TC, minHeight: h,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         background: 'linear-gradient(180deg, rgba(212,175,55,0.02) 0%, rgba(212,175,55,0.1) 50%, rgba(212,175,55,0.02) 100%)',
         borderLeft: '1px solid rgba(212,175,55,0.18)',
         borderRight: '1px solid rgba(212,175,55,0.18)',
+        padding: '10px 0',
       }}>
         {/* Copa con glow — resplandor chico a propósito: la columna que la
             envuelve vive dentro de un contenedor con scroll horizontal
@@ -512,7 +513,12 @@
 
         {/* Scroll horizontal */}
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 8 }}>
-          <div style={{ position: 'relative', width: TOTAL_W, height: TOTAL_H + 4 }}>
+          {/* +130 (no solo +4): la columna del trofeo ahora puede necesitar
+              más alto que TOTAL_H cuando hay pocos partidos por lado
+              (semis/final) — al ser absolute, si el contenedor no le deja
+              el espacio, el scroll horizontal (que fuerza recorte en Y
+              también) se lo corta. */}
+          <div style={{ position: 'relative', width: TOTAL_W, height: TOTAL_H + 130 }}>
 
             {/* SVG: líneas conectoras */}
             <svg width={TOTAL_W} height={TOTAL_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
@@ -1170,7 +1176,12 @@
 
           {/* Bracket */}
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 12 }}>
-            <div style={{ position: 'relative', width: WEB_W, height: WEB_H + 24 }}>
+            {/* +140 (no solo +24): la columna del trofeo ahora puede
+                necesitar más alto que WEB_H cuando hay poco partidos por
+                lado (semis/final) — al ser absolute, si el contenedor no le
+                deja el espacio, el scroll horizontal (que fuerza recorte en
+                Y también) se lo corta. */}
+            <div style={{ position: 'relative', width: WEB_W, height: WEB_H + 140 }}>
 
               {/* SVG conectores */}
               <svg width={WEB_W} height={WEB_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
@@ -1212,10 +1223,11 @@
 
               {/* ─── TROFEO CENTRAL ─── */}
               <div style={{
-                position: 'absolute', left: XFIN, top: 0, width: TW, height: WEB_H,
+                position: 'absolute', left: XFIN, top: 0, width: TW, minHeight: WEB_H,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 background: 'linear-gradient(180deg, rgba(212,175,55,0.02) 0%, rgba(212,175,55,0.12) 50%, rgba(212,175,55,0.02) 100%)',
                 borderLeft: '1px solid rgba(212,175,55,0.2)', borderRight: '1px solid rgba(212,175,55,0.2)',
+                padding: '10px 0',
               }}>
                 {/* Resplandor chico a propósito: la columna vive dentro de un
                     contenedor con scroll horizontal que recorta cualquier
