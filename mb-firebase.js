@@ -37,6 +37,7 @@
       subscribeMyBets(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
       subscribeMe(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       subscribeActivity(cb) { if (typeof cb === 'function') cb([]); return () => {}; },
+      subscribeTournamentResult(cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       notifPermission() { return 'unsupported'; }, enableNotifications: noFB, setChampion: noFB, claimGroupBonuses: noFB, claimStreakTier: noFB, watchMatch: noFB,
       subscribeTeamAlbum(gid, cb) { if (typeof cb === 'function') cb(null); return () => {}; },
       teamOwnerUid() { return Promise.resolve(null); }, albumMark: noFB, albumAddMany: noFB, setAlbumLock: noFB,
@@ -309,6 +310,13 @@
     subscribeActivity(cb) {
       return db.collection('meta').doc('activity')
         .onSnapshot(function (d) { cb(d.exists ? (d.data().recent || []) : []); }, function () { cb([]); });
+    },
+    // Resultado final del torneo (campeón + goleador real), lo escribe solo
+    // el agente al terminar la Final (writeTournamentResult). null hasta
+    // entonces — el banner de cierre se activa solo cuando este doc exista.
+    subscribeTournamentResult(cb) {
+      return db.collection('meta').doc('tournamentResult')
+        .onSnapshot(function (d) { cb(d.exists ? d.data() : null); }, function () { cb(null); });
     },
 
     // ── Reclamo manual de premios de fase de grupos + bono campeón ──

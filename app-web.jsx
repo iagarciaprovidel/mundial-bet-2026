@@ -499,6 +499,7 @@ function DashboardWeb({ me, onNav, onPredict, onTeam }) {
             el gap grande de la columna) para leerse como un solo bloque compacto */}
         {authUser && (
           <div style={{ marginTop: -8 }}>
+            {window.MB_TournamentResultBanner && React.createElement(window.MB_TournamentResultBanner)}
             {window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
             {window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
             {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}

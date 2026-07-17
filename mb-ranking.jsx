@@ -92,11 +92,16 @@
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {shown.map((u, i) => {
             const isMe = u.uid === user.uid;
+            // Podio: destaca los 3 primeros lugares (medalla + avatar más
+            // grande + borde de color) en vez de una fila igual a las demás.
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+            const medalColor = i === 0 ? '#FFD700' : i === 1 ? '#C8CDD4' : '#CD7F32';
+            const avatarSize = medal ? 38 : 30;
             return (
-              <div key={u.uid} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderRadius: 'var(--r-sm)', background: isMe ? 'rgba(212,175,55,0.14)' : 'transparent', borderBottom: i < shown.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                <span style={{ width: 20, textAlign: 'center', color: 'var(--muted-2)', fontWeight: 700, fontSize: 'var(--t-2xs)', flexShrink: 0 }}>{i + 1}{deltaEl(u, i)}</span>
-                <span onClick={() => { if (u.championCode && window.__mbOpenTeamByCode) window.__mbOpenTeamByCode(u.championCode); else if (u.champion && window.MB_openTeam) window.MB_openTeam(u.champion); }} style={{ cursor: (u.champion || u.championCode) ? 'pointer' : 'default', flexShrink: 0 }}>
-                  {window.MB_champAvatar ? window.MB_champAvatar(u.championCode, u.champion, u.nombre, 30) : <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>}
+              <div key={u.uid} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: medal ? '11px 8px' : '10px 8px', borderRadius: 'var(--r-sm)', background: isMe ? 'rgba(212,175,55,0.14)' : medal ? `rgba(${i === 0 ? '255,215,0' : i === 1 ? '200,205,212' : '205,127,50'},0.08)` : 'transparent', border: medal ? `1px solid ${medalColor}55` : 'none', borderBottom: !medal && i < shown.length - 1 ? '1px solid rgba(255,255,255,0.05)' : (medal ? `1px solid ${medalColor}55` : 'none'), marginBottom: medal ? 4 : 0 }}>
+                <span style={{ width: 20, textAlign: 'center', color: medal ? medalColor : 'var(--muted-2)', fontWeight: 700, fontSize: medal ? 15 : 'var(--t-2xs)', flexShrink: 0 }}>{medal || (i + 1)}{deltaEl(u, i)}</span>
+                <span onClick={() => { if (u.championCode && window.__mbOpenTeamByCode) window.__mbOpenTeamByCode(u.championCode); else if (u.champion && window.MB_openTeam) window.MB_openTeam(u.champion); }} style={{ cursor: (u.champion || u.championCode) ? 'pointer' : 'default', flexShrink: 0, position: 'relative' }}>
+                  {window.MB_champAvatar ? window.MB_champAvatar(u.championCode, u.champion, u.nombre, avatarSize) : <span style={{ width: avatarSize, height: avatarSize, borderRadius: '50%', background: 'var(--surface-2)', border: medal ? `2px solid ${medalColor}` : '1px solid var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 }}>{initials(u.nombre)}</span>}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 'var(--t-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 0 }}>{u.nombre || 'Jugador'}{window.MB_champFlag && window.MB_champFlag(u.championCode, u.champion)}<StreakBadge n={streakOf(u)} />{isMe && <span style={{ color: 'var(--info)', fontSize: 'var(--t-3xs)', marginLeft: 6, flexShrink: 0 }}>· tú</span>}</div>

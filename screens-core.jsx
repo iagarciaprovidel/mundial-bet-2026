@@ -256,6 +256,7 @@ function Dashboard({ user, onNav, onPredict }) {
           grupo compacto, no como tarjetas sueltas repartidas por la pantalla. */}
       {authUser && (
         <div style={{ marginTop: -8 }}>
+          {window.MB_TournamentResultBanner && React.createElement(window.MB_TournamentResultBanner)}
           {window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
           {window.MB_ScorerBet && React.createElement(window.MB_ScorerBet, { banner: true })}
           {window.MB_ChampionPick && React.createElement(window.MB_ChampionPick, { banner: true })}

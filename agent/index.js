@@ -1128,6 +1128,57 @@ async function settleScorerBets() {
   return paid;
 }
 
+// ── Guarda el resultado final del torneo (campeón real + goleador real) ────
+// Se dispara solo, sin ningún paso manual: apenas el partido de la FINAL
+// queda marcado 'finished', calcula el campeón (ganador) y el goleador del
+// torneo (mismo tally que settleScorerBets, reutilizado si ya corrió) y lo
+// deja en meta/tournamentResult para que el cliente muestre el banner de
+// cierre y el podio automáticamente. Idempotente: si el doc ya existe, no
+// vuelve a leer nada (corre gratis en cada ciclo el resto del torneo).
+async function writeTournamentResult() {
+  try {
+    const existing = await db.collection('meta').doc('tournamentResult').get();
+    if (existing.exists) return;
+    const finalFx = OURS.filter((f) => f.stage === 'final');
+    if (!finalFx.length) return;
+    const fx = finalFx[0];
+    const od = await db.collection('odds').doc(fx.id).get();
+    if (!od.exists || !od.data().finished) return;
+    const o = od.data();
+    let champCode, champName;
+    if (o.result === 'home') { champCode = fx.homeCode; champName = fx.home; }
+    else if (o.result === 'away') { champCode = fx.awayCode; champName = fx.away; }
+    else if (o.penWinner === 'home') { champCode = fx.homeCode; champName = fx.home; }
+    else if (o.penWinner === 'away') { champCode = fx.awayCode; champName = fx.away; }
+    else return; // sin resultado claro todavía (no debería pasar en la final)
+
+    // Goleador del torneo, con su código de selección (para la bandera) —
+    // se recalcula acá con OURS para saber de qué equipo es cada gol, en vez
+    // de solo el nombre que guarda settleScorerBets.
+    const oddsSnap = await db.collection('odds').get();
+    const oursById = {}; OURS.forEach((f) => { oursById[f.id] = f; });
+    const tally = {};
+    oddsSnap.docs.forEach((d) => {
+      const f = oursById[d.id];
+      (d.data().scorers || []).forEach((s) => {
+        if (!s || !s.name || s.og) return;
+        if (!tally[s.name]) tally[s.name] = { goals: 0, code: null };
+        tally[s.name].goals++;
+        if (!tally[s.name].code && f) tally[s.name].code = s.side === 'home' ? f.homeCode : (s.side === 'away' ? f.awayCode : null);
+      });
+    });
+    const topGoals = Object.values(tally).reduce((m, v) => Math.max(m, v.goals), 0);
+    const topScorers = Object.keys(tally).filter((n) => tally[n].goals === topGoals).map((n) => ({ name: n, code: tally[n].code, goals: topGoals }));
+
+    await db.collection('meta').doc('tournamentResult').set({
+      championCode: champCode, championName: champName,
+      topScorers: topScorers, topScorerGoals: topGoals,
+      finalMatchId: fx.id, at: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log(`  🏆 Torneo finalizado: campeón ${champName} (${champCode}) · goleador ${topScorers.map((s) => s.name).join(', ')} (${topGoals} goles).`);
+  } catch (e) { console.warn('writeTournamentResult:', e && e.message); }
+}
+
 // ── Notificación masiva: usuarios sin equipo ──
 async function sendNotifyNoTeam() {
   const snap = await db.collection('users').get();
@@ -1755,6 +1806,11 @@ async function main() {
   // sin pagar PARA SIEMPRE. Esta barrida revisa cada ronda directamente contra
   // los fixtures/odds guardados, sin depender de que ESPN la devuelva hoy.
   await sweepChampionRoundBonuses();
+
+  // Resultado final del torneo (campeón + goleador real) para el banner de
+  // cierre y el podio — automático, sin ningún paso manual (ver comentario
+  // en writeTournamentResult). No-op el resto del torneo.
+  await writeTournamentResult();
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
 }

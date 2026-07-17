@@ -1382,6 +1382,46 @@
   }
   window.MB_ChampPhaseBanner = ChampPhaseBanner;
 
+  // Banner de cierre del torneo: campeón real + goleador real, apenas el
+  // agente escribe meta/tournamentResult (writeTournamentResult, automático
+  // al terminar la Final — ver comentario en agent/index.js). Marca si el
+  // usuario le acertó a cada uno con lo que ya eligió en la app.
+  function TournamentResultBanner() {
+    const authUser = window.MB_useAuth ? window.MB_useAuth() : null;
+    const s = useBetStore();
+    const [res, setRes] = useState(null);
+    useEffect(() => {
+      if (!FB().subscribeTournamentResult) return undefined;
+      const un = FB().subscribeTournamentResult((r) => setRes(r));
+      return () => { if (typeof un === 'function') un(); };
+    }, []);
+    if (!authUser || !res || !res.championCode) return null;
+    const meRec = (s.users || []).find((u) => u.uid === authUser.uid) || null;
+    const gotChampion = !!(meRec && meRec.championCode === res.championCode);
+    const myScorerPick = meRec && meRec.scorerBet && meRec.scorerBet.player;
+    const gotScorer = !!(myScorerPick && (res.topScorers || []).some((t) => window.MB_scorerNamesMatch && window.MB_scorerNamesMatch(myScorerPick, t.name)));
+    const scorersTxt = (res.topScorers || []).map((t) => t.name).join(' · ');
+    return (
+      <div style={{ padding: '13px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(199,155,31,0.10)), rgba(13,20,15,0.92)', border: '1px solid rgba(212,175,55,0.6)', boxShadow: 'var(--glow-gold)', marginBottom: 5, textAlign: 'center' }}>
+        <div style={{ fontSize: 10, color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>🏆 ¡Terminó el Mundial 2026!</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: gotChampion ? 4 : 8 }}>
+          <img src={`https://flagcdn.com/h40/${res.championCode}.png`} alt="" style={{ height: 26, width: 'auto', borderRadius: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.5)' }} />
+          <span style={{ fontSize: 'var(--t-lg)', fontWeight: 900, color: 'var(--text)' }}>{res.championName}</span>
+          <span style={{ fontSize: 18 }}>👑</span>
+        </div>
+        {gotChampion && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800, marginBottom: 8 }}>✓ ¡Le acertaste al campeón!</div>}
+        {scorersTxt && (
+          <div style={{ paddingTop: 8, borderTop: '1px solid rgba(212,175,55,0.25)' }}>
+            <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>⚽ Goleador del torneo</div>
+            <div style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>{scorersTxt} <span className="num" style={{ color: 'var(--text)' }}>· {res.topScorerGoals} goles</span></div>
+            {gotScorer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800, marginTop: 4 }}>✓ ¡Le acertaste al goleador!</div>}
+          </div>
+        )}
+      </div>
+    );
+  }
+  window.MB_TournamentResultBanner = TournamentResultBanner;
+
   // Banner de inicio: "Elige tu campeón" + "Reclamar premios"
   // Aparece en la pantalla Inicio si el usuario tiene pendientes alguna de las dos acciones.
   function ClaimBonusBanner() {
