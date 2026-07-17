@@ -19,11 +19,12 @@
   const { useState, useEffect } = React;
   const FB = () => window.MBFirebase || {};
 
-  const PTS = { r32: 1500, r16: 1500, qf: 2500, sf: 2500, final: 4000 };
+  const PTS = { r32: 1500, r16: 1500, qf: 2500, sf: 2500, third: 2500, final: 4000 };
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
   // Los desafíos existen recién desde octavos de final (r16): en grupos y r32
-  // no hubo bonus, así que no deben mostrarse en esos partidos.
-  const BONUS_STAGES = new Set(['r16', 'qf', 'sf', 'final']);
+  // no hubo bonus, así que no deben mostrarse en esos partidos. 'third' (3er
+  // y 4to puesto) sí cuenta — es un cruce eliminatorio real, mismas reglas.
+  const BONUS_STAGES = new Set(['r16', 'qf', 'sf', 'third', 'final']);
 
   const STAKE_MULTS = [1, 5, 10, 25, 50];
 

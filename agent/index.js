@@ -639,11 +639,11 @@ async function settleParlays() {
 // Q3: ¿Más de 3 tarjetas amarillas? (bool) — todos los partidos
 // Q4: ¿Quién marca primero? (string: 'home'/'away'/'none') — todos los partidos
 // POINTS KO: r32/r16→1500  qf/sf→2500  final→4000  | Group/extra: 500
-const CHALLENGE_PTS = { r32: 1500, r16: 1500, qf: 2500, sf: 2500, final: 4000 };
+const CHALLENGE_PTS = { r32: 1500, r16: 1500, qf: 2500, sf: 2500, third: 2500, final: 4000 };
 const CHALLENGE_PTS_EXTRA = 500; // para q3/q4 en grupos; para KO es mitad del KO pts
 async function settleChallengePicks(our, oddsData) {
   try {
-    const isKOStage = ['r32', 'r16', 'qf', 'sf', 'final'].includes(our.stage);
+    const isKOStage = ['r32', 'r16', 'qf', 'sf', 'third', 'final'].includes(our.stage);
     const ptsKO = CHALLENGE_PTS[our.stage] || 1500;
     const ptsExtra = isKOStage ? Math.round(ptsKO * 0.5) : CHALLENGE_PTS_EXTRA;
     // { qkey → { correct: bool|string, pts: number } }
