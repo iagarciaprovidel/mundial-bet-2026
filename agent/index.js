@@ -1325,16 +1325,6 @@ async function main() {
     }
   } catch (e) { console.warn('  fix nombres SF:', e && e.message); }
 
-  // Diagnóstico: confirma nombres/kickoff del fixture de la FINAL (España
-  // vs Argentina, ya auto-registrado por ESPN) antes de que se muestre en
-  // el cuadro — verificando que no repita el problema de 'England' sin
-  // traducir que tuvo la otra semifinal.
-  try {
-    const finalFx2 = await db.collection('fixtures').where('stage', '==', 'final').get();
-    console.log(`  DIAG fixtures stage=final: ${finalFx2.size} doc(s)`);
-    finalFx2.docs.forEach((d) => { const f = d.data(); console.log(`    ${d.id}: home=${f.home} away=${f.away} homeCode=${f.homeCode} awayCode=${f.awayCode} kickoff=${f.kickoff}`); });
-  } catch (e) { console.warn('  diag final fixture:', e && e.message); }
-
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
     const dynSnap = await db.collection('fixtures').get();
