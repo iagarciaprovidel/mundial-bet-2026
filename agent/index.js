@@ -1326,12 +1326,14 @@ async function main() {
   } catch (e) { console.warn('  fix nombres SF:', e && e.message); }
 
   // Diagnóstico: usuario reporta "España" repetido 3 veces en el cuadro de
-  // semifinales — sospecha de un fixture duplicado en la colección.
+  // semifinales. fixtures/{stage=sf} da 2 docs limpios (confirmado) — el
+  // cliente arma su lista de dynFixtures desde ODDS (no desde fixtures),
+  // así que reviso ahí por si quedó una metadata _stage='sf' huérfana.
   try {
-    const allSf = await db.collection('fixtures').where('stage', '==', 'sf').get();
-    console.log(`  DIAG fixtures stage=sf: ${allSf.size} doc(s)`);
-    allSf.docs.forEach((d) => { const f = d.data(); console.log(`    ${d.id}: home=${f.home} away=${f.away} homeCode=${f.homeCode} awayCode=${f.awayCode} kickoff=${f.kickoff}`); });
-  } catch (e) { console.warn('  diag sf duplicado:', e && e.message); }
+    const allSfOdds = await db.collection('odds').where('_stage', '==', 'sf').get();
+    console.log(`  DIAG odds con _stage=sf: ${allSfOdds.size} doc(s)`);
+    allSfOdds.docs.forEach((d) => { const o = d.data(); console.log(`    ${d.id}: _home=${o._home} _away=${o._away} _homeCode=${o._homeCode} _awayCode=${o._awayCode} _kickoff=${o._kickoff}`); });
+  } catch (e) { console.warn('  diag odds sf duplicado:', e && e.message); }
 
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
