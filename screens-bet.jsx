@@ -183,7 +183,7 @@ function MobileFixtureCard({ m }) {
         <Chip tone="blue">
           {m.group
             ? `Grupo ${m.group} · J${m.md}`
-            : m.stage === 'r32' ? 'Dieciseisavos' : m.stage === 'r16' ? 'Octavos' : m.stage === 'qf' ? 'Cuartos' : m.stage === 'sf' ? 'Semifinales' : 'Final'}
+            : m.stage === 'r32' ? 'Dieciseisavos' : m.stage === 'r16' ? 'Octavos' : m.stage === 'qf' ? 'Cuartos' : m.stage === 'sf' ? 'Semifinales' : m.stage === 'third' ? '3er y 4to puesto' : 'Final'}
         </Chip>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {window.MB_WatchBell ? <window.MB_WatchBell matchId={m.id} compact /> : null}
@@ -607,15 +607,15 @@ function Partidos() {
             <>
               {/* Partidos de eliminatorias */}
               {(() => {
-                const stageOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
-                const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', final: 'Final' };
+                const stageOrder = ['r32', 'r16', 'qf', 'sf', 'third', 'final'];
+                const stageLabel = { r32: 'Dieciseisavos', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinales', third: '3er y 4to puesto', final: 'Final' };
                 const isKoFx = (m) => m.stage && m.stage !== 'Grupos';
                 // Filtro por ronda: con muchos partidos jugados, encontrar los de
                 // una ronda específica requería scrollear toda la lista.
                 const allKo = fx.filter(isKoFx);
                 const stagesPresent = stageOrder.filter((s) => allKo.some((m) => m.stage === s));
                 const inStage = (m) => koStage === 'all' || m.stage === koStage;
-                const chipLabel = { all: 'Todas', r32: '16avos', r16: 'Octavos', qf: 'Cuartos', sf: 'Semis', final: 'Final' };
+                const chipLabel = { all: 'Todas', r32: '16avos', r16: 'Octavos', qf: 'Cuartos', sf: 'Semis', third: '3er puesto', final: 'Final' };
                 const koLive     = allKo.filter((m) => inStage(m) && isLiveS(m)).sort(byKickoffAsc);
                 const koUpcoming = allKo.filter((m) => inStage(m) && !isLiveS(m) && !isDoneS(m) && new Date(m.kickoff).getTime() + BET_GRACE_MS_S > now).sort(byKickoffAsc);
                 const koPlayed   = allKo.filter((m) => inStage(m) && isDoneS(m)).sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));

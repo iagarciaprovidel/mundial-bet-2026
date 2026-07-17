@@ -88,7 +88,7 @@
     const groupsClosedM = r32CodesM.size > 0 && isFinite(lastKOM) && Date.now() >= lastKOM + 2 * 60 * 60 * 1000;
     // Rastrear en qué fase KO fue eliminado el equipo
     const KO_STAGES = ['r32', 'r16', 'qf', 'sf', 'final'];
-    const STAGE_NAME = { r32: 'Ronda de 32', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinal', final: 'Final' };
+    const STAGE_NAME = { r32: 'Ronda de 32', r16: 'Octavos de final', qf: 'Cuartos de final', sf: 'Semifinal', third: '3er y 4to puesto', final: 'Final' };
     const odds = (store && store.odds) || {};
     let koStatus = null; // null | { alive: true, inStage } | { alive: false, atStage }
     if (groupsClosedM) {

@@ -148,7 +148,7 @@
     'pick-invalido': 'Selección inválida.',
   };
 
-  const KO_STAGES = new Set(['r32', 'r16', 'qf', 'sf', 'final']);
+  const KO_STAGES = new Set(['r32', 'r16', 'qf', 'sf', 'third', 'final']);
   const isKO = (m) => KO_STAGES.has(m && m.stage);
   const DRAW_LABEL = (m) => isKO(m) ? 'Prórr./Pen.' : 'Empate';
   const PICK_LABEL = (m, k) => (k === 'home' ? m.home : k === 'away' ? m.away : DRAW_LABEL(m));

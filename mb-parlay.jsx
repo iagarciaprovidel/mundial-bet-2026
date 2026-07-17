@@ -10,7 +10,7 @@
   const { useState, useEffect } = React;
   const FB = () => window.MBFirebase || {};
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
-  const KO_STAGES = new Set(['r32', 'r16', 'qf', 'sf', 'final']);
+  const KO_STAGES = new Set(['r32', 'r16', 'qf', 'sf', 'third', 'final']);
   const isKO = (m) => KO_STAGES.has(m && m.stage);
   const DRAW_LABEL = (m) => isKO(m) ? 'Prórr./Pen.' : 'Empate';
 

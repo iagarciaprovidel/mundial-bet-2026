@@ -1304,6 +1304,31 @@ async function main() {
     }
   } catch (e) { console.warn('seed SF:', e && e.message); }
 
+  // Seed partido por el 3er y 4to puesto: Francia vs Inglaterra (los dos
+  // perdedores de semifinal), confirmado con fuentes externas — sábado
+  // 18-jul, 17:00 ET (21:00 UTC), Hard Rock Stadium, Miami. Stage propio
+  // ('third') porque no es parte del árbol de eliminación normal (no viene
+  // de ganar una ronda, viene de PERDER la semifinal) — así no interfiere
+  // con la lógica de "ronda actual" del cuadro (PHASES no lo incluye).
+  try {
+    const THIRD_ID = 'dyn_fr_gb-eng';
+    const THIRD_SEED = { id: THIRD_ID, homeCode: 'fr', awayCode: 'gb-eng', home: 'Francia', away: 'Inglaterra', kickoff: '2026-07-18T21:00:00Z', stage: 'third' };
+    const refT = db.collection('fixtures').doc(THIRD_ID);
+    const snapT = await refT.get();
+    if (!snapT.exists) {
+      console.log(`Seed 3er puesto: ${THIRD_ID} (${THIRD_SEED.home} vs ${THIRD_SEED.away})`);
+      await refT.set(THIRD_SEED);
+      await db.collection('odds').doc(THIRD_ID).set({ _home: THIRD_SEED.home, _away: THIRD_SEED.away, _homeCode: THIRD_SEED.homeCode, _awayCode: THIRD_SEED.awayCode, _kickoff: THIRD_SEED.kickoff, _stage: 'third' }, { merge: true });
+    } else {
+      const dT = snapT.data();
+      if (dT.stage !== 'third' || dT.kickoff !== THIRD_SEED.kickoff) {
+        console.log(`Corrigiendo 3er puesto: ${THIRD_ID} stage=${dT.stage}→third kickoff=${dT.kickoff}→${THIRD_SEED.kickoff}`);
+        await refT.update({ kickoff: THIRD_SEED.kickoff, stage: 'third', home: THIRD_SEED.home, away: THIRD_SEED.away, homeCode: THIRD_SEED.homeCode, awayCode: THIRD_SEED.awayCode });
+        await db.collection('odds').doc(THIRD_ID).set({ _kickoff: THIRD_SEED.kickoff, _stage: 'third', _home: THIRD_SEED.home, _away: THIRD_SEED.away, _homeCode: THIRD_SEED.homeCode, _awayCode: THIRD_SEED.awayCode }, { merge: true });
+      }
+    }
+  } catch (e) { console.warn('seed 3er puesto:', e && e.message); }
+
   // Corrige nombres en inglés que quedaron sin traducir en fixtures
   // auto-registrados directo desde ESPN (a diferencia de los sembrados a
   // mano como QF_SEED/SF_SEED, que ya usan nombres en español). Encontrado:

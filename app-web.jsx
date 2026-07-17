@@ -618,7 +618,7 @@ function RefLineWeb({ m }) {
   );
 }
 
-const KO_STAGE_NAMES = { r32: 'Dieciseisavos de Final', r16: 'Octavos de Final', qf: 'Cuartos de Final', sf: 'Semifinales', final: 'Final' };
+const KO_STAGE_NAMES = { r32: 'Dieciseisavos de Final', r16: 'Octavos de Final', qf: 'Cuartos de Final', sf: 'Semifinales', third: '3er y 4to puesto', final: 'Final' };
 
 function PartidosWeb({ onTeam }) {
   const store = window.MB_useBetStore ? window.MB_useBetStore() : null;
@@ -634,7 +634,7 @@ function PartidosWeb({ onTeam }) {
   const byKickoffAscP = (a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime();
   const byKickoffDescP = (a, b) => new Date(b.kickoff).getTime() - new Date(a.kickoff).getTime();
   const byMd = { 1: [], 2: [], 3: [] };
-  const byKO = { r32: [], r16: [], qf: [], sf: [], final: [] };
+  const byKO = { r32: [], r16: [], qf: [], sf: [], third: [], final: [] };
   fx.forEach(m => {
     if (byMd[m.md] !== undefined) byMd[m.md].push(m);
     else if (byKO[m.stage] !== undefined) byKO[m.stage].push(m);
@@ -649,7 +649,7 @@ function PartidosWeb({ onTeam }) {
   const authUserP = window.MB_useAuth ? window.MB_useAuth() : null;
   // Filtro por ronda KO — con muchos partidos jugados cuesta llegar a una ronda puntual
   const [koStageW, setKoStageW] = useStateW('all');
-  const KO_CHIP_LABEL = { all: 'Todas', r32: '16avos', r16: 'Octavos', qf: 'Cuartos', sf: 'Semis', final: 'Final' };
+  const KO_CHIP_LABEL = { all: 'Todas', r32: '16avos', r16: 'Octavos', qf: 'Cuartos', sf: 'Semis', third: '3er puesto', final: 'Final' };
   return (
     <div style={{ animation: 'mb-fade-up var(--dur-slow) var(--ease-out)' }}>
       {authUserP && window.MB_SemisPick && React.createElement(window.MB_SemisPick, { banner: true })}
@@ -664,7 +664,7 @@ function PartidosWeb({ onTeam }) {
       ))}
 
       {hasKO && (() => {
-        const stageOrderAll = ['r32', 'r16', 'qf', 'sf', 'final'];
+        const stageOrderAll = ['r32', 'r16', 'qf', 'sf', 'third', 'final'];
         const stagesPresentW = stageOrderAll.filter(s => byKO[s].length > 0);
         const stageOrder = koStageW === 'all' ? stageOrderAll : stageOrderAll.filter(s => s === koStageW);
         const koPlayedByStage = {};
