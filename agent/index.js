@@ -1310,8 +1310,8 @@ async function main() {
   // dyn_ar_gb-eng (semifinal Inglaterra vs Argentina) tenía home="England".
   const NAME_ES = { England: 'Inglaterra', Spain: 'España', France: 'Francia', Morocco: 'Marruecos', Belgium: 'Bélgica', Norway: 'Noruega', Switzerland: 'Suiza', Argentina: 'Argentina' };
   try {
-    const sfFixtures = await db.collection('fixtures').where('stage', '==', 'sf').get();
-    for (const d of sfFixtures.docs) {
+    const sfFinalFixtures = await db.collection('fixtures').where('stage', 'in', ['sf', 'final']).get();
+    for (const d of sfFinalFixtures.docs) {
       const f = d.data();
       const homeEs = NAME_ES[f.home], awayEs = NAME_ES[f.away];
       const patch = {};
@@ -1325,15 +1325,15 @@ async function main() {
     }
   } catch (e) { console.warn('  fix nombres SF:', e && e.message); }
 
-  // Diagnóstico: usuario reporta "España" repetido 3 veces en el cuadro de
-  // semifinales. fixtures/{stage=sf} da 2 docs limpios (confirmado) — el
-  // cliente arma su lista de dynFixtures desde ODDS (no desde fixtures),
-  // así que reviso ahí por si quedó una metadata _stage='sf' huérfana.
+  // Diagnóstico: confirma nombres/kickoff del fixture de la FINAL (España
+  // vs Argentina, ya auto-registrado por ESPN) antes de que se muestre en
+  // el cuadro — verificando que no repita el problema de 'England' sin
+  // traducir que tuvo la otra semifinal.
   try {
-    const allSfOdds = await db.collection('odds').where('_stage', '==', 'sf').get();
-    console.log(`  DIAG odds con _stage=sf: ${allSfOdds.size} doc(s)`);
-    allSfOdds.docs.forEach((d) => { const o = d.data(); console.log(`    ${d.id}: _home=${o._home} _away=${o._away} _homeCode=${o._homeCode} _awayCode=${o._awayCode} _kickoff=${o._kickoff}`); });
-  } catch (e) { console.warn('  diag odds sf duplicado:', e && e.message); }
+    const finalFx2 = await db.collection('fixtures').where('stage', '==', 'final').get();
+    console.log(`  DIAG fixtures stage=final: ${finalFx2.size} doc(s)`);
+    finalFx2.docs.forEach((d) => { const f = d.data(); console.log(`    ${d.id}: home=${f.home} away=${f.away} homeCode=${f.homeCode} awayCode=${f.awayCode} kickoff=${f.kickoff}`); });
+  } catch (e) { console.warn('  diag final fixture:', e && e.message); }
 
   // Carga fixtures dinámicos (r16+) registrados por corridas anteriores y los agrega a OURS.
   try {
