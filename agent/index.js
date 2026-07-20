@@ -1812,6 +1812,17 @@ async function main() {
   // en writeTournamentResult). No-op el resto del torneo.
   await writeTournamentResult();
 
+  try {
+    const dgTR = await db.collection('meta').doc('tournamentResult').get();
+    console.log('DIAG tournamentResult exists=' + dgTR.exists + ' data=' + JSON.stringify(dgTR.data() || null));
+    const dgFinalFx = OURS.filter((f) => f.stage === 'final');
+    console.log('DIAG finalFx=' + JSON.stringify(dgFinalFx));
+    if (dgFinalFx.length) {
+      const dgOd = await db.collection('odds').doc(dgFinalFx[0].id).get();
+      console.log('DIAG finalOdds exists=' + dgOd.exists + ' data=' + JSON.stringify(dgOd.data() || null));
+    }
+  } catch (e) { console.warn('DIAG error:', e && e.message); }
+
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
 }
 
