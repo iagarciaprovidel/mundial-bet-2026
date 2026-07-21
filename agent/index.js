@@ -1175,7 +1175,9 @@ async function writeTournamentResult() {
       topScorers: topScorers, topScorerGoals: topGoals,
       finalMatchId: fx.id, at: admin.firestore.FieldValue.serverTimestamp(),
     });
-    console.log(`  🏆 Torneo finalizado: campeón ${champName} (${champCode}) · goleador ${topScorers.map((s) => s.name).join(', ')} (${topGoals} goles).`);
+    const scorersTxt = topScorers.map((s) => s.name).join(', ');
+    await notifyAll('🏆 ¡Terminó el Mundial 2026!', `Campeón: ${champName}. Goleador: ${scorersTxt} (${topGoals} goles). Entra a MundialBet para ver si acertaste.`, BADGE_URL);
+    console.log(`  🏆 Torneo finalizado: campeón ${champName} (${champCode}) · goleador ${scorersTxt} (${topGoals} goles).`);
   } catch (e) { console.warn('writeTournamentResult:', e && e.message); }
 }
 
@@ -1812,16 +1814,23 @@ async function main() {
   // en writeTournamentResult). No-op el resto del torneo.
   await writeTournamentResult();
 
+  // ONE-OFF: el doc meta/tournamentResult ya se había escrito antes de que
+  // notifyAll() existiera dentro de writeTournamentResult (se agregó después),
+  // así que ese aviso nunca salió. Se envía una sola vez y luego se borra este bloque.
   try {
-    const dgTR = await db.collection('meta').doc('tournamentResult').get();
-    console.log('DIAG tournamentResult exists=' + dgTR.exists + ' data=' + JSON.stringify(dgTR.data() || null));
-    const dgFinalFx = OURS.filter((f) => f.stage === 'final');
-    console.log('DIAG finalFx=' + JSON.stringify(dgFinalFx));
-    if (dgFinalFx.length) {
-      const dgOd = await db.collection('odds').doc(dgFinalFx[0].id).get();
-      console.log('DIAG finalOdds exists=' + dgOd.exists + ' data=' + JSON.stringify(dgOd.data() || null));
+    const trMeta = await db.collection('meta').doc('bonuses').get();
+    const trData = trMeta.exists ? trMeta.data() : {};
+    if (!trData.tournamentResultNotified) {
+      const tr = await db.collection('meta').doc('tournamentResult').get();
+      if (tr.exists) {
+        const t = tr.data();
+        const scorersTxt2 = (t.topScorers || []).map((s) => s.name).join(', ');
+        await notifyAll('🏆 ¡Terminó el Mundial 2026!', `Campeón: ${t.championName}. Goleador: ${scorersTxt2} (${t.topScorerGoals} goles). Entra a MundialBet para ver si acertaste.`, BADGE_URL);
+        await db.collection('meta').doc('bonuses').set({ tournamentResultNotified: true }, { merge: true });
+        console.log('  🏆 Aviso ONE-OFF de resultado del torneo enviado.');
+      }
     }
-  } catch (e) { console.warn('DIAG error:', e && e.message); }
+  } catch (e) { console.warn('ONE-OFF notif torneo:', e && e.message); }
 
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
 }
