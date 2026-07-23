@@ -1,8 +1,13 @@
 name: Agente MundialBet
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'    # cada 5 minutos (UTC). El script sólo gasta API si hay partido en vivo o cuotas pendientes (marcador casi en vivo).
+  # Cron desactivado: el Mundial 2026 terminó (campeón España, 19-jul) y ya no
+  # hay partidos que trackear. Corría cada 5 min las 24h consumiendo lecturas/
+  # escrituras de Firestore sin necesidad, generando costo real sin motivo.
+  # Para reactivarlo (otro torneo, temporada nueva, etc.) descomentar el bloque
+  # `schedule` de abajo.
+  # schedule:
+  #   - cron: '*/5 * * * *'
   workflow_dispatch:          # permite ejecutarlo a mano desde la pestaña Actions
     inputs:
       mode:
