@@ -1401,6 +1401,11 @@
     const myScorerPick = meRec && meRec.scorerBet && meRec.scorerBet.player;
     const gotScorer = !!(myScorerPick && (res.topScorers || []).some((t) => window.MB_scorerNamesMatch && window.MB_scorerNamesMatch(myScorerPick, t.name)));
     const scorersTxt = (res.topScorers || []).map((t) => t.name).join(' · ');
+    // Podio: los 3 jugadores con más patrimonio (los que más acertaron), no su
+    // pronóstico de campeón — para no confundir "quién ganó el torneo real"
+    // (arriba) con "qué campeón eligió cada jugador" (que puede ser otro país).
+    const top3 = (s.users || []).slice().sort((a, b) => window.MB_worth(b) - window.MB_worth(a)).slice(0, 3);
+    const medals = ['🥇', '🥈', '🥉'];
     return (
       <div style={{ padding: '13px 14px', borderRadius: 'var(--r-lg)', background: 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(199,155,31,0.10)), rgba(13,20,15,0.92)', border: '1px solid rgba(212,175,55,0.6)', boxShadow: 'var(--glow-gold)', marginBottom: 5, textAlign: 'center' }}>
         <div style={{ fontSize: 10, color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>🏆 ¡Terminó el Mundial 2026!</div>
@@ -1415,6 +1420,20 @@
             <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>⚽ Goleador del torneo</div>
             <div style={{ fontSize: 'var(--t-sm)', fontWeight: 800, color: 'var(--gold-light)' }}>{scorersTxt} <span className="num" style={{ color: 'var(--text)' }}>· {res.topScorerGoals} goles</span></div>
             {gotScorer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800, marginTop: 4 }}>✓ ¡Le acertaste al goleador!</div>}
+          </div>
+        )}
+        {top3.length > 0 && (
+          <div style={{ paddingTop: 8, marginTop: 8, borderTop: '1px solid rgba(212,175,55,0.25)' }}>
+            <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>🏅 Podio final del club</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 14 }}>
+              {top3.map((u, i) => (
+                <div key={u.uid} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, opacity: u.uid === authUser.uid ? 1 : 0.9 }}>
+                  <span style={{ fontSize: 20 }}>{medals[i]}</span>
+                  <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: u.uid === authUser.uid ? 'var(--gold-light)' : 'var(--text)', maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}</span>
+                  <span className="num" style={{ fontSize: 9, color: 'var(--muted)' }}>{Math.round(window.MB_worth(u)).toLocaleString('es-CL')}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
