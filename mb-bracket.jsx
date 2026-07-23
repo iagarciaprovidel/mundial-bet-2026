@@ -307,11 +307,15 @@
   }
 
   // ── Columna trofeo (centro) ───────────────────────────────
-  function TrophyColumn({ h, sfMatches, odds }) {
+  function TrophyColumn({ h, sfMatches, odds, finalMatch }) {
     // Quién va a la final, aunque el fixture real de la final todavía no
     // exista — antes acá solo se veía fecha/estadio, sin indicar a quién ya
     // se sabe que le tocó jugarla.
     const winners = (sfMatches || []).map((m) => getWinner(m, odds[m.id] || {}, true)).filter(Boolean);
+    // Una vez la Final terminó de verdad, se reemplaza el "vs" de finalistas
+    // por el campeón real — si no, quedaba pareciendo que el torneo seguía
+    // "en disputa" entre ambos aunque ya hubiera un ganador.
+    const champ = finalMatch ? getWinner(finalMatch, odds[finalMatch.id] || {}, false) : null;
     return (
       <div style={{
         position: 'absolute', left: TROPH, top: 0, width: TC, minHeight: h,
@@ -341,7 +345,16 @@
         {/* Línea dorada */}
         <div style={{ width: 28, height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.6), transparent)', marginBottom: 5 }} />
 
-        {winners.length > 0 && (
+        {champ ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, marginBottom: 5 }}>
+            <span style={{ fontSize: 9, color: 'var(--gold-light)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Campeón</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <img src={`https://flagcdn.com/h40/${champ.code}.png`} alt="" style={{ height: 16, width: 'auto', borderRadius: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.5)' }} />
+              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--text)' }}>{champ.name}</span>
+              <span style={{ fontSize: 13 }}>👑</span>
+            </span>
+          </div>
+        ) : winners.length > 0 && (
           <div style={{ fontSize: 8, textAlign: 'center', lineHeight: 1.5, marginBottom: 5, display: 'flex', flexDirection: 'column', gap: 2 }}>
             {winners.map((w, i) => (
               <span key={i} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
@@ -552,7 +565,7 @@
             ))}
 
             {/* ── Trofeo central: QF en adelante ── */}
-            {(activePhase === 'qf' || activePhase === 'sf' || activePhase === 'final') && <TrophyColumn h={TOTAL_H} sfMatches={byStage.sf} odds={odds} />}
+            {(activePhase === 'qf' || activePhase === 'sf' || activePhase === 'final') && <TrophyColumn h={TOTAL_H} sfMatches={byStage.sf} odds={odds} finalMatch={byStage.final[0] || null} />}
 
             {/* ── Mitad derecha: fase siguiente ── */}
             {rightNxtSlots && rightNxtSlots.map((slot, i) => (
@@ -1241,6 +1254,19 @@
                     todavía no exista — antes acá solo se veía fecha/estadio,
                     sin indicar a quién ya se sabe que le tocó jugarla. */}
                 {(() => {
+                  const champW = FIN ? getWinner(FIN, odds[FIN.id] || {}, false) : null;
+                  if (champW) {
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                        <span style={{ fontSize: 10, color: 'var(--gold-light)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Campeón</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <img src={`https://flagcdn.com/h40/${champW.code}.png`} alt="" style={{ height: 20, width: 'auto', borderRadius: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.5)' }} />
+                          <span style={{ fontSize: 13, fontWeight: 900, color: 'var(--text)' }}>{champW.name}</span>
+                          <span style={{ fontSize: 16 }}>👑</span>
+                        </span>
+                      </div>
+                    );
+                  }
                   const wL = getWinner(LSF, LSF ? (odds[LSF.id] || {}) : {}, true);
                   const wR = getWinner(RSF, RSF ? (odds[RSF.id] || {}) : {}, true);
                   if (!wL && !wR) return null;
