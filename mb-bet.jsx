@@ -1447,10 +1447,17 @@
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 8 }}>
                 {order.map((u) => {
                   const rank = top3.indexOf(u);
+                  const nailedIt = !!(u.championCode && u.championCode === res.championCode);
                   return (
                     <div key={u.uid} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: 64 }}>
                       <span style={{ fontSize: size(u) }}>{medals[rank]}</span>
                       <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: u.uid === authUser.uid ? 'var(--gold-light)' : 'var(--text)', maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}</span>
+                      {u.championCode && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                          {window.MB_champFlag(u.championCode, u.champion, 13)}
+                        </span>
+                      )}
+                      {nailedIt && <span style={{ fontSize: 7.5, color: 'var(--gold-light)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>🔮 Le acertó</span>}
                       <span className="num" style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 4 }}>{Math.round(window.MB_worth(u)).toLocaleString('es-CL')}</span>
                       <div style={{
                         width: '100%', height: platform(u), borderRadius: '4px 4px 0 0',
