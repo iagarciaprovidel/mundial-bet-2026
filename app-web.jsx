@@ -998,7 +998,7 @@ function PerfilWeb() {
         <Card style={{ textAlign: 'center', padding: '24px 18px' }}>
           <div style={{ width: 88, height: 88, borderRadius: '50%', margin: '0 auto', background: 'var(--surface-2)', border: '2px solid var(--gold)', boxShadow: 'var(--glow-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {(meRec && meRec.championCode)
-              ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Campeón: ' + (meRec.champion || '')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ? <img src={`https://flagcdn.com/h120/${meRec.championCode}.png`} alt="" title={'Campeón elegido: ' + (meRec.champion || '') + (window.MB_tournamentChampCode && meRec.championCode !== window.MB_tournamentChampCode ? ' (no fue el campeón)' : '')} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: (window.MB_tournamentChampCode && meRec.championCode !== window.MB_tournamentChampCode) ? 'grayscale(1)' : 'none', opacity: (window.MB_tournamentChampCode && meRec.championCode !== window.MB_tournamentChampCode) ? 0.5 : 1 }} />
               : <span style={{ fontWeight: 800, fontSize: 30, color: 'var(--gold-light)' }}>{ini}</span>}
           </div>
           <h2 className="display" style={{ margin: '14px 0 2px', fontSize: 'var(--t-2xl)' }}>{dispName}{window.MB_champFlag && window.MB_champFlag(meRec && meRec.championCode, meRec && meRec.champion, 16)}</h2>

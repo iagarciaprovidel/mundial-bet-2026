@@ -15,15 +15,25 @@
   const LADDER = { r32: 7000, r16: 10000, qf: 15000, sf: 20000, final: 30000 };
   const fmt = (n) => Number(n || 0).toLocaleString('es-CL').replace(/,/g, '.');
 
-  // Banderita helper — usada en el saludo del Dashboard
+  // Banderita helper — usada en el saludo del Dashboard, ranking, perfil, etc.
+  // Si el torneo ya terminó y este pick NO fue el campeón real, se muestra
+  // apagada (blanco y negro + opaca) en vez de a todo color, para que no
+  // parezca que ese equipo "sigue clasificado" — ver window.MB_tournamentChampCode,
+  // que llena la suscripción global en mb-bet.jsx.
   window.MB_champFlag = function (code, name, size) {
     if (!code) return null;
     const sz = size || 16;
+    const realChamp = window.MB_tournamentChampCode;
+    const wrong = realChamp && code !== realChamp;
     return React.createElement('img', {
       src: 'https://flagcdn.com/h20/' + code + '.png',
-      title: name || code,
+      title: (name || code) + (wrong ? ' (no fue el campeón)' : ''),
       alt: name || code,
-      style: { height: sz, width: 'auto', borderRadius: 2, marginLeft: 5, verticalAlign: 'middle', boxShadow: '0 1px 3px rgba(0,0,0,0.5)' },
+      style: {
+        height: sz, width: 'auto', borderRadius: 2, marginLeft: 5, verticalAlign: 'middle',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.5)',
+        filter: wrong ? 'grayscale(1)' : 'none', opacity: wrong ? 0.45 : 1,
+      },
     });
   };
 

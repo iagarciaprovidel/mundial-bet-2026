@@ -78,6 +78,14 @@
       store.watch = (u && Array.isArray(u.watchMatches)) ? u.watchMatches : [];
       store.notif = !!(u && u.notifEnabled); emit();
     }));
+    // Suscripción global (fuera de React) al resultado real del torneo, para
+    // que window.MB_champFlag (usada en el saludo, ranking, perfil, etc.) pueda
+    // apagar cualquier bandera de campeón elegido que NO haya sido la real —
+    // si no, una vez terminado el Mundial, el pick equivocado de cada uno queda
+    // luciendo "vigente" para siempre, sin nada que indique que ya se perdió.
+    if (fb.subscribeTournamentResult) unsubs.push(fb.subscribeTournamentResult((r) => {
+      window.MB_tournamentChampCode = (r && r.championCode) || null; emit();
+    }));
   }
   function start() {
     if (started) return; started = true;
@@ -1583,8 +1591,10 @@
   window.MB_champAvatar = function (code, champName, nombre, size) {
     const s = size || 30;
     if (code) {
-      return React.createElement('span', { title: 'Campeón: ' + (champName || ''), style: { width: s, height: s, borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--border-2)', display: 'inline-flex', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.4)' } },
-        React.createElement('img', { src: 'https://flagcdn.com/h60/' + code + '.png', alt: '', style: { width: '100%', height: '100%', objectFit: 'cover' } }));
+      const realChamp = window.MB_tournamentChampCode;
+      const wrong = realChamp && code !== realChamp;
+      return React.createElement('span', { title: 'Campeón elegido: ' + (champName || '') + (wrong ? ' (no fue el campeón)' : ''), style: { width: s, height: s, borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--border-2)', display: 'inline-flex', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.4)' } },
+        React.createElement('img', { src: 'https://flagcdn.com/h60/' + code + '.png', alt: '', style: { width: '100%', height: '100%', objectFit: 'cover', filter: wrong ? 'grayscale(1)' : 'none', opacity: wrong ? 0.5 : 1 } }));
     }
     return React.createElement('span', { style: { width: s, height: s, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border-2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: s >= 40 ? 'var(--t-md)' : 'var(--t-3xs)', color: 'var(--gold-light)', flexShrink: 0 } }, avatarInitials(nombre));
   };
