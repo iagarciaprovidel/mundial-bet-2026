@@ -283,9 +283,16 @@ window.addEventListener('appinstalled', function () {
       var r32Codes = codesFor('r32'), r16Codes = codesFor('r16'), qfCodes = codesFor('qf'), sfCodes = codesFor('sf'), finCodes = codesFor('final');
       var hasR32 = Object.keys(r32Codes).length > 0, hasR16 = Object.keys(r16Codes).length > 0;
       var hasQf = Object.keys(qfCodes).length > 0, hasSf = Object.keys(sfCodes).length > 0, hasFin = Object.keys(finCodes).length > 0;
+      // Campeón real del torneo (lo cachea mb-bet.jsx apenas el agente lo calcula,
+      // ver localStorage mb_champ_cache) — una vez existe, solo ese equipo queda
+      // "vigente"; si no, ambos finalistas quedaban coloreados para siempre
+      // porque esta lógica nunca avanza más allá de "llegó a la Final".
+      var realChamp = null;
+      try { realChamp = localStorage.getItem('mb_champ_cache') || null; } catch (e) {}
       // Elimina en la ronda más avanzada de la que el equipo NO forma parte
       // (progresivo: si ya hay cuartos definidos, quien no esté ahí quedó afuera en octavos, etc.)
       var isEliminated = function (code) {
+        if (realChamp) return code !== realChamp;
         if (hasFin) return !finCodes[code];
         if (hasSf) return !sfCodes[code];
         if (hasQf) return !qfCodes[code];

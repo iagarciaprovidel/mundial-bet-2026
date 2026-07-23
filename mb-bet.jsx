@@ -84,7 +84,13 @@
     // si no, una vez terminado el Mundial, el pick equivocado de cada uno queda
     // luciendo "vigente" para siempre, sin nada que indique que ya se perdió.
     if (fb.subscribeTournamentResult) unsubs.push(fb.subscribeTournamentResult((r) => {
-      window.MB_tournamentChampCode = (r && r.championCode) || null; emit();
+      window.MB_tournamentChampCode = (r && r.championCode) || null;
+      // Cacheado en localStorage para que el splash de arranque (index.html,
+      // corre antes que React/Firebase) sepa el campeón real sin esperar
+      // a la suscripción — si no, el splash sigue mostrando a ambos
+      // finalistas "vigentes" para siempre, incluso con el torneo terminado.
+      try { if (window.MB_tournamentChampCode) localStorage.setItem('mb_champ_cache', window.MB_tournamentChampCode); else localStorage.removeItem('mb_champ_cache'); } catch (e) {}
+      emit();
     }));
   }
   function start() {
