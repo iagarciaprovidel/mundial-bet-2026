@@ -1422,20 +1422,38 @@
             {gotScorer && <div style={{ fontSize: 'var(--t-2xs)', color: 'var(--success)', fontWeight: 800, marginTop: 4 }}>✓ ¡Le acertaste al goleador!</div>}
           </div>
         )}
-        {top3.length > 0 && (
-          <div style={{ paddingTop: 8, marginTop: 8, borderTop: '1px solid rgba(212,175,55,0.25)' }}>
-            <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>🏅 Podio final del club</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 14 }}>
-              {top3.map((u, i) => (
-                <div key={u.uid} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, opacity: u.uid === authUser.uid ? 1 : 0.9 }}>
-                  <span style={{ fontSize: 20 }}>{medals[i]}</span>
-                  <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: u.uid === authUser.uid ? 'var(--gold-light)' : 'var(--text)', maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}</span>
-                  <span className="num" style={{ fontSize: 9, color: 'var(--muted)' }}>{Math.round(window.MB_worth(u)).toLocaleString('es-CL')}</span>
-                </div>
-              ))}
+        {top3.length > 0 && (() => {
+          // Orden visual de podio (2°-1°-3°), con el 1er lugar más alto al medio.
+          const order = [top3[1], top3[0], top3[2]].filter(Boolean);
+          const platform = (u) => u === top3[0] ? 46 : u === top3[1] ? 28 : 16;
+          const size = (u) => u === top3[0] ? 30 : 24;
+          return (
+            <div style={{ paddingTop: 8, marginTop: 8, borderTop: '1px solid rgba(212,175,55,0.25)' }}>
+              <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>🏅 Podio final del club</div>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 8 }}>
+                {order.map((u) => {
+                  const rank = top3.indexOf(u);
+                  return (
+                    <div key={u.uid} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: 64 }}>
+                      <span style={{ fontSize: size(u) }}>{medals[rank]}</span>
+                      <span style={{ fontSize: 'var(--t-2xs)', fontWeight: 800, color: u.uid === authUser.uid ? 'var(--gold-light)' : 'var(--text)', maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre || 'Jugador'}</span>
+                      <span className="num" style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 4 }}>{Math.round(window.MB_worth(u)).toLocaleString('es-CL')}</span>
+                      <div style={{
+                        width: '100%', height: platform(u), borderRadius: '4px 4px 0 0',
+                        background: rank === 0 ? 'linear-gradient(180deg, rgba(255,215,0,0.35), rgba(255,215,0,0.12))' : rank === 1 ? 'linear-gradient(180deg, rgba(200,205,212,0.3), rgba(200,205,212,0.1))' : 'linear-gradient(180deg, rgba(205,127,50,0.3), rgba(205,127,50,0.1))',
+                        border: `1px solid ${rank === 0 ? '#FFD700' : rank === 1 ? '#C8CDD4' : '#CD7F32'}55`,
+                        borderBottom: 'none',
+                        display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 3,
+                      }}>
+                        <span className="num" style={{ fontSize: 10, fontWeight: 900, color: rank === 0 ? '#FFD700' : rank === 1 ? '#C8CDD4' : '#CD7F32' }}>{rank + 1}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     );
   }
