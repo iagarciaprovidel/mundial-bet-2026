@@ -349,7 +349,7 @@ body{
       <div class="app-logo">🏆</div>
       <div class="app-name-row">
         <span class="app-name">MB26</span>
-        <span class="app-ver">v171</span>
+        <span class="app-ver">v337</span>
       </div>
       <p class="app-desc">Sistema de pronósticos<br>del Mundial 2026<br>para grupos de amigos</p>
       <div class="badges" id="badges"></div>
@@ -415,7 +415,7 @@ body{
   <div class="section" id="agente" style="border-left:4px solid #9B6DFF;">
     <div class="sec-label">🤖 Agente automático · GitHub Actions cron</div>
     <h2 class="sec-title">El único "servidor" — y vive solo ~10 segundos</h2>
-    <p class="sec-desc">Un script Node.js que GitHub Actions ejecuta cada 5 minutos vía cron. No hay ningún servidor permanente: GitHub prende una VM, corre el script, la VM desaparece. Costo fijo: cero.</p>
+    <p class="sec-desc">Un script Node.js que GitHub Actions ejecutaba cada 5 minutos vía cron durante el Mundial. No hay ningún servidor permanente: GitHub prende una VM, corre el script, la VM desaparece. Costo fijo: cero. <strong style="color:#FFB81C">Cron desactivado</strong> desde que terminó el torneo (19-jul-2026) — el trabajo de fondo ya no tiene partidos que trackear, así que ahora solo corre manualmente (workflow_dispatch) para no seguir gastando lecturas/escrituras de Firestore sin necesidad.</p>
     <div class="agent-run" id="agent-run"></div>
     <div style="margin-top:26px;">
       <div class="sec-label" style="margin-bottom:10px;">⚡ Flujo completo — desde que un jugador apuesta hasta que cobra</div>
@@ -438,9 +438,15 @@ body{
 │   │   ├── <span class="t-file">ios-frame.jsx       </span><span class="t-note">· chrome nativo iOS · safe-area · status bar</span>
 │   │   ├── <span class="t-file">components.jsx      </span><span class="t-note">· botones · chips · loaders · toasts · avatares</span>
 │   │   ├── <span class="t-file">mb-auth-ui.jsx      </span><span class="t-note">· pantalla login: Google OAuth · email magic link</span>
-│   │   ├── <span class="t-file">mb-bet.jsx          </span><span class="t-note">· tarjeta de apuesta · selector 1·X·2 · monto</span>
+│   │   ├── <span class="t-file">mb-bet.jsx          </span><span class="t-note">· tarjeta de apuesta 1·X·2 · store compartido · banner de cierre + podio final</span>
+│   │   ├── <span class="t-file">mb-parlay.jsx       </span><span class="t-note">· apuestas combinadas (varias selecciones, un boleto)</span>
+│   │   ├── <span class="t-file">mb-champion.jsx     </span><span class="t-note">· pronóstico de campeón · escalera de bonos r32→final</span>
+│   │   ├── <span class="t-file">mb-semis.jsx        </span><span class="t-note">· pronóstico de los 4 semifinalistas (gratis)</span>
+│   │   ├── <span class="t-file">mb-scorer.jsx       </span><span class="t-note">· apuesta al goleador del torneo (paga ×20)</span>
+│   │   ├── <span class="t-file">mb-challenges.jsx   </span><span class="t-note">· desafíos del partido (r16+): gol 1T/2T, penales, tarjetas</span>
+│   │   ├── <span class="t-file">mb-team-modal.jsx   </span><span class="t-note">· ficha de equipo/selección al tocar bandera o escudo</span>
 │   │   ├── <span class="t-file">screens-core.jsx    </span><span class="t-note">· inicio · perfil · mis apuestas · wallet</span>
-│   │   ├── <span class="t-file">screens-bet.jsx     </span><span class="t-note">· apostar en partidos · odds en vivo · marcador</span>
+│   │   ├── <span class="t-file">screens-bet.jsx     </span><span class="t-note">· apostar en partidos · odds en vivo · marcador · filtro por ronda KO</span>
 │   │   ├── <span class="t-file">screens-rank.jsx    </span><span class="t-note">· ranking global · por grupo · historial</span>
 │   │   ├── <span class="t-file">screens-teams.jsx   </span><span class="t-note">· selecciones · plantillas · zona del grupo</span>
 │   │   └── <span class="t-file">screens-special.jsx </span><span class="t-note">· feed social de actividad · panel admin · cierre de torneo</span>
@@ -463,13 +469,14 @@ body{
       <div class="fe-split">
         <div class="fe-pane">
           <div class="fe-pane-head" style="color:#61DAFB;border-top:3px solid #61DAFB;">📱 App móvil <span class="fe-file-tag">app.jsx</span></div>
-          <div class="fe-screen"><span class="fe-screen-dot" style="background:#00D466"></span><span class="fe-screen-name">Inicio</span><span class="fe-screen-desc">partidos del día · odds vivos</span></div>
-          <div class="fe-screen"><span class="fe-screen-dot" style="background:#FFB81C"></span><span class="fe-screen-name">Apostar</span><span class="fe-screen-desc">1·X·2 · stake · confirmación</span></div>
-          <div class="fe-screen"><span class="fe-screen-dot" style="background:#9B6DFF"></span><span class="fe-screen-name">Ranking</span><span class="fe-screen-desc">global · grupo · posición propia</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#D4AF37"></span><span class="fe-screen-name">Banner de cierre</span><span class="fe-screen-desc">campeón + goleador real · automático al terminar la Final</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#00D466"></span><span class="fe-screen-name">Inicio</span><span class="fe-screen-desc">partidos del día · odds vivos · desafíos · racha</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#FFB81C"></span><span class="fe-screen-name">Apostar</span><span class="fe-screen-desc">1·X·2 · stake · confirmación · chips por ronda KO</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#9B6DFF"></span><span class="fe-screen-name">Ranking</span><span class="fe-screen-desc">global · grupo · podio con medallas (top 3)</span></div>
           <div class="fe-screen"><span class="fe-screen-dot" style="background:#FFAA55"></span><span class="fe-screen-name">Mis apuestas</span><span class="fe-screen-desc">abiertas · ganadas · perdidas</span></div>
           <div class="fe-screen"><span class="fe-screen-dot" style="background:#00C2A8"></span><span class="fe-screen-name">Selecciones</span><span class="fe-screen-desc">plantillas · zona · historial</span></div>
-          <div class="fe-screen"><span class="fe-screen-dot" style="background:#F77F88"></span><span class="fe-screen-name">Copa / Bracket</span><span class="fe-screen-desc">fase KO · cruces · campeón</span></div>
-          <div class="fe-screen"><span class="fe-screen-dot" style="background:#61DAFB"></span><span class="fe-screen-name">Perfil</span><span class="fe-screen-desc">saldo · campeón · figuritas</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#F77F88"></span><span class="fe-screen-name">Copa / Bracket</span><span class="fe-screen-desc">fase KO + 3er/4to puesto · trofeo con el campeón real</span></div>
+          <div class="fe-screen"><span class="fe-screen-dot" style="background:#61DAFB"></span><span class="fe-screen-name">Perfil</span><span class="fe-screen-desc">saldo · campeón elegido (apagado si no acertó) · figuritas</span></div>
           <div class="fe-screen"><span class="fe-screen-dot" style="background:#C0D4E8"></span><span class="fe-screen-name">Feed social</span><span class="fe-screen-desc">actividad · goles · apuestas del grupo</span></div>
         </div>
         <div class="fe-pane">
@@ -518,7 +525,7 @@ const COMPS=[
   {id:"react",nombre:"React App",ver:"v18.3",icon:"⚛️",color:"#00D466",
    gear:{cx:0,cy:0,teeth:16,outer:58,inner:40,dur:9,cw:true},
    desc:"Interfaz de usuario reactiva cargada desde CDN, sin npm ni webpack. Los archivos .jsx son transpilados por Babel Standalone directamente en el navegador. Dos versiones: App (móvil &lt;1024px) y AppWeb (escritorio ≥1024px)."},
-  {id:"sw",nombre:"Service Worker",ver:"v171",icon:"⚙️",color:"#FFB81C",
+  {id:"sw",nombre:"Service Worker",ver:"v337",icon:"⚙️",color:"#FFB81C",
    gear:{cx:-115,cy:-88,teeth:11,outer:39,inner:27,dur:13,cw:false},
    desc:"Cache offline de toda la app. Estrategia Network-First: intenta la red primero, cae a caché si no hay internet. Detecta versiones nuevas por el número CACHE='mundialbet-vN' y recarga todos los clientes automáticamente."},
   {id:"auth",nombre:"Firebase Auth",ver:"10.12",icon:"🔑",color:"#FF8A4A",
@@ -532,13 +539,13 @@ const COMPS=[
    desc:"Notificaciones push a teléfonos y navegadores aunque la app esté cerrada. El agente las envía al liquidar cada partido. Funciona en iOS, Android y web PWA instalada."},
   {id:"agent",nombre:"Agente Auto.",ver:"Node 20",icon:"🤖",color:"#9B6DFF",
    gear:{cx:-118,cy:96,teeth:12,outer:44,inner:31,dur:11,cw:false},
-   desc:"Script Node.js que GitHub Actions ejecuta cada 5 minutos. Consulta football-data.org, detecta partidos terminados y paga: saldo × cuota a cada ganador, más bonos por precisión y rachas. Sin servidor permanente."},
+   desc:"Script Node.js. Consulta ESPN (scoreboard oculto) y cruza con football-data.org para confirmar la ronda de cada fixture nuevo, detecta partidos terminados y paga: saldo × cuota a cada ganador, más bonos por precisión y rachas. Al terminar la Final calcula solo el campeón y goleador reales del torneo. Cron desactivado desde que terminó el Mundial 2026 (19-jul) — queda solo a mano (workflow_dispatch) para no gastar lecturas de Firestore sin partidos que trackear."},
   {id:"gh",nombre:"GitHub Actions",ver:"CI/CD",icon:"🐙",color:"#C0D4E8",
    gear:{cx:-162,cy:18,teeth:8,outer:27,inner:19,dur:22,cw:true},
    desc:"Dos workflows: deploy.yml publica la app en Firebase Hosting ~30s después de cada push a main. agent.yml despierta al agente cada 5 minutos via cron de GitHub — sin ningún servidor permanente ni costo fijo."},
   {id:"fd",nombre:"football-data",ver:"API v4",icon:"⚽",color:"#00C2A8",
    gear:{cx:4,cy:162,teeth:7,outer:24,inner:16,dur:20,cw:true},
-   desc:"API gratuita de resultados del Mundial (football-data.org, plan free). Incluye la competición WC (FIFA World Cup). El agente la consulta en cada corrida para detectar marcadores finales."},
+   desc:"API gratuita de resultados (football-data.org, plan free). Sirve como segunda fuente: cuando ESPN descubre un fixture nuevo sin poder clasificar su ronda, el agente cruza contra football-data para confirmar r16/qf/sf/final antes de registrarlo — evita fixtures 'fantasma' con ronda equivocada."},
 ];
 
 /* ── Genera path de engranaje ── */
@@ -694,7 +701,7 @@ const mkFa=()=>{const s=document.createElement("span");s.className="fa";s.textCo
   ["#F77F88","Firebase Cloud Messaging"],["#FF8A4A","Firebase Hosting CDN"],
   ["#FFB81C","Service Worker API"],["#9B6DFF","GitHub Actions"],
   ["#9B6DFF","Node.js 20 (solo en Actions)"],["#00C2A8","football-data.org API"],
-  ["#C0D4E8","GitHub Pages (respaldo)"],["#00D466","Bricolage Grotesque"],
+  ["#00D466","Bricolage Grotesque"],
   ["#A8C5E0","Manrope + JetBrains Mono"],["#00C2A8","flagcdn.com (banderas)"],
   ["#A8C5E0","qrcode-generator + jsQR"],["#FFB81C","PWA Web App Manifest"],
   ["#FFAA55","Firebase Admin SDK"],["#C0D4E8","IndexedDB (sesión local)"],
@@ -716,6 +723,7 @@ const COLS=[
     {n:"semiPick",t:"object",note:"4 semifinalistas (gratis)"},
     {n:"scorerBet",t:"object",note:"apuesta al goleador (paga ×20)"},
     {n:"currentStreak / bestStreak",t:"number",note:"solo el agente escribe"},
+    {n:"champClaim_qf / _sf / _final",t:"object",note:"{claimed:bool} — reclamo manual, no auto-pago"},
   ]},
   {id:"challenge_picks",icon:"⚡",color:"#61DAFB",docId:"{uid}_{matchId}_{q}",
    desc:"Desafíos del partido (desde octavos): gol 1T/2T, penales, tarjetas, primer gol. Apuesta real con multiplicador ×1–×50; el ganador reclama el premio con un botón.",
@@ -774,10 +782,18 @@ const COLS=[
     {n:"lockedBy",ref:true,t:"→ users"},{n:"actualizado",t:"timestamp"},
   ]},
   {id:"meta / bonuses",icon:"⚙️",color:"#A8C5E0",docId:"bonuses (doc fijo)",
-   desc:"Estado global del sistema: pagos de cierre de fase y selecciones clasificadas al KO.",
+   desc:"Estado global del sistema: pagos de cierre de fase y selecciones clasificadas al KO. r32/r16 se pagaron automáticos (histórico); qf/sf/final quedan marcados acá pero el jugador reclama el premio con un botón, no se le acredita solo.",
    fields:[
     {n:"groupsClosed",t:"boolean"},{n:"qualified",t:"string[]",note:"ISO2 clasificados"},
-    {n:"champ_r32 … champ_final",t:"boolean",note:"idempotencia por ronda"},{n:"at",t:"timestamp"},
+    {n:"champ_r32 … champ_final",t:"boolean",note:"idempotencia por ronda"},
+    {n:"scorer_bets_paid",t:"boolean"},{n:"scorerTop / scorerGoals",t:"string / number"},{n:"at",t:"timestamp"},
+  ]},
+  {id:"meta / tournamentResult",icon:"🏆",color:"#D4AF37",docId:"tournamentResult (doc fijo)",
+   desc:"Resultado real y definitivo del torneo — el agente lo escribe una sola vez, apenas la Final queda 'finished', y no lo vuelve a tocar. La app lo lee en vivo para mostrar el banner de cierre (campeón + goleador, con '✓ le acertaste') y el podio final en Inicio y Ranking.",
+   fields:[
+    {n:"championCode / championName",t:"string"},
+    {n:"topScorers",t:"object[]",note:"{name, code, goals}"},{n:"topScorerGoals",t:"number"},
+    {n:"finalMatchId",ref:true,t:"→ odds"},{n:"at",t:"timestamp"},
   ]},
 ];
 const dbGrid=document.getElementById('db-grid');
@@ -822,7 +838,9 @@ COLS.forEach(col=>{
   {freq:"1× total",fc:"#FFB81C",bg:"rgba(255,184,28,.11)",t:"Cierre de fase de grupos",
    d:"Al terminar los 72 partidos: paga una vez por jugador — recarga +2.000 c/10 apuestas, precisión hasta +25.000, racha hasta +10.000, campeón pasa de fase +5.000. Idempotente: <code>meta/bonuses.groupsClosed</code> + <code>users/{uid}.rewards.groupsClosed</code>."},
   {freq:"1× / ronda KO",fc:"#FFB81C",bg:"rgba(255,184,28,.11)",t:"Premio del campeón por avance",
-   d:"Tras cada ronda (r32/r16/qf/sf/final): paga a quienes eligieron al equipo que avanzó. Escala +7.000 (r32) → +30.000 (final). Idempotente vía <code>meta/bonuses.champ_{stage}</code>. Al definirse los 4 semifinalistas paga además el bono del pronóstico de semifinales (<code>users/{uid}.semiPick</code>)."},
+   d:"Tras cada ronda (r32/r16/qf/sf/final): habilita el premio a quienes eligieron al equipo que avanzó. Escala +7.000 (r32) → +30.000 (final). r32/r16 se pagaron automáticos (histórico); <strong>qf/sf/final el jugador los reclama con un botón</strong> — el agente solo habilita <code>meta/bonuses.champ_{stage}</code>, nunca acredita solo. Al definirse los 4 semifinalistas paga además el bono del pronóstico de semifinales (<code>users/{uid}.semiPick</code>)."},
+  {freq:"1× total",fc:"#D4AF37",bg:"rgba(212,175,55,.13)",t:"Resultado final del torneo",
+   d:"Apenas la Final queda <code>finished</code>: calcula el campeón real (<code>result</code>/<code>penWinner</code>) y el goleador real del Mundial (tally de <code>odds/*.scorers</code> cruzado contra los fixtures) y los escribe una sola vez en <code>meta/tournamentResult</code>. 100% automático — sin ningún paso manual — dispara el banner de cierre y el podio en la app de todos los jugadores."},
 ].forEach(s=>{
   document.getElementById('agent-run').innerHTML+=`<div class="agent-row">
     <span class="agent-badge" style="background:${s.bg};color:${s.fc}">${s.freq}</span>
