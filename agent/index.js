@@ -1814,6 +1814,11 @@ async function main() {
   // en writeTournamentResult). No-op el resto del torneo.
   await writeTournamentResult();
 
+  try {
+    const dgTR = await db.collection('meta').doc('tournamentResult').get();
+    console.log('DIAG tournamentResult=' + JSON.stringify(dgTR.data() || null));
+  } catch (e) { console.warn('DIAG error:', e && e.message); }
+
   console.log(`\nResumen: ${oddsN} cuota(s), ${lives} en vivo, ${results} resultado(s), ${settled} apuesta(s) liquidada(s), ${parlaysSettled} combinada(s) liquidada(s).`);
 }
 
